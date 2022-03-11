@@ -32,10 +32,9 @@ function provideInitialize(data) {
     /* eslint-disable no-param-reassign */
     // request the ethers provider from the forta sdk
     data.provider = getEthersProvider();
-
+    data.iface = new ethers.utils.Interface(achoredViewAbi);
     // initialize the UniswapAnchoredView contract
     data.contract = new ethers.Contract(UNI_ANCHORED_VIEW_ADDRESS, achoredViewAbi, data.provider);
-    data.iface = data.contract.interface;
     /* eslint-enable no-param-reassign */
   };
 }
@@ -85,6 +84,7 @@ function provideHandleTransaction(data) {
 }
 
 module.exports = {
+  UNI_ANCHORED_VIEW_ADDRESS,
   provideInitialize,
   initialize: provideInitialize(initializeData),
   provideHandleTransaction,
