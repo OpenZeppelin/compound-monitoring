@@ -9,3 +9,9 @@ transactions that occur with Compound Protocol smart contracts.
 
 This agent monitors blockchain transactions for events emitted from Compound smart contract
 addresses.  Alert type and severity are specified per event per contract address.
+
+### Price Oracle Monitor
+
+This agent monitors the UniswapAnchoredProxy contract for PriceGuarded events which indicate that
+a ValidatorProxy reported a cToken price that is outside of the Uniswap V2 TWAP percent threshold.
+Alert type is set to Degraded and severity is set to High.
