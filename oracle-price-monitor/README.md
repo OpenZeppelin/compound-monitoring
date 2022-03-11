@@ -1,4 +1,4 @@
-# Compound cToken Price Monitor Agent
+# Compound Oracle Price Monitor Agent
 
 ## Description
 

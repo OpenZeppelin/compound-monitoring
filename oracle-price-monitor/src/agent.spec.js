@@ -102,7 +102,7 @@ describe('handleTransaction', () => {
     // run the agent
     const findings = await handleTransaction(txEvent);
     const expectedFinding = Finding.fromObject({
-      name: 'Compound cToken Price Rejected',
+      name: 'Compound Oracle Price Monitor',
       description: 'The new price reported by ValidatorProxy 0xREPORTERADDRESS was rejected '
         + 'for cToken 0xCTOKENADDRESS',
       alertId: 'AE-COMP-CTOKEN-PRICE-REJECTED',

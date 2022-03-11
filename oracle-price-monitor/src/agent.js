@@ -11,7 +11,7 @@ function createAlert(
   cTokenAddress, underlyingTokenAddress, priceReporterAddress, currentPrice, rejectedPrice,
 ) {
   return Finding.fromObject({
-    name: 'Compound cToken Price Rejected',
+    name: 'Compound Oracle Price Monitor',
     description: `The new price reported by ValidatorProxy ${priceReporterAddress} was rejected `
       + `for cToken ${cTokenAddress}`,
     alertId: 'AE-COMP-CTOKEN-PRICE-REJECTED',
