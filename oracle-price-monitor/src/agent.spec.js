@@ -87,11 +87,7 @@ describe('handleTransaction', () => {
     // event and the agent should return a finding as a reult
     const iface = new ethers.utils.Interface(abi);
     const mockTopics = iface.encodeFilterTopics('PriceGuarded', [0x1]);
-    const reporterPrice = 100;
-    const anchorPrice = 10;
-    const mockData = ethers.utils.defaultAbiCoder.encode(
-      ['uint256', 'uint256'], [reporterPrice, anchorPrice],
-    );
+    const mockData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [100, 10]);
     const mockReceipt = {
       logs: [{
         address: UNI_ANCHORED_VIEW_ADDRESS,
