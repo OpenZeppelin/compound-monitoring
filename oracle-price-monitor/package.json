@@ -1,5 +1,5 @@
 {
-  "name": "forta-ae-price-oracle-monitor",
+  "name": "forta-ae-oracle-price-monitor",
   "version": "0.0.1",
   "chainIds": [1],
   "description": "This agent monitors the UniswapAnchoredView contract to see if any price updates have been rejected.",
