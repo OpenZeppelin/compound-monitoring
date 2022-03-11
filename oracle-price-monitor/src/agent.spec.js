@@ -54,7 +54,7 @@ describe('handleTransaction', () => {
     ];
     const mockReceipt = {
       logs: [{
-        address: '0xFAKEPOOLADDRESS',
+        address: '0xMOCKADDRESS',
         topics: mockTopics,
         data: '0x',
       }],
