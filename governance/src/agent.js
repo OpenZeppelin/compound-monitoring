@@ -24,18 +24,17 @@ function provideInitialize(data) {
 
     const sigTypeFull = ethers.utils.FormatTypes.full;
 
-    const { GovernorBravo: governorBravo } = config.contracts;
+    const { governance } = config;
 
     // GovernorBravo contract
-    const governorBravoAbi = getAbi(governorBravo.abiFile);
+    const governorBravoAbi = getAbi(governance.abiFile);
     const governorBravoInterface = new ethers.utils.Interface(governorBravoAbi);
-    const { events: governorBravoEvents } = governorBravo;
-    data.governorBravoAddress = governorBravo.address;
+    const { events: governorBravoEvents, address } = governance;
+    data.governorBravoAddress = address;
     data.governorBravoInfo = governorBravoEvents.map((eventName) => {
       const signature = governorBravoInterface.getEvent(eventName).format(sigTypeFull);
       return signature;
     });
-    console.log(data.governorBravoInfo);
     /* eslint-enable no-param-reassign */
   };
 }
@@ -76,4 +75,5 @@ module.exports = {
   initialize: provideInitialize(initializeData),
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(initializeData),
+  getAbi,
 };
