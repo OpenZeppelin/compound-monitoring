@@ -1,11 +1,15 @@
 const { ethers } = require('forta-agent');
 
-const { getAbi } = require('./utils');
-
 const { createGovernanceFindings } = require('./governance');
 
 // load any agent configuration parameters
 const config = require('../agent-config.json');
+
+function getAbi(abiName) {
+  // eslint-disable-next-line global-require,import/no-dynamic-require
+  const { abi } = require(`../abi/${abiName}`);
+  return abi;
+}
 
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
