@@ -5,11 +5,24 @@
   "contracts": {
     "Comptroller": {
       "address": "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B",
-      "abiFile": "Comptroller.json"
+      "abiFile": "Comptroller.json",
+      "events": {}
     },
     "cTokens": {
       "abiFile": "cErc20.json",
       "events": {
+        "Borrow": {
+          "type": "Info",
+          "severity": "Info"
+        },
+        "Failure": {
+          "type": "Info",
+          "severity": "Info"
+        },
+        "LiquidateBorrow": {
+          "type": "Info",
+          "severity": "Info"
+        },
         "Mint": {
           "type": "Info",
           "severity": "Info"
@@ -18,19 +31,7 @@
           "type": "Info",
           "severity": "Info"
         },
-        "Borrow": {
-          "type": "Info",
-          "severity": "Info"
-        },
         "RepayBorrow": {
-          "type": "Info",
-          "severity": "Info"
-        },
-        "LiquidateBorrow": {
-          "type": "Info",
-          "severity": "Info"
-        },
-        "Failure": {
           "type": "Info",
           "severity": "Info"
         }

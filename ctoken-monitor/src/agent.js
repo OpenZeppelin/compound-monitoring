@@ -60,7 +60,6 @@ function provideInitialize(data) {
   return async function initialize() {
     /* eslint-disable no-param-reassign */
     // assign configurable fields
-    data.adminEvents = config.contracts;
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
