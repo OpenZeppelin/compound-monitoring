@@ -4,9 +4,9 @@ This agent monitors Compound Finance cToken contracts for common market events l
 etc.  Monitored events are specified in the agent-config.json file, with associated Finding types
 and severities for each one.
 
-This agent checks the Compound Finance Comptroller contract on every block to compare the most
+This agent also checks the Compound Finance Comptroller contract on every block to compare the most
 recent Array of cToken addresses against the previously stored Array.  If any new cTokens were
-added, the new cToken address(es) are placed into the Array for monitoring in that block and
+added, the new cToken address(es) are placed into the Array for monitoring in that block and all
 subsequent blocks.
 
 ## Transactions
