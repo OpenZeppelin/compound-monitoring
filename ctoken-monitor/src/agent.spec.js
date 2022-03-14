@@ -119,8 +119,10 @@ describe('monitor emitted events', () => {
     let findingType;
     let findingSeverity;
     const contractName = 'cTokens';
-    const validContractAddress = '0xc0ffee254729296a45a3885639AC7E10F9d54979';
+    const validContractAddress = ethers.utils.getAddress('0xc0ffee254729296a45a3885639AC7E10F9d54979');
+    const newValidContractAddress = ethers.utils.getAddress('0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef');
     const validContractSymbol = 'VLD';
+    const newValidContractSymbol = 'NVLD';
 
     beforeEach(async () => {
       initializeData = {};
@@ -221,7 +223,7 @@ describe('monitor emitted events', () => {
       expect(findings).toStrictEqual([]);
     });
 
-    it('returns empty findings if contract address matches but no monitored function was invoked', async () => {
+    it('returns empty findings if contract address matches but no monitored event was emitted', async () => {
       // encode event data - valid event with valid arguments
       const { mockArgs, mockTopics, data } = createMockEventLogs(eventNotInConfig, iface);
 
@@ -242,7 +244,7 @@ describe('monitor emitted events', () => {
       expect(findings).toStrictEqual([]);
     });
 
-    it('returns a finding if a target contract invokes a monitored function with no expression', async () => {
+    it('returns a finding if a target contract emits a monitored event', async () => {
       // encode event data - valid event with valid arguments
       const { mockArgs, mockTopics, data } = createMockEventLogs(eventInConfig, iface);
 
@@ -282,6 +284,76 @@ describe('monitor emitted events', () => {
         },
       })];
 
+      expect(findings).toStrictEqual(testFindings);
+    });
+
+    it('returns empty findings if a new cToken is added and no monitored events are emitted', async () => {
+      mockContract.getAllMarkets = jest.fn().mockResolvedValueOnce([newValidContractAddress]);
+      mockContract.symbol = jest.fn().mockResolvedValueOnce(newValidContractSymbol);
+
+      // select event in config file
+      const { mockArgs, mockTopics, data } = createMockEventLogs(eventNotInConfig, iface);
+
+      // update mock transaction event
+      const [defaultLog] = mockTxEvent.receipt.logs;
+      defaultLog.name = contractName;
+      defaultLog.address = newValidContractAddress; // new cToken address
+      defaultLog.topics = mockTopics;
+      defaultLog.args = mockArgs;
+      defaultLog.data = data;
+      defaultLog.signature = iface
+        .getEvent(eventInConfig.name)
+        .format(ethers.utils.FormatTypes.minimal)
+        .substring(6);
+
+      //  feed in event to handler
+      const findings = await handleTransaction(mockTxEvent);
+      expect(findings).toStrictEqual([]);
+    });
+
+    it('returns findings if a new cToken is added and a monitored event is emitted', async () => {
+      mockContract.getAllMarkets = jest.fn().mockResolvedValueOnce([newValidContractAddress]);
+      mockContract.symbol = jest.fn().mockResolvedValueOnce(newValidContractSymbol);
+
+      // select event NOT in config file
+      const { mockArgs, mockTopics, data } = createMockEventLogs(eventInConfig, iface);
+
+      // update mock transaction event
+      const [defaultLog] = mockTxEvent.receipt.logs;
+      defaultLog.name = contractName;
+      defaultLog.address = newValidContractAddress; // new cToken address
+      defaultLog.topics = mockTopics;
+      defaultLog.args = mockArgs;
+      defaultLog.data = data;
+      defaultLog.signature = iface
+        .getEvent(eventInConfig.name)
+        .format(ethers.utils.FormatTypes.minimal)
+        .substring(6);
+
+      //  feed in event to handler
+      const findings = await handleTransaction(mockTxEvent);
+
+      let expectedMetaData = {};
+      Object.keys(mockArgs).forEach((name) => {
+        expectedMetaData[name] = mockArgs[name];
+      });
+      expectedMetaData = utils.extractEventArgs(expectedMetaData);
+
+      // create the expected finding
+      const testFindings = [Finding.fromObject({
+        alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-EVENT`,
+        description: `The ${eventInConfig.name} event was emitted by the ${newValidContractSymbol} cToken contract`,
+        name: `${protocolName} cToken Event`,
+        protocol: protocolName,
+        severity: FindingSeverity[findingSeverity],
+        type: FindingType[findingType],
+        metadata: {
+          cTokenSymbol: newValidContractSymbol,
+          contractAddress: newValidContractAddress,
+          eventName: eventInConfig.name,
+          ...expectedMetaData,
+        },
+      })];
       expect(findings).toStrictEqual(testFindings);
     });
   });
