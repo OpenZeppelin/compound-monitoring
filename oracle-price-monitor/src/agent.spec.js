@@ -10,9 +10,6 @@ jest.mock('forta-agent', () => ({
   getEthersProvider: jest.fn(),
   ethers: {
     ...jest.requireActual('ethers'),
-    providers: {
-      JsonRpcBatchProvider: jest.fn(),
-    },
     Contract: jest.fn().mockReturnValue(mockUniswapAnchoredViewContract),
   },
 }));
@@ -41,6 +38,8 @@ describe('handleTransaction', () => {
     // initialize the handler
     await (provideInitialize(initializeData))();
     handleTransaction = provideHandleTransaction(initializeData);
+    // ensure that the mockTokenConfig Array is empty before running tests
+    mockTokenConfig.splice(0, mockTokenConfig.length);
   });
 
   it('returns no findings when the PriceGuarded event is not emitted', async () => {
@@ -54,7 +53,7 @@ describe('handleTransaction', () => {
     ];
     const mockReceipt = {
       logs: [{
-        address: '0xMOCKADDRESS',
+        address: UNI_ANCHORED_VIEW_ADDRESS,
         topics: mockTopics,
         data: '0x',
       }],
@@ -117,5 +116,28 @@ describe('handleTransaction', () => {
       },
     });
     expect(findings).toStrictEqual([expectedFinding]);
+  });
+
+  it('returns no findings when the UniAnchoredView contract address is not involved', async () => {
+    // build mock receipt for mock txEvent
+    // the event logs will contain a PriceGuarded event but the address will not match, so no
+    // findings should be generated
+    const iface = new ethers.utils.Interface(abi);
+    const mockTopics = iface.encodeFilterTopics('PriceGuarded', [0x1]);
+    const mockData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [100, 10]);
+    const mockReceipt = {
+      logs: [{
+        address: '0xMOCKADDRESS',
+        topics: mockTopics,
+        data: mockData,
+      }],
+    };
+
+    // create the mock txEvent
+    const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
+
+    // run the agent
+    const findings = await handleTransaction(txEvent);
+    expect(findings).toStrictEqual([]);
   });
 });

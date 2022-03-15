@@ -31,22 +31,22 @@ function provideInitialize(data) {
   return async function initialize() {
     /* eslint-disable no-param-reassign */
     // request the ethers provider from the forta sdk
-    data.provider = getEthersProvider();
-    data.iface = new ethers.utils.Interface(achoredViewAbi);
+    const provider = getEthersProvider();
+    const iface = new ethers.utils.Interface(achoredViewAbi);
     // initialize the UniswapAnchoredView contract
-    data.contract = new ethers.Contract(UNI_ANCHORED_VIEW_ADDRESS, achoredViewAbi, data.provider);
+    data.contract = new ethers.Contract(UNI_ANCHORED_VIEW_ADDRESS, achoredViewAbi, provider);
+    data.priceGuardedEvent = iface.getEvent('PriceGuarded').format(ethers.utils.FormatTypes.full);
     /* eslint-enable no-param-reassign */
   };
 }
 
 function provideHandleTransaction(data) {
   return async function handleTransaction(txEvent) {
-    const { iface, contract } = data;
+    const { priceGuardedEvent, contract } = data;
 
     // use parseLog to see if the event PriceGuarded has been emitted, this is the event that
     // means the price returned from the validator proxy did not meet the acceptable Uniswap V2 TWAP
     // percent range and was rejected
-    const priceGuardedEvent = iface.getEvent('PriceGuarded').format(ethers.utils.FormatTypes.full);
     const parsedLogs = txEvent.filterLog(priceGuardedEvent, UNI_ANCHORED_VIEW_ADDRESS);
 
     const promises = parsedLogs.map(async (log) => {
