@@ -17,31 +17,31 @@ const MINIMUM_EVENT_LIST = [
 
 // check the configuration file to verify the values
 describe('check agent configuration file', () => {
-  describe('procotolName key required', () => {
+  it('procotolName key required', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');
     expect(protocolName).not.toBe('');
   });
 
-  describe('protocolAbbreviation key required', () => {
+  it('protocolAbbreviation key required', () => {
     const { protocolAbbreviation } = config;
     expect(typeof (protocolAbbreviation)).toBe('string');
     expect(protocolAbbreviation).not.toBe('');
   });
 
-  describe('developerAbbreviation key required', () => {
+  it('developerAbbreviation key required', () => {
     const { developerAbbreviation } = config;
     expect(typeof (developerAbbreviation)).toBe('string');
     expect(developerAbbreviation).not.toBe('');
   });
 
-  describe('governance key required', () => {
+  it('governance key required', () => {
     const { governance } = config;
     expect(typeof (governance)).toBe('object');
     expect(governance).not.toBe({});
   });
 
-  describe('governance key values must be valid', () => {
+  it('governance key values must be valid', () => {
     const { governance } = config;
     const { abiFile, address } = governance;
 
@@ -155,7 +155,7 @@ describe('monitor governance contracts for emitted events', () => {
     });
 
     it('returns empty findings if contract address matches but no monitored event was emitted', async () => {
-      // encode event data - valid event with valid arguments
+      // encode event data - invalid event with valid arguments
       const { mockArgs, mockTopics, data } = createMockEventLogs(invalidEvent, iface);
 
       // update mock transaction event
