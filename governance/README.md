@@ -31,8 +31,8 @@ to Proposals and Voting.  All alert types and severities are set to Info.
     - Address of GovernorBravo contract
     - Voter address
     - Number of votes cast by voter
-    - Reason accompanying vote 
-    - Initial line of proposal description
+    - Reason string that accompanies vote 
+    - First line of proposal description
 
 <!-- -->
 - AE-COMP-GOVERNANCE-PROPOSAL-CANCELED
@@ -42,7 +42,7 @@ to Proposals and Voting.  All alert types and severities are set to Info.
     - Address of GovernorBravo contract
     - Proposal ID
     - State of proposal
-    - Initial line of proposal description
+    - First line of proposal description
 
 <!-- -->
 - AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED
@@ -52,7 +52,7 @@ to Proposals and Voting.  All alert types and severities are set to Info.
     - Address of GovernorBravo contract
     - Proposal ID
     - State of proposal
-    - Initial line of proposal description
+    - First line of proposal description
 
 <!-- -->
 - AE-COMP-GOVERNANCE-PROPOSAL-QUEUED
@@ -60,9 +60,10 @@ to Proposals and Voting.  All alert types and severities are set to Info.
   - Severity is always set to `Info`
   - Metadata field contains:
     - Address of GovernorBravo contract
+    - End block number for proposal to be queued (eta)
     - Proposal ID
     - State of proposal
-    - Initial line of proposal description
+    - First line of proposal description
 
 <!-- -->
 - AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET
