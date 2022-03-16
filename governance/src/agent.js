@@ -35,6 +35,10 @@ function provideInitialize(data) {
       const signature = governorBravoInterface.getEvent(eventName).format(sigTypeFull);
       return signature;
     });
+
+    // track proposals
+    data.proposals = {};
+
     /* eslint-enable no-param-reassign */
   };
 }
@@ -47,6 +51,7 @@ function provideHandleTransaction(data) {
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      proposals,
     } = data;
 
     if (!governorBravoInfo) throw new Error('handleTransaction called before initialization');
@@ -62,6 +67,7 @@ function provideHandleTransaction(data) {
         developerAbbreviation,
         protocolName,
         protocolAbbreviation,
+        proposals,
       };
       const results = createGovernanceFindings(parsedLogs, governorBravoAddress, configFields);
       findings.push(...results);

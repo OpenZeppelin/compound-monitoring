@@ -23,7 +23,7 @@ function proposalCreatedFinding(proposal, address, config) {
   return Finding.fromObject({
     name: `${config.protocolName} Governance Proposal Created`,
     description: `Governance Proposal ${proposal.id} was just created`,
-    alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-PROPOSAL-CREATED`,
+    alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CREATED`,
     type: 'Info',
     severity: 'Info',
     protocol: config.protocolName,
@@ -32,6 +32,19 @@ function proposalCreatedFinding(proposal, address, config) {
       ...proposal,
     },
   });
+}
+
+function getProposalName(config, id) {
+  // look up proposal description from config Object
+  const proposal = config.proposals[id.toString()];
+  if (proposal === undefined) {
+    return '(unknown proposal name)';
+  }
+  const lines = proposal.description.split('\n');
+  const [proposalName] = lines;
+  // remove markdown heading symbol and then leading and trailing spaces
+  proposalName.replace('#', '').trim();
+  return proposalName;
 }
 
 function voteCastFinding(voteInfo, address, config) {
@@ -52,10 +65,12 @@ function voteCastFinding(voteInfo, address, config) {
   }
   description += ` proposal ${voteInfo.proposalId}`;
 
+  const proposalName = getProposalName(config, voteInfo.proposalId);
+
   return Finding.fromObject({
     name: `${config.protocolName} Governance Proposal Vote Cast`,
     description,
-    alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-VOTE-CAST`,
+    alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-VOTE-CAST`,
     type: 'Info',
     severity: 'Info',
     protocol: config.protocolName,
@@ -64,11 +79,14 @@ function voteCastFinding(voteInfo, address, config) {
       voter: voteInfo.voter,
       votes: voteInfo.votes.toString(),
       reason: voteInfo.reason,
+      proposalName,
     },
   });
 }
 
 function proposalCanceledFinding(id, address, config) {
+  const proposalName = getProposalName(config, id);
+
   return Finding.fromObject({
     name: `${config.protocolName} Governance Proposal Canceled`,
     description: `Governance proposal ${id} has been canceled`,
@@ -80,11 +98,13 @@ function proposalCanceledFinding(id, address, config) {
       address,
       id,
       state: 'canceled',
+      proposalName,
     },
   });
 }
 
 function proposalExecutedFinding(id, address, config) {
+  const proposalName = getProposalName(config, id);
   return Finding.fromObject({
     name: `${config.protocolName} Governance Proposal Executed`,
     description: `Governance proposal ${id} has been executed`,
@@ -96,11 +116,13 @@ function proposalExecutedFinding(id, address, config) {
       address,
       id,
       state: 'executed',
+      proposalName,
     },
   });
 }
 
 function proposalQueuedFinding(id, address, config, eta) {
+  const proposalName = getProposalName(config, id);
   return Finding.fromObject({
     name: `${config.protocolName} Governance Proposal Queued`,
     description: `Governance Proposal ${id} has been queued`,
@@ -113,6 +135,7 @@ function proposalQueuedFinding(id, address, config, eta) {
       eta,
       id,
       state: 'queued',
+      proposalName,
     },
   });
 }
@@ -142,6 +165,11 @@ function createGovernanceFindings(logs, address, config) {
       case 'ProposalCreated':
         // create a finding for a new proposal
         proposal = createProposalFromLog(log);
+
+        // store the proposal information in the config Object for later use
+        // eslint-disable-next-line no-param-reassign
+        config.proposals[proposal.id] = proposal;
+
         return proposalCreatedFinding(
           proposal,
           address,

@@ -90,8 +90,10 @@ describe('monitor governance contracts for emitted events', () => {
     let handleTransaction;
     let mockTxEvent;
     let validEvent;
+    let secondValidEvent;
     let validContractAddress;
     const validEventName = 'ProposalCreated';
+    const secondValidEventName = 'ProposalCanceled';
     const mockContractName = 'mockContractName';
 
     beforeEach(async () => {
@@ -105,6 +107,7 @@ describe('monitor governance contracts for emitted events', () => {
 
       const eventsInAbi = getObjectsFromAbi(abi, 'event');
       validEvent = eventsInAbi[validEventName];
+      secondValidEvent = eventsInAbi[secondValidEventName];
 
       // initialize mock transaction event with default values
       mockTxEvent = createTransactionEvent({
@@ -207,13 +210,136 @@ describe('monitor governance contracts for emitted events', () => {
       const expectedFinding = Finding.fromObject({
         name: `${config.protocolName} Governance Proposal Created`,
         description: `Governance Proposal ${proposal.id} was just created`,
-        alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-PROPOSAL-CREATED`,
+        alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CREATED`,
         type: 'Info',
         severity: 'Info',
         protocol: config.protocolName,
         metadata: {
           address: validContractAddress,
           ...proposal,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFinding]);
+    });
+
+    it('returns finding with unknown proposal name if the ProposalCreated event was not observed (should only happen with initial deployment)', async () => {
+      // create another event to run through the handler so we can see if the propsal name was saved
+      const { mockArgs, mockTopics, data } = createMockEventLogs(secondValidEvent, iface);
+
+      // update mock transaction event
+      const [defaultLog] = mockTxEvent.receipt.logs;
+      defaultLog.name = mockContractName;
+      defaultLog.address = validContractAddress;
+      defaultLog.topics = mockTopics;
+      defaultLog.args = mockArgs;
+      defaultLog.data = data;
+      defaultLog.signature = iface
+        .getEvent(secondValidEvent.name)
+        .format(ethers.utils.FormatTypes.minimal)
+        .substring(6);
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFinding = Finding.fromObject({
+        name: `${config.protocolName} Governance Proposal Canceled`,
+        description: `Governance proposal ${defaultLog.args.id.toString()} has been canceled`,
+        alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CANCELED`,
+        type: 'Info',
+        severity: 'Info',
+        protocol: config.protocolName,
+        metadata: {
+          address: validContractAddress,
+          id: defaultLog.args.id.toString(),
+          state: 'canceled',
+          proposalName: '(unknown proposal name)',
+        },
+      });
+      expect(findings).toStrictEqual([expectedFinding]);
+    });
+
+    it('returns finding with proposal name if the ProposalCreated event was previously observed', async () => {
+      // encode event data - valid event with valid arguments
+      const proposalDescription = '# This is a super sweet proposal you should check out\nWords here describe the proposal';
+      const override = {
+        name: 'description',
+        value: proposalDescription,
+      };
+      let { mockArgs, mockTopics, data } = createMockEventLogs(validEvent, iface, override);
+
+      // update mock transaction event
+      let [defaultLog] = mockTxEvent.receipt.logs;
+      defaultLog.name = mockContractName;
+      defaultLog.address = validContractAddress;
+      defaultLog.topics = mockTopics;
+      defaultLog.args = mockArgs;
+      defaultLog.data = data;
+      defaultLog.signature = iface
+        .getEvent(validEvent.name)
+        .format(ethers.utils.FormatTypes.minimal)
+        .substring(6);
+
+      let findings = await handleTransaction(mockTxEvent);
+
+      const proposal = {
+        id: '0',
+        _values: '0',
+        calldatas: '0xff',
+        description: proposalDescription,
+        endBlock: '0',
+        startBlock: '0',
+        targets: ethers.constants.AddressZero,
+        proposer: ethers.constants.AddressZero,
+        signatures: 'test',
+      };
+
+      let expectedFinding = Finding.fromObject({
+        name: `${config.protocolName} Governance Proposal Created`,
+        description: `Governance Proposal ${proposal.id} was just created`,
+        alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CREATED`,
+        type: 'Info',
+        severity: 'Info',
+        protocol: config.protocolName,
+        metadata: {
+          address: validContractAddress,
+          ...proposal,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFinding]);
+
+      // create another event to run through the handler so we can see if the propsal name was saved
+      ({ mockArgs, mockTopics, data } = createMockEventLogs(secondValidEvent, iface));
+
+      // update mock transaction event
+      ([defaultLog] = mockTxEvent.receipt.logs);
+      defaultLog.name = mockContractName;
+      defaultLog.address = validContractAddress;
+      defaultLog.topics = mockTopics;
+      defaultLog.args = mockArgs;
+      defaultLog.data = data;
+      defaultLog.signature = iface
+        .getEvent(secondValidEvent.name)
+        .format(ethers.utils.FormatTypes.minimal)
+        .substring(6);
+
+      findings = await handleTransaction(mockTxEvent);
+
+      const [shortDescription] = proposalDescription.split('\n');
+      shortDescription.replace('#', '').trim();
+
+      expectedFinding = Finding.fromObject({
+        name: `${config.protocolName} Governance Proposal Canceled`,
+        description: `Governance proposal ${proposal.id} has been canceled`,
+        alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CANCELED`,
+        type: 'Info',
+        severity: 'Info',
+        protocol: config.protocolName,
+        metadata: {
+          address: validContractAddress,
+          id: mockArgs.id.toString(),
+          state: 'canceled',
+          proposalName: shortDescription,
         },
       });
 
