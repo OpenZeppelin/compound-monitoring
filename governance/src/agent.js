@@ -28,11 +28,11 @@ function provideInitialize(data) {
 
     // GovernorBravo contract
     const governorBravoAbi = getAbi(governance.abiFile);
-    const governorBravoInterface = new ethers.utils.Interface(governorBravoAbi);
+    data.governorBravoInterface = new ethers.utils.Interface(governorBravoAbi);
     const { events: governorBravoEvents, address } = governance;
     data.governorBravoAddress = address;
     data.governorBravoInfo = governorBravoEvents.map((eventName) => {
-      const signature = governorBravoInterface.getEvent(eventName).format(sigTypeFull);
+      const signature = data.governorBravoInterface.getEvent(eventName).format(sigTypeFull);
       return signature;
     });
 
@@ -59,7 +59,7 @@ function provideHandleTransaction(data) {
     const findings = [];
 
     // check GovernorBravo contract
-    governorBravoInfo.forEach((signature) => {
+    const promises = governorBravoInfo.map((signature) => {
       // filter down to only the events we want to alert on
       const parsedLogs = txEvent.filterLog(signature, governorBravoAddress);
 
@@ -69,9 +69,17 @@ function provideHandleTransaction(data) {
         protocolAbbreviation,
         proposals,
       };
-      const results = createGovernanceFindings(parsedLogs, governorBravoAddress, configFields);
-      findings.push(...results);
+      return createGovernanceFindings(parsedLogs, governorBravoAddress, configFields);
     });
+
+    // results will be an Array of Arrays
+    const results = await Promise.all(promises);
+
+    // unpack the Array of Arrays and store the findings
+    results.forEach((result) => {
+      findings.push(...result);
+    });
+
     return findings;
   };
 }

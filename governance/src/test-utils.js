@@ -1,6 +1,7 @@
 const { ethers } = require('forta-agent');
 
 const defaultTypeMap = {
+  uint8: 0,
   uint256: 0,
   'uint256[]': [0],
   address: ethers.constants.AddressZero,
@@ -59,7 +60,8 @@ function createMockEventLogs(eventObject, iface, override = undefined) {
     // push the values into the correct array, indexed arguments go into topics, otherwise they go
     // into data
     if (entry.indexed) {
-      mockTopics.push(value);
+      // convert to a 32 byte hex string
+      mockTopics.push(ethers.utils.hexZeroPad(value, 32));
     } else {
       eventTypes.push(entry.type);
       defaultData.push(value);

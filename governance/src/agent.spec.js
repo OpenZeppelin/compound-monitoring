@@ -2,6 +2,25 @@ const {
   Finding, createTransactionEvent, ethers,
 } = require('forta-agent');
 
+const mockCompoundApiCall = {
+  data: {
+    proposal_vote_receipts: [
+      {
+        voter: {
+          display_name: '',
+        },
+      },
+    ],
+  },
+};
+
+// mock the axios package
+jest.mock('axios', () => ({
+  ...jest.requireActual('axios'),
+  get: jest.fn().mockResolvedValue(mockCompoundApiCall),
+}));
+const axios = require('axios');
+
 const { provideHandleTransaction, provideInitialize, getAbi } = require('./agent');
 
 const { createMockEventLogs, getObjectsFromAbi } = require('./test-utils');
@@ -83,6 +102,19 @@ const invalidEvent = {
 abi.push(invalidEvent);
 const iface = new ethers.utils.Interface(abi);
 
+describe('mock axios GET request', () => {
+  it('should call axios.get and return a response', async () => {
+    mockCompoundApiCall.data.proposal_vote_receipts[0].voter.display_name = 'foo';
+    const response = await axios.get('https://...');
+    expect(axios.get).toHaveBeenCalledTimes(1);
+    expect(response.data.proposal_vote_receipts[0].voter.display_name).toEqual('foo');
+
+    // reset call count for next test
+    axios.get.mockClear();
+    expect(axios.get).toHaveBeenCalledTimes(0);
+  });
+});
+
 // tests
 describe('monitor governance contracts for emitted events', () => {
   describe('handleTransaction', () => {
@@ -91,9 +123,11 @@ describe('monitor governance contracts for emitted events', () => {
     let mockTxEvent;
     let validEvent;
     let secondValidEvent;
+    let thirdValidEvent;
     let validContractAddress;
     const validEventName = 'ProposalCreated';
     const secondValidEventName = 'ProposalCanceled';
+    const thirdValidEventName = 'VoteCast';
     const mockContractName = 'mockContractName';
 
     beforeEach(async () => {
@@ -108,6 +142,7 @@ describe('monitor governance contracts for emitted events', () => {
       const eventsInAbi = getObjectsFromAbi(abi, 'event');
       validEvent = eventsInAbi[validEventName];
       secondValidEvent = eventsInAbi[secondValidEventName];
+      thirdValidEvent = eventsInAbi[thirdValidEventName];
 
       // initialize mock transaction event with default values
       mockTxEvent = createTransactionEvent({
@@ -255,6 +290,108 @@ describe('monitor governance contracts for emitted events', () => {
           proposalName: '(unknown proposal name)',
         },
       });
+      expect(findings).toStrictEqual([expectedFinding]);
+    });
+
+    it('returns finding with empty string for display name if no name was provided by the Compound API', async () => {
+      // create another event to run through the handler so we can see if the propsal name was saved
+      const { mockArgs, mockTopics, data } = createMockEventLogs(thirdValidEvent, iface);
+
+      // update mock transaction event
+      const [defaultLog] = mockTxEvent.receipt.logs;
+
+      defaultLog.name = mockContractName;
+      defaultLog.address = validContractAddress;
+      defaultLog.topics = mockTopics;
+      defaultLog.args = mockArgs;
+      defaultLog.data = data;
+      defaultLog.signature = iface
+        .getEvent(thirdValidEvent.name)
+        .format(ethers.utils.FormatTypes.minimal)
+        .substring(6);
+
+      const voteInfo = {
+        voter: mockArgs.voter,
+        proposalId: mockArgs.proposalId.toString(),
+        support: mockArgs.support,
+        votes: mockArgs.votes.toString(),
+        reason: mockArgs.reason,
+      };
+
+      // set the return value for the Compound API call
+      mockCompoundApiCall.data.proposal_vote_receipts[0].voter.display_name = null;
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFinding = Finding.fromObject({
+        name: `${config.protocolName} Governance Proposal Vote Cast`,
+        description: 'Vote cast with 0 votes against proposal 0',
+        alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-VOTE-CAST`,
+        type: 'Info',
+        severity: 'Info',
+        protocol: config.protocolName,
+        metadata: {
+          address: validContractAddress,
+          displayName: '',
+          id: voteInfo.proposalId,
+          reason: voteInfo.reason,
+          voter: voteInfo.voter,
+          votes: voteInfo.votes,
+          proposalName: '(unknown proposal name)',
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFinding]);
+    });
+
+    it('returns finding with display name if name was provided by the Compound API', async () => {
+      // create another event to run through the handler so we can see if the propsal name was saved
+      const { mockArgs, mockTopics, data } = createMockEventLogs(thirdValidEvent, iface);
+
+      // update mock transaction event
+      const [defaultLog] = mockTxEvent.receipt.logs;
+
+      defaultLog.name = mockContractName;
+      defaultLog.address = validContractAddress;
+      defaultLog.topics = mockTopics;
+      defaultLog.args = mockArgs;
+      defaultLog.data = data;
+      defaultLog.signature = iface
+        .getEvent(thirdValidEvent.name)
+        .format(ethers.utils.FormatTypes.minimal)
+        .substring(6);
+
+      const voteInfo = {
+        voter: mockArgs.voter,
+        proposalId: mockArgs.proposalId.toString(),
+        support: mockArgs.support,
+        votes: mockArgs.votes.toString(),
+        reason: mockArgs.reason,
+      };
+
+      // set the return value for the Compound API call
+      mockCompoundApiCall.data.proposal_vote_receipts[0].voter.display_name = 'ArbitraryApp';
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFinding = Finding.fromObject({
+        name: `${config.protocolName} Governance Proposal Vote Cast`,
+        description: 'Vote cast with 0 votes against proposal 0',
+        alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-VOTE-CAST`,
+        type: 'Info',
+        severity: 'Info',
+        protocol: config.protocolName,
+        metadata: {
+          address: validContractAddress,
+          displayName: 'ArbitraryApp',
+          id: voteInfo.proposalId,
+          reason: voteInfo.reason,
+          voter: voteInfo.voter,
+          votes: voteInfo.votes,
+          proposalName: '(unknown proposal name)',
+        },
+      });
+
       expect(findings).toStrictEqual([expectedFinding]);
     });
 

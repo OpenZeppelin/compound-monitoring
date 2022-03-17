@@ -1,5 +1,7 @@
 const { Finding } = require('forta-agent');
 
+const axios = require('axios');
+
 function createProposalFromLog(log) {
   const proposal = {
     id: log.args.id.toString(),
@@ -47,8 +49,25 @@ function getProposalName(config, id) {
   return proposalName;
 }
 
-function voteCastFinding(voteInfo, address, config) {
-  console.log(voteInfo);
+async function getAccountDisplayName(voteInfo) {
+  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
+  const queryUrl = `?account=${voteInfo.voter}&proposal_id=${voteInfo.proposalId}`;
+  let displayName;
+  try {
+    const result = await axios.get(baseUrl + queryUrl);
+    displayName = result.data.proposal_vote_receipts[0].voter.display_name;
+    if (displayName === null) {
+      displayName = '';
+    }
+  } catch {
+    displayName = '';
+  }
+  return displayName;
+}
+
+async function voteCastFinding(voteInfo, address, config) {
+  const displayName = await getAccountDisplayName(voteInfo);
+
   let description = `Vote cast with ${voteInfo.votes.toString()} votes`;
   switch (voteInfo.support) {
     case 0:
@@ -79,7 +98,9 @@ function voteCastFinding(voteInfo, address, config) {
       voter: voteInfo.voter,
       votes: voteInfo.votes.toString(),
       reason: voteInfo.reason,
+      id: voteInfo.proposalId.toString(),
       proposalName,
+      displayName,
     },
   });
 }
@@ -156,11 +177,12 @@ function proposalThresholdSetFinding(address, config, oldThresh, newThresh) {
   });
 }
 
-function createGovernanceFindings(logs, address, config) {
+async function createGovernanceFindings(logs, address, config) {
   // iterate over all logs to determine what governance actions were taken
-  let results = logs.map((log) => {
+  const promises = logs.map(async (log) => {
     let proposal;
     let voteInfo;
+    let finding;
     switch (log.name) {
       case 'ProposalCreated':
         // create a finding for a new proposal
@@ -185,7 +207,8 @@ function createGovernanceFindings(logs, address, config) {
           reason: log.args.reason,
         };
         // create a finding indicating that the vote was cast
-        return voteCastFinding(voteInfo, address, config);
+        finding = await voteCastFinding(voteInfo, address, config);
+        return finding;
       case 'ProposalCanceled':
         // create a finding indicating that the proposal has been canceled,
         return proposalCanceledFinding(log.args.id.toString(), address, config);
@@ -210,6 +233,8 @@ function createGovernanceFindings(logs, address, config) {
         return undefined;
     }
   });
+
+  let results = await Promise.all(promises);
 
   // filter out empty results
   results = results.filter((result) => result !== undefined);
