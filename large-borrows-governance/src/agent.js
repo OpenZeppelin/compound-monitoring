@@ -59,12 +59,10 @@ function provideInitialize(data) {
     const iface = new ethers.utils.Interface(cERC20Abi);
     const borrowEvent = iface.getEvent('Borrow').format(ethers.utils.FormatTypes.full);
 
-    // get the provider from the forta-agent SDK and create a CErc20 contract instance
+    // get the provider from the forta-agent SDK and create a contract instance for the COMP token
     const provider = getEthersProvider();
-    const cTokenContract = new ethers.Contract(cCOMPAddress, cERC20Abi, provider);
-
-    // get the number of decimals for the COMP token
     const compContract = new ethers.Contract(COMPAddress, compAbi, provider);
+    // get the number of decimals for the COMP token
     let compDecimals = await compContract.decimals();
 
     // convert to bignumber.js
@@ -77,7 +75,7 @@ function provideInitialize(data) {
     data.cCOMPAddress = cCOMPAddress;
     data.borrowEvent = borrowEvent;
     data.borrowLevels = borrowLevels;
-    data.contract = cTokenContract;
+    data.contract = compContract;
     data.decimalsExp = new BigNumber(10).pow(compDecimals);
     /* eslint-enable no-param-reassign */
   };
