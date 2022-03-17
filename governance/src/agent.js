@@ -56,29 +56,17 @@ function provideHandleTransaction(data) {
 
     if (!governorBravoInfo) throw new Error('handleTransaction called before initialization');
 
-    const findings = [];
-
     // check GovernorBravo contract
-    const promises = governorBravoInfo.map((signature) => {
-      // filter down to only the events we want to alert on
-      const parsedLogs = txEvent.filterLog(signature, governorBravoAddress);
+    // filter down to only the events we want to alert on
+    const parsedLogs = txEvent.filterLog(governorBravoInfo, governorBravoAddress);
 
-      const configFields = {
-        developerAbbreviation,
-        protocolName,
-        protocolAbbreviation,
-        proposals,
-      };
-      return createGovernanceFindings(parsedLogs, governorBravoAddress, configFields);
-    });
-
-    // results will be an Array of Arrays
-    const results = await Promise.all(promises);
-
-    // unpack the Array of Arrays and store the findings
-    results.forEach((result) => {
-      findings.push(...result);
-    });
+    const configFields = {
+      developerAbbreviation,
+      protocolName,
+      protocolAbbreviation,
+      proposals,
+    };
+    const findings = await createGovernanceFindings(parsedLogs, governorBravoAddress, configFields);
 
     return findings;
   };
