@@ -98,14 +98,14 @@ function provideHandleTransaction(data) {
 
     const parsedLogs = txEvent.filterLog(borrowEvent, cCOMPAddress);
     const promises = parsedLogs.map(async (log) => {
-      // check to see how much COMP the address that borrowed has now and iterate over the borrow
-      // levels to see if any meaningful thresholds have been crossed
+      // check to see how much COMP the address that borrowed has now
       const borrowerAddress = log.args.borrower;
       let userCOMPBalance = await contract.balanceOf(borrowerAddress);
 
       // convert to bignumber.js and divide by COMP decimals
       userCOMPBalance = new BigNumber(userCOMPBalance.toString()).div(decimalsExp);
 
+      // iterate over the borrow levels to see if any meaningful thresholds have been crossed
       let findings = Object.keys(borrowLevels).map((levelName) => {
         const { type, severity } = borrowLevels[levelName];
         const minAmountCOMP = new BigNumber(borrowLevels[levelName].minAmountCOMP);
