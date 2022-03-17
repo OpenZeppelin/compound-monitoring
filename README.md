@@ -9,3 +9,8 @@ transactions that occur with Compound Protocol smart contracts.
 
 This agent monitors blockchain transactions for events emitted from Compound smart contract
 addresses.  Alert type and severity are specified per event per contract address.
+
+### Large Borrows of COMP
+
+This agent monitors all borrow events of COMP to see if the borrower address has accrued enough COMP
+to pass significant governance thresholds. This can be an early indication of governance attacks.

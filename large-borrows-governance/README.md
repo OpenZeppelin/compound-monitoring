@@ -1,29 +1,24 @@
-# Compound Oracle Price Monitor Agent
+# Compound Large Borrows Governance Agent
 
 ## Description
 
-This agent monitors the UniswapAnchoredProxy contract for PriceGuarded events which indicate that
-a ValidatorProxy reported a cToken price that is outside of the Uniswap V2 TWAP percent threshold.
+This agent monitors all borrow events of COMP to see if the borrower address has accrued enough COMP
+to pass significant governance thresholds. This can be an early indication of governance attacks.
 
 ## Alerts
 
 <!-- -->
-- AE-COMP-CTOKEN-PRICE-REJECTED
-  - Type is always set to `Degraded`
-  - Severity is always set to `High`
+- AE-COMP-GOVERNANCE
+  - Type is always set to `Suspicious`
+  - Severity is set to `Medium` for the proposal threshold alert and `High` for the voting quorum
+    threshold alert
   - Metadata field contains:
-    - Address of the affected cToken
-    - Address of the underlying token
-    - Address of the respective ValidatorProxy contract
-    - Anchor Price (current price)
-    - Reporter Price (failed price)
+    - Borrower address
+    - Governance threshold level that has been surpassed, which can be either `proposal` or `votingQuorum`
+    - The minimum amount of COMP needed to pass the respective governance threshold
+    - The amount of COMP owned by the borrower address
 
 ## Testing
-
-Running against a real transaction:
-```
-npx forta-agent run --tx 0xe9456ccee1b1764dfe80291f3b894a29f0789f20f995de7d88ff186e8cafe55c
-```
 
 Run unit tests:
 ```
