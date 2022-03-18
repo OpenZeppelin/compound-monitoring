@@ -2,6 +2,9 @@ const {
   Finding, FindingSeverity, FindingType, ethers, getEthersBatchProvider,
 } = require('forta-agent');
 
+const BigNumber = require('bignumber.js');
+const axios = require('axios');
+
 const {
   getAbi,
   extractEventArgs,
@@ -13,8 +16,56 @@ const config = require('../agent-config.json');
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
 
+async function getTokenPrice(cTokenContract, cTokenSymbol) {
+  let tokenAddress;
+  if (cTokenSymbol !== 'cETH') {
+    // get the underlying asset for this cToken
+    tokenAddress = await cTokenContract.underlying();
+  } else {
+    // the symbol is for Compound Ether, so use the Wrapped Ether address
+    tokenAddress = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+  }
+
+  const coingeckoApiUrl = 'https://api.coingecko.com/api/v3/simple/token_price/ethereum?';
+  const addressQuery = `contract_address=${tokenAddress}`;
+  const vsCurrency = '&vs_currencies=usd';
+
+  // create the URL
+  const url = coingeckoApiUrl.concat(addressQuery.concat(vsCurrency));
+
+  // get the price from the CoinGecko API
+  const { data } = await axios.get(url);
+
+  // parse the response and convert the prices to BigNumber.js type
+  const usdPerToken = new BigNumber(data[tokenAddress.toLowerCase()].usd);
+
+  return usdPerToken;
+}
+
+async function emojiForEvent(eventName, value) {
+  // create the appropriate number of whale emoji for the value
+  // add one whale for each power of 1000
+  const numWhales = Math.floor((value.toString().length - 1) / 3);
+  const whaleString = '🐳'.repeat(numWhales);
+
+  switch (eventName) {
+    case 'Borrow':
+      return whaleString.concat('📥');
+    case 'LiquidateBorrow':
+      return whaleString.concat('💔');
+    case 'Mint':
+      return whaleString.concat('📈');
+    case 'Redeem':
+      return whaleString.concat('📉');
+    case 'RepayBorrow':
+      return whaleString.concat('📤');
+    default:
+      return '';
+  }
+}
+
 // helper function to create cToken alerts
-function createCTokenAlert(
+async function createCTokenAlert(
   eventName,
   cTokenSymbol,
   contractAddress,
@@ -24,11 +75,24 @@ function createCTokenAlert(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  amountKey,
+  contract,
 ) {
+  // convert an ethers BigNumber to a bignumber.js BigNumber
+  const amount = new BigNumber(args[amountKey].toString());
+
+  // get the conversion rate for this token to USD
+  const usdPerToken = await getTokenPrice(contract, cTokenSymbol);
+
+  // calculate the total amount of this transaction
+  const value = usdPerToken.times(amount);
+
+  const emojiString = await emojiForEvent(eventName, value);
+
   const eventArgs = extractEventArgs(args);
   const finding = Finding.fromObject({
     name: `${protocolName} cToken Event`,
-    description: `The ${eventName} event was emitted by the ${cTokenSymbol} cToken contract`,
+    description: `${emojiString} - The ${eventName} event was emitted by the ${cTokenSymbol} cToken contract`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-EVENT`,
     type: FindingType[eventType],
     severity: FindingSeverity[eventSeverity],
@@ -51,6 +115,7 @@ function getEventInfo(iface, events, sigType) {
       signature,
       type: entry.type,
       severity: entry.severity,
+      amountKey: entry.amountKey,
     };
   });
   return result;
@@ -126,8 +191,6 @@ function provideHandleTransaction(data) {
 
     if (!cTokenInfo) throw new Error('handleTransaction called before initialization');
 
-    const findings = [];
-
     // first check that no additional cTokens have been added
     const currentCTokenAddresses = await comptrollerContract.getAllMarkets();
     const unique = currentCTokenAddresses.filter((addr) => cTokenAddresses.indexOf(addr) === -1);
@@ -144,33 +207,31 @@ function provideHandleTransaction(data) {
     }
 
     // check all cToken contracts
-    cTokenInfo.forEach((eventInfo) => {
-      const {
+    const signatures = cTokenInfo.map((entry) => entry.signature);
+    const parsedLogs = txEvent.filterLog(signatures, cTokenAddresses);
+
+    const promises = parsedLogs.map(async (log) => {
+      const { address, name } = log;
+      const [specificEvent] = cTokenInfo.filter((entry) => entry.name === name);
+      const { symbol, contract } = cTokenContracts[ethers.utils.getAddress(address)];
+      const promise = createCTokenAlert(
         name,
-        signature,
-        type,
-        severity,
-      } = eventInfo;
-
-      // filter down to only the events we want to alert on
-      const parsedLogs = txEvent.filterLog(signature, cTokenAddresses);
-
-      parsedLogs.forEach((parsedLog) => {
-        const { address } = parsedLog;
-        const { symbol } = cTokenContracts[ethers.utils.getAddress(address)];
-        findings.push(createCTokenAlert(
-          name,
-          symbol,
-          parsedLog.address,
-          type,
-          severity,
-          parsedLog.args,
-          protocolName,
-          protocolAbbreviation,
-          developerAbbreviation,
-        ));
-      });
+        symbol,
+        log.address,
+        specificEvent.type,
+        specificEvent.severity,
+        log.args,
+        protocolName,
+        protocolAbbreviation,
+        developerAbbreviation,
+        specificEvent.amountKey,
+        contract,
+      );
+      return promise;
     });
+
+    const findings = await Promise.all(promises);
+
     return findings;
   };
 }

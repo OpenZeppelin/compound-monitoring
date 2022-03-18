@@ -1,5 +1,15 @@
 const mockContract = {};
 
+const mockCoinGeckoResponse = {
+  data: {},
+};
+
+jest.mock('axios', () => ({
+  ...jest.requireActual('axios'),
+  get: jest.fn().mockResolvedValue(mockCoinGeckoResponse),
+}));
+const axios = require('axios');
+
 jest.mock('forta-agent', () => ({
   ...jest.requireActual('forta-agent'),
   getEthersBatchProvider: jest.fn(),
@@ -19,6 +29,23 @@ const {
   getEventFromConfig,
   createMockEventLogs,
 } = require('./test-utils');
+
+describe('mock axios GET request', () => {
+  it('should call axios.get and return a response', async () => {
+    mockCoinGeckoResponse.data = {
+      '0xVALIDADDRESS': {
+        usd: '1',
+      },
+    };
+    const response = await axios.get('https://...');
+    expect(axios.get).toHaveBeenCalledTimes(1);
+    expect(response.data['0xVALIDADDRESS'].usd).toEqual('1');
+
+    // reset call count for next test
+    axios.get.mockClear();
+    expect(axios.get).toHaveBeenCalledTimes(0);
+  });
+});
 
 const utils = require('./utils');
 
@@ -123,14 +150,18 @@ describe('monitor emitted events', () => {
     const newValidContractAddress = ethers.utils.getAddress('0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef');
     const validContractSymbol = 'VLD';
     const newValidContractSymbol = 'NVLD';
+    const underlyingAddress = '0xc0ffee254729296a45a3885639AC7E10F9d54878'.toLowerCase();
 
     beforeEach(async () => {
       initializeData = {};
+
+      mockCoinGeckoResponse.data = {};
 
       mockContract.getAllMarkets = jest.fn()
         .mockResolvedValueOnce([validContractAddress])
         .mockResolvedValueOnce([]);
       mockContract.symbol = jest.fn().mockResolvedValueOnce(validContractSymbol);
+      mockContract.underlying = jest.fn().mockResolvedValueOnce(underlyingAddress);
 
       // initialize the handler
       await (provideInitialize(initializeData))();
@@ -266,12 +297,63 @@ describe('monitor emitted events', () => {
       });
       expectedMetaData = utils.extractEventArgs(expectedMetaData);
 
+      mockCoinGeckoResponse.data[underlyingAddress] = { usd: '1' };
+
       const findings = await handleTransaction(mockTxEvent);
 
       // create the expected finding
       const testFindings = [Finding.fromObject({
         alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-EVENT`,
-        description: `The ${eventInConfig.name} event was emitted by the ${validContractSymbol} cToken contract`,
+        description: `📈 - The ${eventInConfig.name} event was emitted by the ${validContractSymbol} cToken contract`,
+        name: `${protocolName} cToken Event`,
+        protocol: protocolName,
+        severity: FindingSeverity[findingSeverity],
+        type: FindingType[findingType],
+        metadata: {
+          cTokenSymbol: validContractSymbol,
+          contractAddress: validContractAddress,
+          eventName: eventInConfig.name,
+          ...expectedMetaData,
+        },
+      })];
+
+      expect(findings).toStrictEqual(testFindings);
+    });
+
+    it('returns a finding with a whale emoji if a target contract emits a monitored event with a value over 1,000 USD', async () => {
+      // encode event data - valid event with valid arguments
+      const override = {
+        name: 'mintAmount',
+        value: '1000',
+      };
+      const { mockArgs, mockTopics, data } = createMockEventLogs(eventInConfig, iface, override);
+
+      // update mock transaction event
+      const [defaultLog] = mockTxEvent.receipt.logs;
+      defaultLog.name = contractName;
+      defaultLog.address = validContractAddress;
+      defaultLog.topics = mockTopics;
+      defaultLog.args = mockArgs;
+      defaultLog.data = data;
+      defaultLog.signature = iface
+        .getEvent(eventInConfig.name)
+        .format(ethers.utils.FormatTypes.minimal)
+        .substring(6);
+
+      let expectedMetaData = {};
+      Object.keys(mockArgs).forEach((name) => {
+        expectedMetaData[name] = mockArgs[name];
+      });
+      expectedMetaData = utils.extractEventArgs(expectedMetaData);
+
+      mockCoinGeckoResponse.data[underlyingAddress] = { usd: '1' };
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      // create the expected finding
+      const testFindings = [Finding.fromObject({
+        alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-EVENT`,
+        description: `🐳📈 - The ${eventInConfig.name} event was emitted by the ${validContractSymbol} cToken contract`,
         name: `${protocolName} cToken Event`,
         protocol: protocolName,
         severity: FindingSeverity[findingSeverity],
@@ -330,6 +412,8 @@ describe('monitor emitted events', () => {
         .format(ethers.utils.FormatTypes.minimal)
         .substring(6);
 
+      mockCoinGeckoResponse.data[underlyingAddress] = { usd: '1' };
+
       //  feed in event to handler
       const findings = await handleTransaction(mockTxEvent);
 
@@ -342,7 +426,7 @@ describe('monitor emitted events', () => {
       // create the expected finding
       const testFindings = [Finding.fromObject({
         alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-EVENT`,
-        description: `The ${eventInConfig.name} event was emitted by the ${newValidContractSymbol} cToken contract`,
+        description: `📈 - The ${eventInConfig.name} event was emitted by the ${newValidContractSymbol} cToken contract`,
         name: `${protocolName} cToken Event`,
         protocol: protocolName,
         severity: FindingSeverity[findingSeverity],

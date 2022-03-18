@@ -13,27 +13,28 @@
       "events": {
         "Borrow": {
           "type": "Info",
-          "severity": "Info"
-        },
-        "Failure": {
-          "type": "Info",
-          "severity": "Info"
+          "severity": "Info",
+          "amountKey": "borrowAmount"
         },
         "LiquidateBorrow": {
           "type": "Info",
-          "severity": "Info"
+          "severity": "Info",
+          "amountKey": "repayAmount"
         },
         "Mint": {
           "type": "Info",
-          "severity": "Info"
+          "severity": "Info",
+          "amountKey": "mintAmount"
         },
         "Redeem": {
           "type": "Info",
-          "severity": "Info"
+          "severity": "Info",
+          "amountKey": "redeemAmount"
         },
         "RepayBorrow": {
           "type": "Info",
-          "severity": "Info"
+          "severity": "Info",
+          "amountKey": "repayBorrow"
         }
       }
     }
