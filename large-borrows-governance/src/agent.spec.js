@@ -223,10 +223,10 @@ describe('handleTransaction', () => {
     // run the agent
     const findings = await handleTransaction(txEvent);
     const expectedFinding = [Finding.fromObject({
-      name: `${protocolName} Governance Alert`,
+      name: `${protocolName} Governance Threshold Alert`,
       description: `The address ${mockBorrowerAddress} has borrowed and accrued enough COMP token to pass`
         + 'the minimum threshold for the governance event: proposal',
-      alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE`,
+      alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-THRESHOLD`,
       type: FindingType[type],
       severity: FindingSeverity[severity],
       protocol: protocolName,
@@ -278,10 +278,10 @@ describe('handleTransaction', () => {
     // because the total COMP balance of the mockBorrowerAddress has exceeded both the proposal and
     // vote quorum thresholds, we expect two findings to be returned after running handleTransaction
     const expectedFindingProposal = Finding.fromObject({
-      name: `${protocolName} Governance Alert`,
+      name: `${protocolName} Governance Threshold Alert`,
       description: `The address ${mockBorrowerAddress} has borrowed and accrued enough COMP token to pass`
         + 'the minimum threshold for the governance event: proposal',
-      alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE`,
+      alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-THRESHOLD`,
       type: FindingType[proposalType],
       severity: FindingSeverity[proposalSeverity],
       protocol: protocolName,
@@ -294,10 +294,10 @@ describe('handleTransaction', () => {
     });
 
     const expectedFindingVotingQuorum = Finding.fromObject({
-      name: `${protocolName} Governance Alert`,
+      name: `${protocolName} Governance Threshold Alert`,
       description: `The address ${mockBorrowerAddress} has borrowed and accrued enough COMP token to pass`
         + 'the minimum threshold for the governance event: votingQuorum',
-      alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE`,
+      alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-THRESHOLD`,
       type: FindingType[votingQuorumType],
       severity: FindingSeverity[votingQuorumSeverity],
       protocol: protocolName,

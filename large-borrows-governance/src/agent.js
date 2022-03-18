@@ -21,10 +21,10 @@ function createAlert(
   currCOMPOwned,
 ) {
   return Finding.fromObject({
-    name: `${protocolName} Governance Alert`,
+    name: `${protocolName} Governance Threshold Alert`,
     description: `The address ${borrowerAddress} has borrowed and accrued enough COMP token to pass`
       + `the minimum threshold for the governance event: ${governanceLevel}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-THRESHOLD`,
     type: FindingType[type],
     severity: FindingSeverity[severity],
     protocol: protocolName,
@@ -50,8 +50,7 @@ function provideInitialize(data) {
 
     // quick sanity check on config fields
     if (developerAbbreviation === '' || protocolName === '' || protocolAbbreviation === ''
-        || cCOMPAddress === '' || COMPAddress === '' || borrowLevels === ''
-        || borrowLevels === {}) {
+        || cCOMPAddress === '' || COMPAddress === '' || Object.keys(borrowLevels).length === 0) {
       throw new Error('Required config fields are empty');
     }
 

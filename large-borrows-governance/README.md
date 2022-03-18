@@ -8,7 +8,7 @@ to pass significant governance thresholds. This can be an early indication of go
 ## Alerts
 
 <!-- -->
-- AE-COMP-GOVERNANCE
+- AE-COMP-GOVERNANCE-THRESHOLD
   - Type is always set to `Suspicious`
   - Severity is set to `Medium` for the proposal threshold alert and `High` for the voting quorum
     threshold alert
