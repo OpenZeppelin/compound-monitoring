@@ -60,7 +60,7 @@ function createMockEventLogs(eventObject, iface, override = undefined) {
     // push the values into the correct array, indexed arguments go into topics, otherwise they go
     // into data
     if (entry.indexed) {
-      // convert to a 32 byte hex string
+      // convert to a 32 byte hex string before putting into topics Array
       mockTopics.push(ethers.utils.hexZeroPad(value, 32));
     } else {
       eventTypes.push(entry.type);
