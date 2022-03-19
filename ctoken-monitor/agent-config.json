@@ -34,7 +34,7 @@
         "RepayBorrow": {
           "type": "Info",
           "severity": "Info",
-          "amountKey": "repayBorrow"
+          "amountKey": "repayAmount"
         }
       }
     }

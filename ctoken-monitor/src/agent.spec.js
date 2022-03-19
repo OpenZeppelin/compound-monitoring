@@ -151,6 +151,7 @@ describe('monitor emitted events', () => {
     const validContractSymbol = 'VLD';
     const newValidContractSymbol = 'NVLD';
     const underlyingAddress = '0xc0ffee254729296a45a3885639AC7E10F9d54878'.toLowerCase();
+    const decimals = 0;
 
     beforeEach(async () => {
       initializeData = {};
@@ -162,6 +163,7 @@ describe('monitor emitted events', () => {
         .mockResolvedValueOnce([]);
       mockContract.symbol = jest.fn().mockResolvedValueOnce(validContractSymbol);
       mockContract.underlying = jest.fn().mockResolvedValueOnce(underlyingAddress);
+      mockContract.decimals = jest.fn().mockResolvedValueOnce(decimals);
 
       // initialize the handler
       await (provideInitialize(initializeData))();
@@ -396,6 +398,7 @@ describe('monitor emitted events', () => {
     it('returns findings if a new cToken is added and a monitored event is emitted', async () => {
       mockContract.getAllMarkets = jest.fn().mockResolvedValueOnce([newValidContractAddress]);
       mockContract.symbol = jest.fn().mockResolvedValueOnce(newValidContractSymbol);
+      mockContract.underlying = jest.fn().mockResolvedValueOnce(underlyingAddress);
 
       // select event NOT in config file
       const { mockArgs, mockTopics, data } = createMockEventLogs(eventInConfig, iface);
