@@ -16,18 +16,11 @@ const config = require('../agent-config.json');
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
 
-async function getTokenPrice(cTokenContract, cTokenSymbol) {
-  let tokenAddress;
-  if (cTokenSymbol !== 'cETH') {
-    // get the underlying asset for this cToken
-    tokenAddress = await cTokenContract.underlying();
-  } else {
-    // the symbol is for Compound Ether, so use the Wrapped Ether address
-    tokenAddress = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
-  }
+const DECIMALS_ABI = ['function decimals() view returns (uint8)'];
 
+async function getTokenPrice(tokenAddress) {
   const coingeckoApiUrl = 'https://api.coingecko.com/api/v3/simple/token_price/ethereum?';
-  const addressQuery = `contract_address=${tokenAddress}`;
+  const addressQuery = `contract_addresses=${tokenAddress}`;
   const vsCurrency = '&vs_currencies=usd';
 
   // create the URL
@@ -75,20 +68,8 @@ async function createCTokenAlert(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
-  amountKey,
-  contract,
+  emojiString,
 ) {
-  // convert an ethers BigNumber to a bignumber.js BigNumber
-  const amount = new BigNumber(args[amountKey].toString());
-
-  // get the conversion rate for this token to USD
-  const usdPerToken = await getTokenPrice(contract, cTokenSymbol);
-
-  // calculate the total amount of this transaction
-  const value = usdPerToken.times(amount);
-
-  const emojiString = await emojiForEvent(eventName, value);
-
   const eventArgs = extractEventArgs(args);
   const finding = Finding.fromObject({
     name: `${protocolName} cToken Event`,
@@ -119,6 +100,35 @@ function getEventInfo(iface, events, sigType) {
     };
   });
   return result;
+}
+
+async function getTokenInfo(address, abi, provider) {
+  const contract = new ethers.Contract(address, abi, provider);
+  const symbol = await contract.symbol();
+
+  let underlyingTokenAddress;
+  if (symbol !== 'cETH') {
+    // get the underlying asset for this cToken
+    underlyingTokenAddress = await contract.underlying();
+  } else {
+    // the symbol is for Compound Ether, so use the Wrapped Ether address
+    underlyingTokenAddress = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+  }
+
+  const underlyingContract = new ethers.Contract(
+    underlyingTokenAddress,
+    DECIMALS_ABI,
+    provider,
+  );
+
+  const underlyingDecimals = await underlyingContract.decimals();
+
+  return {
+    contract,
+    symbol,
+    underlyingTokenAddress,
+    underlyingDecimals,
+  };
 }
 
 function provideInitialize(data) {
@@ -164,12 +174,7 @@ function provideInitialize(data) {
     // create ethers Contract Objects for all of the existing cTokens
     data.cTokenContracts = {};
     const promises = data.cTokenAddresses.map(async (address) => {
-      const contract = new ethers.Contract(address, data.cTokenAbi, data.provider);
-      const symbol = await contract.symbol();
-      data.cTokenContracts[address] = {
-        contract,
-        symbol,
-      };
+      data.cTokenContracts[address] = await getTokenInfo(address, data.cTokenAbi, data.provider);
     });
     await Promise.all(promises);
     /* eslint-enable no-param-reassign */
@@ -199,9 +204,7 @@ function provideHandleTransaction(data) {
     if (unique.length > 0) {
       // create ethers.js Contract Objects and add them to the Object of other Contract Objects
       const promises = unique.map(async (address) => {
-        const contract = new ethers.Contract(address, cTokenAbi, data.provider);
-        const symbol = await contract.symbol();
-        cTokenContracts[address] = { contract, symbol };
+        cTokenContracts[address] = await getTokenInfo(address, cTokenAbi, data.provider);
       });
       await Promise.all(promises);
     }
@@ -213,7 +216,24 @@ function provideHandleTransaction(data) {
     const promises = parsedLogs.map(async (log) => {
       const { address, name } = log;
       const [specificEvent] = cTokenInfo.filter((entry) => entry.name === name);
-      const { symbol, contract } = cTokenContracts[ethers.utils.getAddress(address)];
+      const {
+        symbol,
+        underlyingDecimals,
+        underlyingTokenAddress,
+      } = cTokenContracts[ethers.utils.getAddress(address)];
+
+      // convert an ethers BigNumber to a bignumber.js BigNumber
+      const amount = new BigNumber(log.args[specificEvent.amountKey].toString());
+
+      // get the conversion rate for this token to USD
+      const usdPerToken = await getTokenPrice(underlyingTokenAddress);
+
+      // calculate the total amount of this transaction
+      const divisor = (new BigNumber(10)).pow(underlyingDecimals);
+      const value = usdPerToken.times(amount.div(divisor)).integerValue(BigNumber.ROUND_FLOOR);
+
+      const emojiString = await emojiForEvent(name, value);
+
       const promise = createCTokenAlert(
         name,
         symbol,
@@ -224,8 +244,7 @@ function provideHandleTransaction(data) {
         protocolName,
         protocolAbbreviation,
         developerAbbreviation,
-        specificEvent.amountKey,
-        contract,
+        emojiString,
       );
       return promise;
     });
