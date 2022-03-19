@@ -5,7 +5,7 @@ transactions that occur with Compound Protocol smart contracts.
 
 ## Agents
 
-### Event Monitor
+### Governance Event Monitor
 
-This agent monitors blockchain transactions for events emitted from Compound smart contract
-addresses.  Alert type and severity are specified per event per contract address.
+This agent monitors the Compound Finance GovernorBravo contract for specific emitted events related
+to Proposals and Voting.  All alert types and severities are set to Info.
