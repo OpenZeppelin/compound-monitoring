@@ -1,6 +1,4 @@
-const BigNumber = require('bignumber.js');
 const { ethers } = require('forta-agent');
-const utils = require('./utils');
 
 const defaultTypeMap = {
   uint256: 0,
@@ -51,91 +49,6 @@ function getEventFromConfig(abi, events) {
   return {
     eventInConfig, eventNotInConfig, findingType, findingSeverity,
   };
-}
-
-function getExpressionOperand(operator, value, expectedResult) {
-  // given a value, an operator, and a corresponding expected result, return a value that
-  // meets the expected result
-  let leftOperand;
-  /* eslint-disable no-case-declarations */
-  if (BigNumber.isBigNumber(value)) {
-    switch (operator) {
-      case '>=':
-        if (expectedResult) {
-          leftOperand = value.toString();
-        } else {
-          leftOperand = value.minus(1).toString();
-        }
-        break;
-      case '<=':
-        if (expectedResult) {
-          leftOperand = value.toString();
-        } else {
-          leftOperand = value.plus(1).toString();
-        }
-        break;
-      case '===':
-        if (expectedResult) {
-          leftOperand = value.toString();
-        } else {
-          leftOperand = value.minus(1).toString();
-        }
-        break;
-      case '>':
-      case '!==':
-        if (expectedResult) {
-          leftOperand = value.plus(1).toString();
-        } else {
-          leftOperand = value.toString();
-        }
-        break;
-      case '<':
-        if (expectedResult) {
-          leftOperand = value.minus(1).toString();
-        } else {
-          leftOperand = value.toString();
-        }
-        break;
-      default:
-        throw new Error(`Unknown operator: ${operator}`);
-    }
-  } else if (utils.isAddress(value)) {
-    switch (operator) {
-      case '===':
-        if (expectedResult) {
-          leftOperand = value;
-        } else {
-          let temp = ethers.BigNumber.from(value);
-          if (temp.eq(0)) {
-            temp = temp.add(1);
-          } else {
-            temp = temp.sub(1);
-          }
-          leftOperand = ethers.utils.getAddress(ethers.utils.hexZeroPad(temp.toHexString(), 20));
-        }
-        break;
-      case '!==':
-        if (expectedResult) {
-          let temp = ethers.BigNumber.from(value);
-          if (temp.eq(0)) {
-            temp = temp.add(1);
-          } else {
-            temp = temp.sub(1);
-          }
-          leftOperand = ethers.utils.getAddress(ethers.utils.hexZeroPad(temp.toHexString(), 20));
-        } else {
-          leftOperand = value;
-        }
-        break;
-      default:
-        throw new Error(`Unsupported operator ${operator} for address comparison`);
-    }
-  } else {
-    throw new Error(`Unsupported variable type ${typeof (value)} for comparison`);
-  }
-
-  /* eslint-enable no-case-declarations */
-  return leftOperand;
 }
 
 function createMockEventLogs(eventObject, iface, override = undefined) {
@@ -194,6 +107,5 @@ function createMockEventLogs(eventObject, iface, override = undefined) {
 module.exports = {
   getObjectsFromAbi,
   getEventFromConfig,
-  getExpressionOperand,
   createMockEventLogs,
 };
