@@ -16,7 +16,7 @@ to Proposals and Voting.  All alert types and severities are set to Info.
     - Proposal ID
     - Proposer address
     - Target addresses for calls to be made during proposal execution
-    - Values to be passed to target calls during proposal execution, named _values due to a naming collision with JavaScript Object method name
+    - Values to be passed to target calls during proposal execution, named "_values" due to a naming collision with JavaScript Object method name
     - Function signatures to be passed during proposal execution
     - Call datas to be passed to each individual function during proposal execution 
     - Starting block for voting period
