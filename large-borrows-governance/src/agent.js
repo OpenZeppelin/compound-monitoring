@@ -130,10 +130,8 @@ function provideHandleTransaction(data) {
 
       // filter out any empty object findings
       findings = findings.filter((finding) => finding !== undefined);
-      if (findings.length > 0) {
-        return findings;
-      }
-      return [];
+
+      return findings;
     });
 
     const findings = (await Promise.all(promises)).flat();
