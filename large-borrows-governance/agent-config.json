@@ -1,0 +1,19 @@
+{
+  "developerAbbreviation": "AE",
+  "protocolName": "Compound",
+  "protocolAbbreviation": "COMP",
+  "COMPAddress": "0xc00e94Cb662C3520282E6f5717214004A7f26888",
+  "cCOMPAddress": "0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4",
+  "borrowLevels": {
+    "proposal": {
+      "minAmountCOMP": 65000,
+      "type": "Suspicious",
+      "severity": "Medium"
+    },
+    "votingQuorum": {
+      "minAmountCOMP": 400000,
+      "type": "Suspicious",
+      "severity": "High"
+    }
+  }
+}
