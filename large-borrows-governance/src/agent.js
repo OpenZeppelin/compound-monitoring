@@ -49,9 +49,13 @@ function provideInitialize(data) {
     } = config;
 
     // quick sanity check on config fields
-    if (developerAbbreviation === '' || protocolName === '' || protocolAbbreviation === ''
-        || cCOMPAddress === '' || COMPAddress === '' || Object.keys(borrowLevels).length === 0) {
-      throw new Error('Required config fields are empty');
+    if (developerAbbreviation === '' || developerAbbreviation === undefined
+        || protocolName === '' || protocolName === undefined
+        || protocolAbbreviation === '' || protocolAbbreviation === undefined
+        || cCOMPAddress === '' || cCOMPAddress === undefined
+        || COMPAddress === '' || COMPAddress === undefined
+        || Object.keys(borrowLevels).length === 0) {
+      throw new Error('Required config fields are empty or undefined');
     }
 
     // using the CErc20 ABI, get the signature for the Borrow event
