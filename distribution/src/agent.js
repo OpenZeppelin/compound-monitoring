@@ -55,7 +55,6 @@ function provideInitialize(data) {
     } = config.contracts;
 
     // from the Comptroller contract
-
     comptrollerAbi = getAbi(comptroller.abiFile);
     data.comptrollerAddress = comptrollerAddress = comptroller.address;
     data.comptrollerContract = new ethers.Contract(
