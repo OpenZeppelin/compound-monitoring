@@ -29,7 +29,7 @@ const {
 const { getAbi } = require('./utils');
 
 const config = require('../agent-config.json');
-const { default: BigNumber } = require('bignumber.js');
+const BigNumber = require('bignumber.js');
 
 // utility function specific for this test module
 // we are intentionally not using the Forta SDK function due to issues with
