@@ -15,3 +15,8 @@ to Proposals and Voting.  All alert types and severities are set to Info.
 This agent monitors all borrow events of COMP to see if the borrower address has accrued enough COMP
 to pass significant governance thresholds. This can be an early indication of governance attacks.
 
+### Oracle Price Monitor
+
+This agent monitors the UniswapAnchoredProxy contract for PriceGuarded events which indicate that
+a ValidatorProxy reported a cToken price that is outside of the Uniswap V2 TWAP percent threshold.
+Alert type is set to Degraded and severity is set to High.
