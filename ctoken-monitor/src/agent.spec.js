@@ -375,7 +375,7 @@ describe('monitor emitted events', () => {
       mockContract.getAllMarkets = jest.fn().mockResolvedValueOnce([newValidContractAddress]);
       mockContract.symbol = jest.fn().mockResolvedValueOnce(newValidContractSymbol);
 
-      // select event in config file
+      // select event NOT in config file
       const { mockArgs, mockTopics, data } = createMockEventLogs(eventNotInConfig, iface);
 
       // update mock transaction event
@@ -400,7 +400,7 @@ describe('monitor emitted events', () => {
       mockContract.symbol = jest.fn().mockResolvedValueOnce(newValidContractSymbol);
       mockContract.underlying = jest.fn().mockResolvedValueOnce(underlyingAddress);
 
-      // select event NOT in config file
+      // select event in config file
       const { mockArgs, mockTopics, data } = createMockEventLogs(eventInConfig, iface);
 
       // update mock transaction event
