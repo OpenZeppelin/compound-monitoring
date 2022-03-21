@@ -194,8 +194,6 @@ function provideHandleTransaction(data) {
       developerAbbreviation,
     } = data;
 
-    if (!cTokenInfo) throw new Error('handleTransaction called before initialization');
-
     // first check that no additional cTokens have been added
     const currentCTokenAddresses = await comptrollerContract.getAllMarkets();
     const unique = currentCTokenAddresses.filter((addr) => cTokenAddresses.indexOf(addr) === -1);
