@@ -14,7 +14,6 @@ WORKDIR /app
 # else if using unobfuscated code:
 COPY ./abi ./abi
 COPY ./src ./src
-COPY agent-config.json ./
 COPY package*.json ./
 RUN npm ci --production
 CMD [ "npm", "run", "start:prod" ]
