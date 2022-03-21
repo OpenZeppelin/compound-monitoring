@@ -8,9 +8,6 @@ jest.mock('forta-agent', () => ({
   getEthersProvider: jest.fn(),
   ethers: {
     ...jest.requireActual('ethers'),
-    providers: {
-      JsonRpcBatchProvider: jest.fn(),
-    },
     Contract: jest.fn().mockReturnValue(mockContract),
   },
 }));
