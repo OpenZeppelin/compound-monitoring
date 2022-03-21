@@ -8,7 +8,7 @@ const { getAbi } = require('./utils');
 // load any agent configuration parameters
 const config = require('../agent-config.json');
 
-const ERC20_TRANSFER_EVENT = "event Transfer(address indexed from, address indexed to, uint value)";
+const ERC20_TRANSFER_EVENT = "event Transfer(address indexed from, address indexed to, uint256 value)";
 
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
@@ -90,9 +90,6 @@ function provideHandleTransaction(data) {
     if (!comptrollerContract) throw new Error('handleTransaction called before initialization');
     const findings = [];
   
-    // if not calling compound comptroller, return
-    if (txEvent.to !== comptrollerAddress) return findings;
-
     // if no events found for distributing COMP, return
     const compDistributedEvents = txEvent.filterLog(
       distributionSignatures, 
