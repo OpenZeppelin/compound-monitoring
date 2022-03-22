@@ -105,7 +105,7 @@ function provideHandleTransaction(data) {
 
       // determine Comptroller.compAccrued() in previous block
       const blockNumber = txEvent.blockNumber;
-      const prevBlockCompAccrued = await comptrollerContract.compAccrued(transferEvent.args.from, { blockTag: blockNumber-1 })    
+      const prevBlockCompAccrued = await comptrollerContract.compAccrued(transferEvent.args.to, { blockTag: blockNumber-1 })
       const prevBlockCompAccruedBN = new BigNumber(prevBlockCompAccrued.toString());
 
       // calculate ratio of accrued to distributed COMP
@@ -116,7 +116,7 @@ function provideHandleTransaction(data) {
           protocolAbbreviation,
           developerAbbreviation,
           accruedToDistributedRatio,
-          receiver = transferEvent.args.from,
+          receiver = transferEvent.args.to,
           compDistributed = amountCompDistributedBN.toString(),
           compAccrued = prevBlockCompAccruedBN.toString()
         ));
