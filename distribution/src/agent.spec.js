@@ -214,7 +214,7 @@ describe('monitor compound for distribution bugs', () => {
       expect(findings).toStrictEqual([]);
     });
     
-    it('returns empty findings if distribution was withing the threshold', async () => {
+    it('returns empty findings if distribution was within the threshold', async () => {
       mockTxEvent.transaction.to = validComptrollerAddress;
 
       const distEventAbi = ComptrollerIface.getEvent("DistributedSupplierComp");
