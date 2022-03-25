@@ -63,7 +63,7 @@ function getEventInfo(iface, events, sigType) {
 }
 
 function isUpgradeableProxy(asset, proxyPatterns) {
-  return proxyPatterns.every((pattern) => {
+  return proxyPatterns.some((pattern) => {
     let isPattern = pattern.functionHashes.every((functionHash) => {
       if ( asset.code.indexOf(functionHash) !== -1) {
         return true;
