@@ -15,55 +15,38 @@ const config = require('../agent-config.json');
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
 
-const DECIMALS_ABI = ['function decimals() view returns (uint8)'];
-
-// helper function to create cToken alerts
-async function createCTokenAlert(
-  eventName,
-  cTokenSymbol,
-  contractAddress,
-  eventType,
-  eventSeverity,
-  args,
+// helper function to create upgrade alerts
+async function createUpgradeAlert(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
-  emojiString,
+  cTokenSymbol,
+  underlyingAssetAddress,
+  eventArgs,
+  eventType,
+  eventSeverity
 ) {
-  const eventArgs = extractEventArgs(args);
   const finding = Finding.fromObject({
-    name: `${protocolName} cToken Event`,
-    description: `${emojiString} - The ${eventName} event was emitted by the ${cTokenSymbol} cToken contract`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-EVENT`,
+    name: `${protocolName} cToken Asset Upgraded`,
+    description: `${emojiString} - The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-ASSET-UPGRADED`,
     type: FindingType[eventType],
     severity: FindingSeverity[eventSeverity],
     protocol: protocolName,
     metadata: {
       cTokenSymbol,
       contractAddress,
-      eventName,
+      underlyingAssetAddress,
       ...eventArgs,
     },
   });
   return finding;
 }
 
-function getEventInfo(iface, events, sigType) {
-  const result = Object.entries(events).map(([eventName, entry]) => {
-    const signature = iface.getEvent(eventName).format(sigType);
-    return {
-      name: eventName,
-      signature,
-      type: entry.type,
-      severity: entry.severity,
-      amountKey: entry.amountKey,
-    };
-  });
-  return result;
-}
-
 function isUpgradeableProxy(asset, proxyPatterns) {
-  return proxyPatterns.some((pattern) => {
+  let foundPattern = false;
+
+  proxyPatterns.some((pattern) => {
     let isPattern = pattern.functionHashes.every((functionHash) => {
       if ( asset.code.indexOf(functionHash) !== -1) {
         return true;
@@ -72,19 +55,25 @@ function isUpgradeableProxy(asset, proxyPatterns) {
       }
     });
     if ( isPattern ) {
+      foundPattern = pattern;
       return true;
     }
     else {
       return false;
     }
   });  
+
+  return foundPattern;
 }
 
 async function getUnderlyingAsset(address, abi, provider, proxyPatterns) {
   let underlyingTokenAddress;
   let symbol;
 
-  const underlyingAsset = {};
+  const underlyingAsset = {
+    "isProxy": false
+  };
+
   const contract = new ethers.Contract(address, abi, provider);
 
   try {
@@ -98,8 +87,13 @@ async function getUnderlyingAsset(address, abi, provider, proxyPatterns) {
     underlyingAsset.symbol = symbol;
     underlyingAsset.cToken = address;
     underlyingAsset.address = underlyingTokenAddress;
-    underlyingAsset.code = await provider.getCode(underlyingTokenAddress);;
-    underlyingAsset.isProxy = isUpgradeableProxy(underlyingAsset, proxyPatterns);
+    underlyingAsset.code = await provider.getCode(underlyingTokenAddress);
+
+    let proxyPattern = isUpgradeableProxy(underlyingAsset, proxyPatterns);
+    if ( proxyPattern !== false) {
+      underlyingAsset.isProxy = true;
+      underlyingAsset.pattern = proxyPattern;
+    }
   }
 
   return underlyingAsset;
@@ -186,8 +180,23 @@ function provideHandleTransaction(data) {
     }
 
     const upgradeableProxyAssets = underlyingAssets.filter((asset) => asset.isProxy === true);
-
-    console.log("number of proxies: ", upgradeableProxyAssets.length);
+    
+    upgradeableProxyAssets.forEach((asset) => {
+      const upgradeEvents = txEvent.filterLog(asset.pattern.eventSignatures, asset.address);
+      upgradeEvents.forEach((upgradeEvent) => {
+        findings.push(createUpgradeAlert(
+          protocolName,
+          protocolAbbreviation,
+          developerAbbreviation,
+          cTokenSymbol = asset.symbol,
+          contractAddress = asset.cToken,
+          underlyingAssetAddress = asset.address,
+          eventArgs = upgradeEvent.args,
+          eventType = asset.pattern.FindingType,
+          eventSeverity = asset.pattern.FindingSeverity
+        ));
+      });
+    });
 
     return findings;
   };

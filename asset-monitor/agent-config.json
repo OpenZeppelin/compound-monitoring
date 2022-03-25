@@ -29,6 +29,9 @@
         "5c60da1b",
         "3659cfe6",
         "4f1ef286"
+      ],
+      "eventSignatures": [
+        "event Upgraded(address indexed implementation)"
       ]
     }
   ]
