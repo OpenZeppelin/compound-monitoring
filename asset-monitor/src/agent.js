@@ -2,8 +2,6 @@ const {
   Finding, FindingSeverity, FindingType, ethers, getEthersBatchProvider,
 } = require('forta-agent');
 
-const BigNumber = require('bignumber.js');
-const axios = require('axios');
 const web3 = require('web3-Eth');
 const web3Eth = new web3();
 
@@ -221,4 +219,5 @@ module.exports = {
   initialize: provideInitialize(initializeData),
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(initializeData),
+  createUpgradeAlert
 };
