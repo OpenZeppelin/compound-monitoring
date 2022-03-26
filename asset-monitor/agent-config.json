@@ -17,22 +17,57 @@
   ],
   "proxyPatterns": [
     {
+      "name": "OwnedUpgradeabilityProxy",
+      "findingType": "Suspicious",
+      "findingSeverity": "High",
+      "functionSignatures": [
+        "implementation()",        
+        "upgradeTo(address)",
+        "transferProxyOwnership(address)"
+      ],
+      "eventSignatures": [
+        "event Upgraded(address indexed implementation)"
+      ]
+    },    
+    {
       "name": "OZ_TransparentUpgradableProxy",
       "findingType": "Suspicious",
       "findingSeverity": "High",
       "functionSignatures": [
         "implementation()",
         "upgradeTo(address)",
-        "upgradeToAndCall(address, bytes)"
+        "upgradeToAndCall(address,bytes)"
       ],
-      "functionHashes": [
-        "5c60da1b",
-        "3659cfe6",
-        "4f1ef286"
+      "eventSignatures": [
+        "event Upgraded(address indexed implementation)",
+        "event Upgraded(address implementation)"
+      ]
+    },
+    {
+      "name": "OZ_UpgradeableUsingUnstructuredStorageProxy",
+      "findingType": "Suspicious",
+      "findingSeverity": "High",
+      "functionSignatures": [
+        "implementation()",
+        "upgradeTo(address)",
+        "proxiableUUID()"
       ],
       "eventSignatures": [
         "event Upgraded(address indexed implementation)"
       ]
-    }
+    },
+    {
+      "name": "OZ_UpgradeableUsingInternalStorageProxy",
+      "findingType": "Suspicious",
+      "findingSeverity": "High",
+      "functionSignatures": [
+        "implementation()",        
+        "UpgradeabilityProxy(string)",
+        "upgradeTo(string)"
+      ],
+      "eventSignatures": [
+        "event Upgraded(address indexed implementation)"
+      ]
+    }  
   ]
 }

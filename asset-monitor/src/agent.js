@@ -4,6 +4,8 @@ const {
 
 const BigNumber = require('bignumber.js');
 const axios = require('axios');
+const web3 = require('web3-Eth');
+const web3Eth = new web3();
 
 const {
   getAbi,
@@ -16,11 +18,12 @@ const config = require('../agent-config.json');
 const initializeData = {};
 
 // helper function to create upgrade alerts
-async function createUpgradeAlert(
+function createUpgradeAlert(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
   cTokenSymbol,
+  cTokenAddress,
   underlyingAssetAddress,
   eventArgs,
   eventType,
@@ -28,16 +31,18 @@ async function createUpgradeAlert(
 ) {
   const finding = Finding.fromObject({
     name: `${protocolName} cToken Asset Upgraded`,
-    description: `${emojiString} - The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
+    description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-ASSET-UPGRADED`,
     type: FindingType[eventType],
     severity: FindingSeverity[eventSeverity],
     protocol: protocolName,
     metadata: {
       cTokenSymbol,
-      contractAddress,
+      cTokenAddress,
       underlyingAssetAddress,
-      ...eventArgs,
+      "eventArguments": {
+        ...eventArgs,
+      }
     },
   });
   return finding;
@@ -119,6 +124,13 @@ function provideInitialize(data) {
     data.excludeAddresses = excludeAddresses;
 
     data.proxyPatterns = config.proxyPatterns;
+    data.proxyPatterns.forEach((pattern) => {
+      pattern.functionHashes = [];
+      pattern.functionSignatures.forEach((signature) => {
+        let hash = web3Eth.abi.encodeFunctionSignature(signature).slice(2);
+        pattern.functionHashes.push(hash);
+      });
+    });
 
     data.provider = getEthersBatchProvider();
 
@@ -152,6 +164,7 @@ function provideInitialize(data) {
 function provideHandleTransaction(data) {
   return async function handleTransaction(txEvent) {
     const {
+      provider,
       cTokenAddresses,
       cTokenAbi,
       underlyingAssets,
@@ -166,7 +179,7 @@ function provideHandleTransaction(data) {
     const findings = [];
 
     // first check that no additional cTokens have been added
-    const currentCTokenAddresses = await getCompoundTokens(data.comptrollerContract, data.excludeAddresses);
+    const currentCTokenAddresses = await getCompoundTokens(comptrollerContract, excludeAddresses);
     const unique = currentCTokenAddresses.filter((addr) => cTokenAddresses.indexOf(addr) === -1);
 
     cTokenAddresses.push(...unique);
@@ -174,27 +187,28 @@ function provideHandleTransaction(data) {
     if (unique.length > 0) {
       // create ethers.js Contract Objects and add them to the Object of other Contract Objects
       const promises = unique.map(async (address) => {
-        underlyingAssets.push(await getUnderlyingAsset(address, cTokenAbi, data.provider, data.proxyPatterns));
+        underlyingAssets.push(await getUnderlyingAsset(address, cTokenAbi, provider, proxyPatterns));
       });
       await Promise.all(promises);
     }
 
     const upgradeableProxyAssets = underlyingAssets.filter((asset) => asset.isProxy === true);
-    
     upgradeableProxyAssets.forEach((asset) => {
-      const upgradeEvents = txEvent.filterLog(asset.pattern.eventSignatures, asset.address);
-      upgradeEvents.forEach((upgradeEvent) => {
-        findings.push(createUpgradeAlert(
-          protocolName,
-          protocolAbbreviation,
-          developerAbbreviation,
-          cTokenSymbol = asset.symbol,
-          contractAddress = asset.cToken,
-          underlyingAssetAddress = asset.address,
-          eventArgs = upgradeEvent.args,
-          eventType = asset.pattern.FindingType,
-          eventSeverity = asset.pattern.FindingSeverity
-        ));
+      asset.pattern.eventSignatures.forEach((signature) => {
+        const upgradeEvents = txEvent.filterLog(signature, asset.address);
+        upgradeEvents.forEach((upgradeEvent) => {
+          findings.push(createUpgradeAlert(
+            protocolName,
+            protocolAbbreviation,
+            developerAbbreviation,
+            asset.symbol,
+            asset.cToken,
+            asset.address,
+            upgradeEvent.args,
+            asset.pattern.findingType,
+            asset.pattern.findingSeverity
+          ));
+        });
       });
     });
 
