@@ -1,5 +1,5 @@
 {
-  "name": "forta-AE-COMP-distribution-bugs",
+  "name": "forta-ae-comp-distribution-bugs",
   "version": "0.0.1",
   "description": "This agent monitors Compound distribution bugs.",
   "scripts": {
