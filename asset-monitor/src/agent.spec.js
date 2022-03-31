@@ -92,7 +92,7 @@ describe('check agent configuration file', () => {
     const cTokenAbi = getAbi(cTokenAbiFile);
   });
 
-  describe('excludeAddresses key required', () => {
+  it('excludeAddresses key required', () => {
     const { excludeAddresses } = config;
     expect(Array.isArray(excludeAddresses)).toBe(true);
     excludeAddresses.forEach((address) => {
