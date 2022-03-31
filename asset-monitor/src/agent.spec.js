@@ -107,7 +107,7 @@ describe('check agent configuration file', () => {
     expect(proxyPatterns).not.toBe([]);
   });
 
-  describe('proxyPattern elements must be valid', () => {
+  it('proxyPattern elements must be valid', () => {
     const { proxyPatterns } = config;
 
     proxyPatterns.forEach((pattern) => {
