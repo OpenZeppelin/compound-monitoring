@@ -5,7 +5,7 @@
 This agent monitors the underlying asset of Compound Finance cToken contracts, first
 it determines which assets are deployed using upgradable proxy contracts and then it
 monitors those contracts for any upgrade events to detect when the implementation for
-a cTokens asset may have changed.
+a cToken's underlying asset may have changed.
 
 ## Alerts
 
