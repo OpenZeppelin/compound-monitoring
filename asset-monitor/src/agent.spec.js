@@ -46,7 +46,7 @@ function createTransactionEvent(txObject) {
 
 // check the configuration file to verify the values
 describe('check agent configuration file', () => {
-  describe('procotolName key required', () => {
+  it('procotolName key required', () => {
     const { protocolName } = config;
     expect(typeof(protocolName)).toBe('string');
     expect(protocolName).not.toBe('');
