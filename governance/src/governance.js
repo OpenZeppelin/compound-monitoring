@@ -1,4 +1,4 @@
-const { Finding } = require('forta-agent');
+const { Finding, FindingType, FindingSeverity } = require('forta-agent');
 
 const axios = require('axios');
 
@@ -26,8 +26,8 @@ function proposalCreatedFinding(proposal, address, config) {
     name: `${config.protocolName} Governance Proposal Created`,
     description: `Governance Proposal ${proposal.id} was just created`,
     alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CREATED`,
-    type: 'Info',
-    severity: 'Info',
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
     protocol: config.protocolName,
     metadata: {
       address,
@@ -90,8 +90,8 @@ async function voteCastFinding(voteInfo, address, config) {
     name: `${config.protocolName} Governance Proposal Vote Cast`,
     description,
     alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-VOTE-CAST`,
-    type: 'Info',
-    severity: 'Info',
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
     protocol: config.protocolName,
     metadata: {
       address,
@@ -112,8 +112,8 @@ function proposalCanceledFinding(id, address, config) {
     name: `${config.protocolName} Governance Proposal Canceled`,
     description: `Governance proposal ${id} has been canceled`,
     alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CANCELED`,
-    type: 'Info',
-    severity: 'Info',
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
     protocol: config.protocolName,
     metadata: {
       address,
@@ -130,8 +130,8 @@ function proposalExecutedFinding(id, address, config) {
     name: `${config.protocolName} Governance Proposal Executed`,
     description: `Governance proposal ${id} has been executed`,
     alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-EXECUTED`,
-    type: 'Info',
-    severity: 'Info',
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
     protocol: config.protocolName,
     metadata: {
       address,
@@ -148,8 +148,8 @@ function proposalQueuedFinding(id, address, config, eta) {
     name: `${config.protocolName} Governance Proposal Queued`,
     description: `Governance Proposal ${id} has been queued`,
     alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-QUEUED`,
-    type: 'Info',
-    severity: 'Info',
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
     protocol: config.protocolName,
     metadata: {
       address,
@@ -166,8 +166,8 @@ function proposalThresholdSetFinding(address, config, oldThresh, newThresh) {
     name: `${config.protocolName} Governance Proposal Threshold Set`,
     description: `Proposal threshold change from ${oldThresh} to ${newThresh}`,
     alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-THRESHOLD-SET`,
-    type: 'Info',
-    severity: 'Info',
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
     protocol: config.protocolName,
     metadata: {
       address,
