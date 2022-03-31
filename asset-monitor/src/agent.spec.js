@@ -64,7 +64,7 @@ describe('check agent configuration file', () => {
     expect(developerAbbreviation).not.toBe('');
   });
 
-  describe('contracts key required', () => {
+  it('contracts key required', () => {
     const { contracts } = config;
     expect(typeof(contracts)).toBe('object');
     expect(contracts).not.toBe({});
