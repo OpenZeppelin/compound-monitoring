@@ -209,7 +209,7 @@ describe('monitor compound for upgraded cToken assets', () => {
       protocolAbbreviation = initializeData.protocolAbbreviation;
       developerAbbreviation = initializeData.developerAbbreviation;
 
-      TestEventAbi = {
+      testEventAbi = {
         "anonymous": false,
         "inputs": [
           {
