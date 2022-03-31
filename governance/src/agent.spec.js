@@ -1,5 +1,5 @@
 const {
-  Finding, createTransactionEvent, ethers,
+  Finding, createTransactionEvent, ethers, FindingType, FindingSeverity,
 } = require('forta-agent');
 
 const mockCompoundApiCall = {
@@ -246,8 +246,8 @@ describe('monitor governance contracts for emitted events', () => {
         name: `${config.protocolName} Governance Proposal Created`,
         description: `Governance Proposal ${proposal.id} was just created`,
         alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CREATED`,
-        type: 'Info',
-        severity: 'Info',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
         protocol: config.protocolName,
         metadata: {
           address: validContractAddress,
@@ -280,8 +280,8 @@ describe('monitor governance contracts for emitted events', () => {
         name: `${config.protocolName} Governance Proposal Canceled`,
         description: `Governance proposal ${defaultLog.args.id.toString()} has been canceled`,
         alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CANCELED`,
-        type: 'Info',
-        severity: 'Info',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
         protocol: config.protocolName,
         metadata: {
           address: validContractAddress,
@@ -327,8 +327,8 @@ describe('monitor governance contracts for emitted events', () => {
         name: `${config.protocolName} Governance Proposal Vote Cast`,
         description: 'Vote cast with 0 votes against proposal 0',
         alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-VOTE-CAST`,
-        type: 'Info',
-        severity: 'Info',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
         protocol: config.protocolName,
         metadata: {
           address: validContractAddress,
@@ -378,8 +378,8 @@ describe('monitor governance contracts for emitted events', () => {
         name: `${config.protocolName} Governance Proposal Vote Cast`,
         description: 'Vote cast with 0 votes against proposal 0',
         alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-VOTE-CAST`,
-        type: 'Info',
-        severity: 'Info',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
         protocol: config.protocolName,
         metadata: {
           address: validContractAddress,
@@ -434,8 +434,8 @@ describe('monitor governance contracts for emitted events', () => {
         name: `${config.protocolName} Governance Proposal Created`,
         description: `Governance Proposal ${proposal.id} was just created`,
         alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CREATED`,
-        type: 'Info',
-        severity: 'Info',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
         protocol: config.protocolName,
         metadata: {
           address: validContractAddress,
@@ -469,8 +469,8 @@ describe('monitor governance contracts for emitted events', () => {
         name: `${config.protocolName} Governance Proposal Canceled`,
         description: `Governance proposal ${proposal.id} has been canceled`,
         alertId: `${config.developerAbbreviation}-${config.protocolAbbreviation}-GOVERNANCE-PROPOSAL-CANCELED`,
-        type: 'Info',
-        severity: 'Info',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
         protocol: config.protocolName,
         metadata: {
           address: validContractAddress,
