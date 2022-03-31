@@ -52,7 +52,7 @@ describe('check agent configuration file', () => {
     expect(protocolName).not.toBe('');
   });
 
-  describe('protocolAbbreviation key required', () => {
+  it('protocolAbbreviation key required', () => {
     const { protocolAbbreviation } = config;
     expect(typeof(protocolAbbreviation)).toBe('string');
     expect(protocolAbbreviation).not.toBe('');
