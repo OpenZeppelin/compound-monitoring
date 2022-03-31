@@ -117,9 +117,8 @@ function provideInitialize(data) {
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
 
-    let excludeAddresses = config.excludeAddresses;
-    excludeAddresses.map((addr) => addr.toLowerCase());
-    data.excludeAddresses = excludeAddresses;
+    const excludeAddresses = config.excludeAddresses;
+    data.excludeAddresses = excludeAddresses.map((addr) => addr.toLowerCase());
 
     data.proxyPatterns = config.proxyPatterns;
     data.proxyPatterns.forEach((pattern) => {
