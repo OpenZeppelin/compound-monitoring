@@ -163,13 +163,13 @@ describe('monitor compound for upgraded cToken assets', () => {
       const { proxyPatterns } = config; 
 
       testPattern = {
-        "name": "testPattern",
-        "findingType": "Info",
-        "findingSeverity": "Info",
-        "functionSignatures": [
+        name: "testPattern",
+        findingType: "Info",
+        findingSeverity: "Info",
+        functionSignatures: [
           validFunctionSignature,
         ],
-        "eventSignatures": [
+        eventSignatures: [
           "event TestEvent(address implementation)"
         ]
       }
