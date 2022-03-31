@@ -221,7 +221,7 @@ describe('monitor compound for upgraded cToken assets', () => {
         "name": "TestEvent",
         "type": "event"
       }
-      TestEventIFace = new ethers.utils.Interface([TestEventAbi]);
+      testEventIFace = new ethers.utils.Interface([testEventAbi]);
 
       mockTxEvent = createTransactionEvent({
         receipt: {
