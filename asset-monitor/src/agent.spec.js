@@ -304,11 +304,9 @@ describe('monitor compound for upgraded cToken assets', () => {
       mockComptrollerContract.getAllMarkets.mockReturnValueOnce([newCTokenAddress])
 
       mockedCTokenContract = {
-        underlying: jest.fn(),
-        symbol: jest.fn()
+        underlying: jest.fn().mockReturnValueOnce(newAssetAddress),
+        symbol: jest.fn().mockReturnValueOnce(newSymbol),
       };
-      mockedCTokenContract.underlying.mockReturnValueOnce(newAssetAddress);
-      mockedCTokenContract.symbol.mockReturnValueOnce(newSymbol);
 
       mockedGetContract.mockReturnValueOnce(mockedCTokenContract);
 
