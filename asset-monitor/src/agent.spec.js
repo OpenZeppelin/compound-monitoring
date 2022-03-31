@@ -58,7 +58,7 @@ describe('check agent configuration file', () => {
     expect(protocolAbbreviation).not.toBe('');
   });
 
-  describe('developerAbbreviation key required', () => {
+  it('developerAbbreviation key required', () => {
     const { developerAbbreviation } = config;
     expect(typeof(developerAbbreviation)).toBe('string');
     expect(developerAbbreviation).not.toBe('');
