@@ -70,7 +70,7 @@ describe('check agent configuration file', () => {
     expect(contracts).not.toBe({});
   });
 
-  describe('contracts key values must be valid', () => {
+  it('contracts key values must be valid', () => {
     const { contracts } = config;
 
     const { Comptroller, cTokens } = contracts;
