@@ -12,7 +12,7 @@ jest.mock('forta-agent', () => ({
 }));
 
 const {
-  TransactionEvent, ethers, FindingType, FindingSeverity
+  TransactionEvent, ethers, FindingType, FindingSeverity, Finding
 } = require('forta-agent');
 
 const { provideHandleTransaction, provideInitialize, createUpgradeAlert } = require('./agent');
@@ -133,6 +133,68 @@ describe('check agent configuration file', () => {
   });  
 });
 
+describe('test createUpgradeAlert', () =>  {
+  let protocolName;
+  let protocolAbbreviation;
+  let developerAbbreviation;
+  let cTokenSymbol;
+  let cTokenAddress;
+  let underlyingAssetAddress;
+  let eventArgs;
+  let modifiedArgs;
+  let findingType;
+  let findingSeverity;
+
+  beforeAll(async () => {
+    protocolName = config.protocolName;
+    protocolAbbreviation = config.protocolAbbreviation;
+    developerAbbreviation = config.developerAbbreviation;
+  });
+
+  it('returns a proper finding', () => {
+    cTokenSymbol = "TEST";
+    findingType = "Info";
+    findingSeverity = "Info";
+    cTokenAddress = "0x1234";
+    underlyingAssetAddress = "0x5678";
+    eventArgs = {
+      implementation: "0x8888"
+    }
+    modifiedArgs = {
+      eventArgs_implementation: "0x8888"
+    }
+
+    expectedFinding = Finding.fromObject({
+      name: `${protocolName} cToken Asset Upgraded`,
+      description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
+      alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-ASSET-UPGRADED`,
+      type: FindingType[findingType],
+      severity: FindingSeverity[findingSeverity],
+      protocol: protocolName,
+      metadata: {
+        cTokenSymbol,
+        cTokenAddress,
+        underlyingAssetAddress,
+        ...modifiedArgs
+      }
+    }); 
+
+    finding = createUpgradeAlert(
+      protocolName,
+      protocolAbbreviation,
+      developerAbbreviation,
+      cTokenSymbol,
+      cTokenAddress,
+      underlyingAssetAddress,
+      eventArgs,
+      findingType,
+      findingSeverity      
+    )
+
+    expect(finding).toStrictEqual(expectedFinding);
+  })
+});
+
 // tests
 describe('monitor compound for upgraded cToken assets', () => {
   describe('handleTransaction', () => {
@@ -242,8 +304,8 @@ describe('monitor compound for upgraded cToken assets', () => {
         implementation: validUpgradeAddress,
       }
       
-      const testEventAbi = TestEventIFace.getEvent("TestEvent");
-      const testEvent = createMockEventLogs(testEventAbi, TestEventIFace, override);
+      const testEventAbi = testEventIFace.getEvent("TestEvent");
+      const testEvent = createMockEventLogs(testEventAbi, testEventIFace, override);
       const testLog = {
         "address": validAssetAddress,
         "topics": testEvent.mockTopics,
@@ -312,8 +374,8 @@ describe('monitor compound for upgraded cToken assets', () => {
         implementation: validUpgradeAddress,
       }
       
-      const testEventAbi = TestEventIFace.getEvent("TestEvent");
-      const testEvent = createMockEventLogs(testEventAbi, TestEventIFace, override);
+      const testEventAbi = testEventIFace.getEvent("TestEvent");
+      const testEvent = createMockEventLogs(testEventAbi, testEventIFace, override);
       const testLog = {
         "address": newAssetAddress,
         "topics": testEvent.mockTopics,
