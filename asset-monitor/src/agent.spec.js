@@ -145,8 +145,8 @@ describe('monitor compound for upgraded cToken assets', () => {
     let mockComptrollerContract;
     let mockedProvider;
     let mockTxEvent;
-    let TestEventAbi;
-    let TestEventIFace;
+    let testEventAbi;
+    let testEventIFace;
     let validFunctionSignature = 'TestFunction(address)';
     let validFunctionHash;
     let validCTokenAddress = `0x1${'0'.repeat(39)}`;
