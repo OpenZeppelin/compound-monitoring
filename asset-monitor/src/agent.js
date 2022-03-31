@@ -27,6 +27,12 @@ function createUpgradeAlert(
   eventType,
   eventSeverity
 ) {
+
+  const modifiedArgs = {}
+  Object.keys(eventArgs).forEach((key) => {
+    modifiedArgs[`eventArgs_${key}`] = eventArgs[key];
+  });
+
   const finding = Finding.fromObject({
     name: `${protocolName} cToken Asset Upgraded`,
     description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
@@ -38,9 +44,7 @@ function createUpgradeAlert(
       cTokenSymbol,
       cTokenAddress,
       underlyingAssetAddress,
-      "eventArguments": {
-        ...eventArgs,
-      }
+        ...modifiedArgs,
     },
   });
   return finding;
@@ -150,9 +154,10 @@ function provideInitialize(data) {
     // gather the underlying asset contracts for every cToken
     data.cTokenAbi = getAbi(cTokens.abiFile);
 
-    data.underlyingAssets = [];
+    data.upgradeableProxyAssets = [];
     const promises = data.cTokenAddresses.map(async (address) => {
-      data.underlyingAssets.push(await getUnderlyingAsset(address, data.cTokenAbi, data.provider, data.proxyPatterns));
+      let underlyingAsset = await getUnderlyingAsset(address, data.cTokenAbi, data.provider, data.proxyPatterns);
+      if ( underlyingAsset.isProxy ) data.upgradeableProxyAssets.push(underlyingAsset);
     });
     await Promise.all(promises);
   };
@@ -164,7 +169,7 @@ function provideHandleTransaction(data) {
       provider,
       cTokenAddresses,
       cTokenAbi,
-      underlyingAssets,
+      upgradeableProxyAssets,
       comptrollerContract,
       protocolName,
       protocolAbbreviation,
@@ -184,12 +189,12 @@ function provideHandleTransaction(data) {
     if (unique.length > 0) {
       // create ethers.js Contract Objects and add them to the Object of other Contract Objects
       const promises = unique.map(async (address) => {
-        underlyingAssets.push(await getUnderlyingAsset(address, cTokenAbi, provider, proxyPatterns));
+        let underlyingAsset = await getUnderlyingAsset(address, cTokenAbi, provider, proxyPatterns);
+        if ( underlyingAsset.isProxy ) upgradeableProxyAssets.push(underlyingAsset);
       });
       await Promise.all(promises);
     }
 
-    const upgradeableProxyAssets = underlyingAssets.filter((asset) => asset.isProxy === true);
     upgradeableProxyAssets.forEach((asset) => {
       asset.pattern.eventSignatures.forEach((signature) => {
         const upgradeEvents = txEvent.filterLog(signature, asset.address);
