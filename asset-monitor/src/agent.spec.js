@@ -101,7 +101,7 @@ describe('check agent configuration file', () => {
     });
   });
 
-  describe('proxyPatterns key required', () => {
+  it('proxyPatterns key required', () => {
     const { proxyPatterns } = config;
     expect(Array.isArray(proxyPatterns)).toBe(true);
     expect(proxyPatterns).not.toBe([]);
