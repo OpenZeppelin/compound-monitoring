@@ -156,7 +156,7 @@ describe('monitor compound for upgraded cToken assets', () => {
 
     beforeAll(async () => {
       mockedProvider = {
-        'getCode': jest.fn()
+        getCode: jest.fn()
       };
       mockedGetProvider.mockReturnValue(mockedProvider)
 
