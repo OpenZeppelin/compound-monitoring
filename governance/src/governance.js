@@ -45,7 +45,7 @@ function getProposalName(config, id) {
   const lines = proposal.description.split('\n');
   const [proposalName] = lines;
   // remove markdown heading symbol and then leading and trailing spaces
-  proposalName.replace('#', '').trim();
+  proposalName.replaceAll('#', '').trim();
   return proposalName;
 }
 

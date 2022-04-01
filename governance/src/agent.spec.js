@@ -463,7 +463,7 @@ describe('monitor governance contracts for emitted events', () => {
       findings = await handleTransaction(mockTxEvent);
 
       const [shortDescription] = proposalDescription.split('\n');
-      shortDescription.replace('#', '').trim();
+      shortDescription.replaceAll('#', '').trim();
 
       expectedFinding = Finding.fromObject({
         name: `${config.protocolName} Governance Proposal Canceled`,
