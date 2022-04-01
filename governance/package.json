@@ -1,6 +1,6 @@
 {
   "name": "forta-ae-comp-governance-events",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "This agent monitors events emitted from the Compound GovernorBravo contract.",
   "scripts": {
     "start": "npm run start:dev",
