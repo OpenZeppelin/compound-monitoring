@@ -1,7 +1,12 @@
-const { Finding, FindingSeverity, FindingType, ethers } = require("forta-agent");
+const {
+  Finding, FindingSeverity, FindingType, ethers,
+} = require('forta-agent');
 
 // load agent configuration parameters
 const config = require('../agent-config.json');
+
+// require utilities
+const utils = require('./utils');
 
 // set up variable to hold initalization data for use in the handler
 const initializeData = {};
@@ -18,7 +23,7 @@ function provideInitialize(data) {
     const sigTypeFull = ethers.utils.FormatTypes.full;
 
     // eslint-disable-next-line import/no-dynamic-require
-    const multisigAbi = require(`../abi/${abiFile}`);
+    const multisigAbi = utils.getAbi(abiFile);
 
     data.multisigInterface = new ethers.utils.Interface(multisigAbi);
     data.eventSignatures = multisigEvents.map((eventName) => {
@@ -48,6 +53,18 @@ function provideHandleTransaction(data) {
     // filter txEvent to narrow down to only transactions from (or to?) the multisig
     const parsedLogs = txEvent.filterLog(eventSignatures, multisigAddress);
 
+    // create finding based on what event was emitted
+    parsedLogs.forEach((log) => {
+      const finding = utils.createFinding(
+        log,
+        protocolName,
+        protocolAbbreviation,
+        developerAbbreviation,
+      );
+      findings.push(finding);
+    });
+
+    // create a finding if the multisig was involved in any transaction
     if (txAddrs.includes(multisigAddress)) {
       const finding = Finding.fromObject({
         name: `${protocolName} Multisig Transaction Alert`,
