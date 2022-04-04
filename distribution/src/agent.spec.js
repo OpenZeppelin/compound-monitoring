@@ -1,5 +1,6 @@
 const mockContract = {
   compAccrued: jest.fn(),
+  decimals: jest.fn().mockResolvedValue(18),
 };
 
 // combine the mocked provider and contracts into the ethers import mock
@@ -94,11 +95,8 @@ describe('monitor compound for distribution bugs', () => {
     let initializeData;
     let handleTransaction;
     let validComptrollerAddress;
-    let validCompoundTokenAddress;
     let ComptrollerAbi;
     let ComptrollerIface;
-    let TransferAbi;
-    let TransferIface;
 
     let mockTxEvent;
 
@@ -108,36 +106,11 @@ describe('monitor compound for distribution bugs', () => {
       ComptrollerAbi = getAbi(config.contracts.Comptroller.abiFile);
       ComptrollerIface = new ethers.utils.Interface(ComptrollerAbi);
 
-      TransferAbi = {
-        anonymous: false,
-        inputs: [
-          {
-            indexed: true,
-            name: 'from',
-            type: 'address',
-          },
-          {
-            indexed: true,
-            name: 'to',
-            type: 'address',
-          },
-          {
-            indexed: false,
-            name: 'value',
-            type: 'uint256',
-          },
-        ],
-        name: 'Transfer',
-        type: 'event',
-      };
-      TransferIface = new ethers.utils.Interface([TransferAbi]);
-
       // initialize the handler
       await (provideInitialize(initializeData))();
       handleTransaction = provideHandleTransaction(initializeData);
 
       validComptrollerAddress = config.contracts.Comptroller.address;
-      validCompoundTokenAddress = config.contracts.CompoundToken.address;
 
       mockTxEvent = createTransactionEvent({
         transaction: {
@@ -174,26 +147,6 @@ describe('monitor compound for distribution bugs', () => {
 
       mockTxEvent.receipt.logs.push(distLog);
 
-      const distributionAmount = new BigNumber('300');
-      const override = {
-        from: `0x5${'0'.repeat(39)}`,
-        to: `0x4${'0'.repeat(39)}`,
-        value: distributionAmount.toString(),
-      };
-
-      const transferEventAbi = TransferIface.getEvent('Transfer');
-      const transferEvent = createMockEventLogs(TransferAbi, TransferIface, override);
-
-      const transferLog = {
-        address: validCompoundTokenAddress,
-        topics: transferEvent.mockTopics,
-        args: transferEvent.mockArgs,
-        data: transferEvent.data,
-        signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
-      };
-
-      mockTxEvent.receipt.logs.push(transferLog);
-
       const prevAmount = new BigNumber('100').toString();
 
       mockContract.compAccrued.mockReturnValueOnce(prevAmount);
@@ -206,8 +159,14 @@ describe('monitor compound for distribution bugs', () => {
     it('returns empty findings if distribution was within the threshold', async () => {
       mockTxEvent.transaction.to = validComptrollerAddress;
 
+      // set the threshold
+      initializeData.compDistributionThreshold = 100;
+
+      // create a compDelta amount just under the threshold
+      const multiplier = ethers.BigNumber.from(10).pow(18);
+      const override = { compDelta: ethers.BigNumber.from(99).mul(multiplier) };
       const distEventAbi = ComptrollerIface.getEvent('DistributedSupplierComp');
-      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface);
+      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface, override);
 
       const distLog = {
         address: validComptrollerAddress,
@@ -218,28 +177,6 @@ describe('monitor compound for distribution bugs', () => {
       };
 
       mockTxEvent.receipt.logs.push(distLog);
-
-      const distributionAmount = new BigNumber('100');
-      const override = {
-        from: `0x5${'0'.repeat(39)}`,
-        to: `0x4${'0'.repeat(39)}`,
-        value: distributionAmount.toString(),
-      };
-
-      const transferEventAbi = TransferIface.getEvent('Transfer');
-      const transferEvent = createMockEventLogs(TransferAbi, TransferIface, override);
-
-      const transferLog = {
-        address: validCompoundTokenAddress,
-        topics: transferEvent.mockTopics,
-        args: transferEvent.mockArgs,
-        data: transferEvent.data,
-        signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
-      };
-
-      mockTxEvent.receipt.logs.push(transferLog);
-
-      mockContract.compAccrued.mockReturnValueOnce(100);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -249,8 +186,19 @@ describe('monitor compound for distribution bugs', () => {
     it('returns findings if contract address matches and monitored event was emitted', async () => {
       mockTxEvent.transaction.to = validComptrollerAddress;
 
+      // set the threshold
+      initializeData.compDistributionThreshold = 100;
+
+      // create a compDelta amount just over the threshold
+      const multiplier = ethers.BigNumber.from(10).pow(18);
+      const distributionAmount = ethers.BigNumber.from(101).mul(multiplier);
+      const distributionReceiver = `0x4${'0'.repeat(39)}`;
+      const override = {
+        compDelta: distributionAmount,
+        supplier: distributionReceiver,
+      };
       const distEventAbi = ComptrollerIface.getEvent('DistributedSupplierComp');
-      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface);
+      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface, override);
 
       const distLog = {
         address: validComptrollerAddress,
@@ -262,42 +210,18 @@ describe('monitor compound for distribution bugs', () => {
 
       mockTxEvent.receipt.logs.push(distLog);
 
-      const distributionAmount = new BigNumber('300');
-      const distributionReceiver = `0x4${'0'.repeat(39)}`;
-
-      const override = {
-        from: `0x5${'0'.repeat(39)}`,
-        to: `0x4${'0'.repeat(39)}`,
-        value: distributionAmount.toString(),
-      };
-
-      const transferEventAbi = TransferIface.getEvent('Transfer');
-      const transferEvent = createMockEventLogs(TransferAbi, TransferIface, override);
-
-      const transferLog = {
-        address: validCompoundTokenAddress,
-        topics: transferEvent.mockTopics,
-        args: transferEvent.mockArgs,
-        data: transferEvent.data,
-        signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
-      };
-
-      mockTxEvent.receipt.logs.push(transferLog);
-
-      const prevAmount = new BigNumber('100').toString();
-
-      mockContract.compAccrued.mockReturnValueOnce(prevAmount);
-
       const findings = await handleTransaction(mockTxEvent);
+
+      const multiplierBN = new BigNumber(multiplier.toString());
+      const distributionAmountBN = new BigNumber(distributionAmount.toString()).div(multiplierBN);
 
       const expectedFinding = createDistributionAlert(
         initializeData.protocolName,
         initializeData.protocolAbbreviation,
         initializeData.developerAbbreviation,
-        distributionAmount.div(prevAmount).times(100),
+        distributionAmountBN,
         distributionReceiver,
-        distributionAmount.toString(),
-        prevAmount.toString(),
+        initializeData.compDistributionThreshold,
       );
 
       expect(findings).toStrictEqual([expectedFinding]);
