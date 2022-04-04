@@ -8,12 +8,12 @@ that exceed a configurable threshold.
 ## Alerts
 
 <!-- -->
-- AE-COMP-DISTRIBUTION-EVENT
+- AE-COMP-LARGE-DISTRIBUTION-EVENT
   - Type is always set to `Suspicious`
   - Severity is always set to `High`
   - Metadata field contains:
-    - Amount of COMP distributed
     - Amount of COMP accrued
+    - Distribution threshold
     - Receiver address
 
 ## Testing

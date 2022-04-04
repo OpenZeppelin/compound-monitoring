@@ -8,8 +8,6 @@ const { getAbi } = require('./utils');
 // load any agent configuration parameters
 const config = require('../agent-config.json');
 
-const ERC20_TRANSFER_EVENT = 'event Transfer(address indexed from, address indexed to, uint256 value)';
-
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
 
@@ -23,22 +21,20 @@ function createDistributionAlert(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
-  accruedToDistributedRatio,
+  compAccruedDistribution,
   receiver,
-  compDistributed,
-  compAccrued,
+  compDistributionThreshold,
 ) {
   const finding = Finding.fromObject({
     name: `${protocolName} Distribution Event`,
-    description: `Distributed ${accruedToDistributedRatio.toFixed(0)}% more COMP to ${receiver}`
-      + ' than expected',
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-DISTRIBUTION-EVENT`,
+    description: `Distributed ${compAccruedDistribution.toFixed(0).toString()} COMP to ${receiver}`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-LARGE-DISTRIBUTION-EVENT`,
     protocol: protocolName,
     type: FindingType.Suspicious,
     severity: FindingSeverity.High,
     metadata: {
-      compDistributed,
-      compAccrued,
+      compAccruedDistribution,
+      compDistributionThreshold,
       receiver,
     },
   });
@@ -53,12 +49,13 @@ function provideInitialize(data) {
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
 
-    data.distributionThresholdPercent = config.distributionThresholdPercent;
+    data.compDistributionThreshold = config.compDistributionThreshold;
 
     data.provider = getEthersProvider();
 
     const {
       Comptroller: comptroller,
+      CompoundToken: compToken,
     } = config.contracts;
 
     // from the Comptroller contract
@@ -78,7 +75,11 @@ function provideInitialize(data) {
       iface.getEvent('DistributedBorrowerComp').format(sigType),
     ];
 
-    data.tokenAddress = config.contracts.CompoundToken.address;
+    const decimalsAbi = ['function decimals() view returns (uint8)'];
+    const compAddress = compToken.address;
+    const compContract = new ethers.Contract(compAddress, decimalsAbi, data.provider);
+    const compDecimals = await compContract.decimals();
+    data.compDecimalsMultiplier = new BigNumber(10).pow(compDecimals);
     /* eslint-enable no-param-reassign */
   };
 }
@@ -86,17 +87,18 @@ function provideInitialize(data) {
 function provideHandleTransaction(data) {
   return async function handleTransaction(txEvent) {
     const {
-      tokenAddress,
       comptrollerContract,
       comptrollerAddress,
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
-      distributionThresholdPercent,
+      compDistributionThreshold,
       distributionSignatures,
+      compDecimalsMultiplier,
     } = data;
 
     if (!comptrollerContract) throw new Error('handleTransaction called before initialization');
+
     const findings = [];
 
     // if no events found for distributing COMP, return
@@ -105,39 +107,40 @@ function provideHandleTransaction(data) {
       comptrollerAddress,
     );
 
-    if (!compDistributedEvents.length) return findings;
+    // create Object to track COMP accrued over multiple events
+    const compAccrued = {};
+    compDistributedEvents.forEach(async (compDistributedEvent) => {
+      // the two events we have filtered are
+      //   DistributedSupplierComp
+      //   DistributedBorrowerComp
+      // for both of these events, the address of interest is the second argument
+      // and the delta amount is the third argument
+      const address = compDistributedEvent.args[1];
+      const compDelta = compDistributedEvent.args[2];
+      const compDeltaBN = new BigNumber(compDelta.toString());
 
-    // determine how much COMP distributed using Transfer event
-    const transferEvents = txEvent.filterLog(ERC20_TRANSFER_EVENT, tokenAddress);
-    // eslint-disable-next-line no-restricted-syntax
-    for (const transferEvent of transferEvents) {
-      const amountCompDistributedBN = new BigNumber(transferEvent.args.value.toString());
+      // accumulate the COMP accrued in this event
+      if (compAccrued[address] === undefined) {
+        compAccrued[address] = new BigNumber(0);
+      }
+      compAccrued[address] = compAccrued[address].plus(compDeltaBN);
+    });
 
-      // determine Comptroller.compAccrued() in previous block
-      const { blockNumber } = txEvent;
-      // eslint-disable-next-line no-await-in-loop
-      const prevBlockCompAccrued = await comptrollerContract
-        .compAccrued(transferEvent.args.to, { blockTag: blockNumber - 1 });
-      const prevBlockCompAccruedBN = new BigNumber(prevBlockCompAccrued.toString());
-
-      // calculate ratio of accrued to distributed COMP
-      const accruedToDistributedRatio = amountCompDistributedBN
-        .div(prevBlockCompAccruedBN)
-        .times(100);
-
-      if (accruedToDistributedRatio.gt(distributionThresholdPercent)) {
+    // iterate over the entries to create findings
+    Object.entries(compAccrued).forEach(([address, amount]) => {
+      const accruedAmount = amount.div(compDecimalsMultiplier);
+      if (accruedAmount.gt(compDistributionThreshold)) {
+        // create finding
         findings.push(createDistributionAlert(
           protocolName,
           protocolAbbreviation,
           developerAbbreviation,
-          accruedToDistributedRatio,
-          transferEvent.args.to,
-          amountCompDistributedBN.toString(),
-          prevBlockCompAccruedBN.toString(),
+          accruedAmount,
+          address,
+          compDistributionThreshold,
         ));
       }
-    }
-
+    });
     return findings;
   };
 }
