@@ -1,0 +1,13 @@
+{
+  "developerAbbreviation": "AE",
+  "protocolName": "Compound",
+  "protocolAbbreviation": "COMP",
+  "multisig": {
+    "address": "0xbbf3f1421D886E9b2c5D716B5192aC998af2012c",
+    "abiFile": "Multisig.json",
+    "events": [
+      "OwnerAddition",
+      "OwnerRemoval"
+    ]
+  }
+}
