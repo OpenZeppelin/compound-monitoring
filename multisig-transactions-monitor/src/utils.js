@@ -32,7 +32,7 @@ function createRemoveOwnerFinding(
   return finding;
 }
 
-function createFinding(
+function createGnosisFinding(
   log,
   protocolName,
   protocolAbbreviation,
@@ -40,7 +40,7 @@ function createFinding(
 ) {
   let finding;
 
-  if (log.name === 'OwnerAddition') {
+  if (log.name === 'AddedOwner') {
     finding = createAddOwnerFinding(
       log,
       protocolName,
@@ -49,7 +49,7 @@ function createFinding(
     );
   }
 
-  if (log.name === 'OwnerRemoval') {
+  if (log.name === 'RemovedOwner') {
     finding = createRemoveOwnerFinding(
       log,
       protocolName,
@@ -71,5 +71,5 @@ module.exports = {
   createAddOwnerFinding,
   createRemoveOwnerFinding,
   getAbi,
-  createFinding,
+  createGnosisFinding,
 };
