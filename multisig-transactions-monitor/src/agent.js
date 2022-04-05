@@ -63,23 +63,27 @@ function provideHandleTransaction(data) {
     if (txAddrs.includes(multisigAddress)) {
       contractsInfo.forEach((contract) => {
         // get all tranasaction events from the multisig wallet
-        const parsedLogs = txEvent.filterLog(contract.eventSignatures, multisigAddress);
+        const parsedLogsMultiSig = txEvent.filterLog(contract.eventSignatures, multisigAddress);
+        const parsedLogsGovernance = txEvent.filterLog(contract.eventSignatures, governanceAddress);
+        const parsedLogsComptroller = txEvent.filterLog(contract.eventSignatures, comptrollerAddress);
 
-        // case if interaction is with gnosis wallet (add/remove owner)
-        parsedLogs.forEach((log) => {
-          const finding = utils.createGnosisFinding(
-            log,
-            protocolName,
-            protocolAbbreviation,
-            developerAbbreviation,
-          );
-          findings.push(finding);
-        });
+        if (parsedLogsMultiSig.length !== 0) {
+          // case if interaction is with gnosis wallet (add/remove owner)
+          parsedLogsMultiSig.forEach((log) => {
+            const finding = utils.createGnosisFinding(
+              log,
+              protocolName,
+              protocolAbbreviation,
+              developerAbbreviation,
+            );
+            findings.push(finding);
+          });
+        }
 
-        if (txEvent.to === governanceAddress) {
+        if (parsedLogsGovernance.length !== 0) {
           // check for governance interaction
           // check what governance event was emited
-          parsedLogs.forEach((log) => {
+          parsedLogsGovernance.forEach((log) => {
             const finding = utils.createGovernanceFinding(
               log,
               protocolName,
@@ -90,10 +94,10 @@ function provideHandleTransaction(data) {
           });
         }
 
-        if (txEvent.to === comptrollerAddress) {
+        if (parsedLogsComptroller.length !== 0) {
           // check for comptroller interaction
           // check what comptroller event was emiiter
-          parsedLogs.forEach((log) => {
+          parsedLogsComptroller.forEach((log) => {
             const finding = utils.createComptrollerFinding(
               log,
               protocolName,
