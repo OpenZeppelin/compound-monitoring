@@ -12,8 +12,8 @@ decimals = new BigNumber(decimals.toString());
 decimals = new BigNumber(10).pow(decimals);
 
 // convert to bignumber.js and divide by COMP decimals
-const minQuorumVotes = new BigNumber(mockMinQuorum.toString()).div(decimals);
-const minProposalVotes = new BigNumber(mockMinProposal.toString()).div(decimals);
+const minQuorumVotes = new BigNumber(mockMinQuorum).div(decimals);
+const minProposalVotes = new BigNumber(mockMinProposal).div(decimals);
 
 const mockERC20Contract = {
   decimals: jest.fn().mockResolvedValue(mockDecimals),
