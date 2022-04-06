@@ -2,9 +2,9 @@ const BigNumber = require('bignumber.js');
 
 // Pulled from etherscan for testing (full decimals)
 // get proposalThreshold and quorumVotes from Governor Alpha contract
-const mockMinProposal = 11000;
+const mockMinProposal = 1100;
 const mockMinQuorum = 4400;
-const mockDecimals = 2;
+const mockDecimals = 0;
 
 // Convert to bignumber and 10^x
 let decimals = mockDecimals;
