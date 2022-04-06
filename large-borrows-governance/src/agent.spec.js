@@ -1,6 +1,6 @@
 const BigNumber = require('bignumber.js');
 
-// proposalThreshold and quorumVotes will be pulled from Governor Alpha contract
+// proposalThreshold and quorumVotes will be pulled from Governor Bravo contract
 // Note: the Proposal threshold will be less than the Quorum threshold
 const mockMinProposal = 1100;
 const mockMinQuorum = 4400;
