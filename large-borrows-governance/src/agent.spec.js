@@ -222,17 +222,11 @@ describe('handleTransaction', () => {
   it('returns a finding when a borrow event is emitted from the cCOMP token contract and the address that borrowed COMP exceeds the proposal threshold', async () => {
     // set the balanceOf to a value that is greater than the minimum COMP threshold for the proposal
     // governance action
-
-    // const { minAmountCOMP, type, severity } = borrowLevels.proposal;
     const { type, severity } = borrowLevels.proposal;
     const minAmountCOMP = minProposalVotes;
+    // Mock: minAmountCOMP + 1, and then with the rest of the decimals added back on.
     mockERC20Contract.balanceOf.mockResolvedValue(BigNumber.sum(minAmountCOMP, 1)
       .multipliedBy(decimals));
-    // mockERC20Contract.balanceOf.mockResolvedValue((minAmountCOMP + 1).pow(decimals));
-    // mockERC20Contract.balanceOf.mockResolvedValue(mockMinQuorum + 1);
-
-    // TS
-    console.log('Watch from here', minAmountCOMP);
 
     // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
     // the Borrow event with the cCOMP address
@@ -251,9 +245,6 @@ describe('handleTransaction', () => {
 
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
-
-    // TS
-    // console.log(minAmountCOMP);
 
     // run the agent
     const findings = await handleTransaction(txEvent);
@@ -279,7 +270,7 @@ describe('handleTransaction', () => {
 
   it('returns two findings when a borrow event is emitted from the cCOMP token contract and the address that borrowed COMP exceeds the proposal and vote quorum thresholds', async () => {
     const {
-      minAmountCOMP: proposalMinCOMP, type: proposalType, severity: proposalSeverity,
+      type: proposalType, severity: proposalSeverity,
     } = borrowLevels.proposal;
     const {
       type: votingQuorumType, severity: votingQuorumSeverity,
@@ -287,10 +278,9 @@ describe('handleTransaction', () => {
 
     // set the balanceOf to a value that is greater than the minimum COMP threshold for the proposal
     // and vote quorum governance interactions
-    // mockERC20Contract.balanceOf.mockResolvedValue(votingMinCOMP + 1);
+    // Mock: minAmountCOMP + 1, and then with the rest of the decimals added back on.
     mockERC20Contract.balanceOf.mockResolvedValue(BigNumber.sum(minQuorumVotes, 1)
       .multipliedBy(decimals));
-    //  mockERC20Contract.balanceOf.mockResolvedValue(mockMinProposal + decimals);
 
     // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
     // the Borrow event with the cCOMP address
@@ -326,9 +316,7 @@ describe('handleTransaction', () => {
       metadata: {
         borrowerAddress: mockBorrowerAddress,
         governanceLevel: 'proposal',
-        // minCOMPNeeded: proposalMinCOMP.toString(),
         minCOMPNeeded: minProposalVotes.toString(),
-        // currCOMPOwned: (votingMinCOMP + 1).toString(),
         currCOMPOwned: (BigNumber.sum(minQuorumVotes, 1)).toString(),
       },
     });
@@ -344,9 +332,7 @@ describe('handleTransaction', () => {
       metadata: {
         borrowerAddress: mockBorrowerAddress,
         governanceLevel: 'votingQuorum',
-        // minCOMPNeeded: votingMinCOMP.toString(),
         minCOMPNeeded: minQuorumVotes.toString(),
-        // currCOMPOwned: (votingMinCOMP + 1).toString(),
         currCOMPOwned: (BigNumber.sum(minQuorumVotes, 1)).toString(),
       },
     });
