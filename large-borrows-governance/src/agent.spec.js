@@ -2,14 +2,14 @@ const BigNumber = require('bignumber.js');
 
 // Pulled from etherscan for testing (full decimals)
 // get proposalThreshold and quorumVotes from Governor Alpha contract
-const mockMinProposal = 110000000000000000000000;
-const mockMinQuorum = 440000000000000000000000;
-const mocDecimals = 0;
+const mockMinProposal = 11000;
+const mockMinQuorum = 4400;
+const mockDecimals = 2;
 
 // Convert to bignumber and 10^x
-let decimals = mocDecimals;
+let decimals = mockDecimals;
 decimals = new BigNumber(decimals.toString());
-decimals = new BigNumber(10).pow(mocDecimals);
+decimals = new BigNumber(10).pow(decimals);
 
 // convert to bignumber.js and divide by COMP decimals
 const minQuorumVotes = new BigNumber(mockMinQuorum.toString()).div(decimals);
