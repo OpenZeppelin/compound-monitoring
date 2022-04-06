@@ -128,23 +128,20 @@ function provideHandleTransaction(data) {
       let findings = Object.keys(borrowLevels).map((levelName) => {
         const { type, severity } = borrowLevels[levelName];
         // if the borrowLevel name matches "proposal" or "votingQuorum", use that defined minCOMP
-        if (voteMinimums[levelName]) {
-          const minAmountCOMP = voteMinimums[levelName];
-
-          if (userCOMPBalance.gte(minAmountCOMP)) {
-            // a governance threshold has been crossed, generate an alert
-            return createAlert(
-              developerAbbreviation,
-              protocolName,
-              protocolAbbreviation,
-              type,
-              severity,
-              levelName,
-              borrowerAddress,
-              minAmountCOMP.toString(),
-              userCOMPBalance.toString(),
-            );
-          }
+        const minAmountCOMP = voteMinimums[levelName];
+        if ( minAmountCOMP !== undefined && userCOMPBalance.gte(minAmountCOMP ) {
+          // a governance threshold has been crossed, generate an alert
+          return createAlert(
+            developerAbbreviation,
+            protocolName,
+            protocolAbbreviation,
+            type,
+            severity,
+            levelName,
+            borrowerAddress,
+            minAmountCOMP.toString(),
+            userCOMPBalance.toString(),
+          );
         }
 
         return undefined;
