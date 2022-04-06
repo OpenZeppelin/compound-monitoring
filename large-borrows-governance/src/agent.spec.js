@@ -86,8 +86,6 @@ describe('check agent configuration file', () => {
       const { minAmountCOMP, type, severity } = borrowLevels[key];
 
       // check that all the required values in the borrowLevel key are present and defined
-      expect(typeof (minAmountCOMP)).toBe('number');
-      expect(minAmountCOMP).not.toBe(undefined);
       expect(typeof (type)).toBe('string');
       expect(type).not.toBe('');
       expect(typeof (severity)).toBe('string');

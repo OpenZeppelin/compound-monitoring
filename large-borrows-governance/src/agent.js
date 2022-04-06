@@ -114,7 +114,7 @@ function provideHandleTransaction(data) {
       borrowLevels,
       contract,
       decimalsExp,
-      voteMinimums
+      voteMinimums,
     } = data;
 
     const parsedLogs = txEvent.filterLog(borrowEvent, cCOMPAddress);
