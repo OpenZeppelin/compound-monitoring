@@ -17,7 +17,6 @@ const minProposalVotes = new BigNumber(mockMinProposal.toString()).div(decimals)
 
 const mockERC20Contract = {
   decimals: jest.fn().mockResolvedValue(mockDecimals),
-  // decimals: jest.fn().mockResolvedValue(18),
   balanceOf: jest.fn(),
   proposalVotes: jest.fn().mockResolvedValue(mockMinQuorum),
   quorumVotes: jest.fn().mockResolvedValue(mockMinProposal),
@@ -74,6 +73,12 @@ describe('check agent configuration file', () => {
     expect(cCOMPAddress).not.toBe('');
   });
 
+  it('governorAddress key required', () => {
+    const { governorAddress } = config;
+    expect(typeof (governorAddress)).toBe('string');
+    expect(governorAddress).not.toBe('');
+  });
+
   it('borrowLevels key required', () => {
     const { borrowLevels } = config;
     expect(typeof (borrowLevels)).toBe('object');
@@ -83,7 +88,7 @@ describe('check agent configuration file', () => {
   it('borrowLevels key values must be valid', () => {
     const { borrowLevels } = config;
     Object.keys(borrowLevels).forEach((key) => {
-      const { minAmountCOMP, type, severity } = borrowLevels[key];
+      const { type, severity } = borrowLevels[key];
 
       // check that all the required values in the borrowLevel key are present and defined
       expect(typeof (type)).toBe('string');
