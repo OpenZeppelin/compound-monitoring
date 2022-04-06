@@ -83,7 +83,7 @@ function provideInitialize(data) {
     let minQuorumVotes = await governorContract.proposalVotes();
     minQuorumVotes = new BigNumber(minQuorumVotes.toString()).div(compDecimals);
 
-    const voteMinimums = {
+    data.voteMinimums = {
       proposal: minProposalVotes,
       votingQuorum: minQuorumVotes,
     };
