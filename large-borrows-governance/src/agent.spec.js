@@ -1,10 +1,10 @@
 const BigNumber = require('bignumber.js');
 
-// Pulled from etherscan for testing (full decimals)
-// get proposalThreshold and quorumVotes from Governor Alpha contract
+// proposalThreshold and quorumVotes will be pulled from Governor Alpha contract
+// Note: the Proposal threshold will be less than the Quorum threshold
 const mockMinProposal = 1100;
 const mockMinQuorum = 4400;
-const mockDecimals = 0;
+const mockDecimals = 2;
 
 // Convert to bignumber and 10^x
 let decimals = mockDecimals;
@@ -16,7 +16,7 @@ const minQuorumVotes = new BigNumber(mockMinQuorum.toString()).div(decimals);
 const minProposalVotes = new BigNumber(mockMinProposal.toString()).div(decimals);
 
 const mockERC20Contract = {
-  decimals: jest.fn().mockResolvedValue(0),
+  decimals: jest.fn().mockResolvedValue(mockDecimals),
   // decimals: jest.fn().mockResolvedValue(18),
   balanceOf: jest.fn(),
   proposalVotes: jest.fn().mockResolvedValue(mockMinQuorum),
@@ -220,11 +220,11 @@ describe('handleTransaction', () => {
     // set the balanceOf to a value that is greater than the minimum COMP threshold for the proposal
     // governance action
 
-
     // const { minAmountCOMP, type, severity } = borrowLevels.proposal;
     const { type, severity } = borrowLevels.proposal;
     const minAmountCOMP = minProposalVotes;
-    mockERC20Contract.balanceOf.mockResolvedValue(BigNumber.sum(minAmountCOMP, 1));
+    mockERC20Contract.balanceOf.mockResolvedValue(BigNumber.sum(minAmountCOMP, 1)
+      .multipliedBy(decimals));
     // mockERC20Contract.balanceOf.mockResolvedValue((minAmountCOMP + 1).pow(decimals));
     // mockERC20Contract.balanceOf.mockResolvedValue(mockMinQuorum + 1);
 
@@ -270,9 +270,6 @@ describe('handleTransaction', () => {
       },
     })];
 
-    // TS
-    console.log((typeof minAmountCOMP), 'Type') ;
-
     expect(findings).toStrictEqual(expectedFinding);
     expect(mockERC20Contract.balanceOf).toHaveBeenCalledTimes(1);
   });
@@ -288,7 +285,8 @@ describe('handleTransaction', () => {
     // set the balanceOf to a value that is greater than the minimum COMP threshold for the proposal
     // and vote quorum governance interactions
     // mockERC20Contract.balanceOf.mockResolvedValue(votingMinCOMP + 1);
-    mockERC20Contract.balanceOf.mockResolvedValue(BigNumber.sum(minQuorumVotes, 1));
+    mockERC20Contract.balanceOf.mockResolvedValue(BigNumber.sum(minQuorumVotes, 1)
+      .multipliedBy(decimals));
     //  mockERC20Contract.balanceOf.mockResolvedValue(mockMinProposal + decimals);
 
     // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
