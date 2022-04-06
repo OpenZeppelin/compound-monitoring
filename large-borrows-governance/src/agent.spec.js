@@ -7,8 +7,7 @@ const mockMinQuorum = 4400;
 const mockDecimals = 2;
 
 // Convert to bignumber and 10^x
-let decimals = mockDecimals;
-decimals = new BigNumber(decimals.toString());
+let decimals = new BigNumber(mockDecimals);
 decimals = new BigNumber(10).pow(decimals);
 
 // convert to bignumber.js and divide by COMP decimals
