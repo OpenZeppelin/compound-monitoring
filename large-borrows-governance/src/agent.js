@@ -96,7 +96,6 @@ function provideInitialize(data) {
     data.borrowEvent = borrowEvent;
     data.borrowLevels = borrowLevels;
     data.contract = compContract;
-    // data.decimalsExp = new BigNumber(10).pow(compDecimals);
     data.decimalsExp = compDecimals;
     data.voteMinimums = voteMinimums;
     /* eslint-enable no-param-reassign */
@@ -122,25 +121,15 @@ function provideHandleTransaction(data) {
       // check to see how much COMP the address that borrowed has now
       const borrowerAddress = log.args.borrower;
       let userCOMPBalance = await contract.balanceOf(borrowerAddress);
-
       // convert to bignumber.js and divide by COMP decimals
       userCOMPBalance = new BigNumber(userCOMPBalance.toString()).div(decimalsExp);
-      // userCOMPBalance = new BigNumber(userCOMPBalance.toString());
 
       // iterate over the borrow levels to see if any meaningful thresholds have been crossed
       let findings = Object.keys(borrowLevels).map((levelName) => {
-      // let findings = voteMinimums.map((levelName) => {
         const { type, severity } = borrowLevels[levelName];
-
+        // if the borrowLevel name matches "proposal" or "votingQuorum", use that defined minCOMP
         if (voteMinimums[levelName]) {
           const minAmountCOMP = voteMinimums[levelName];
-          // TS
-          // console.log(levelName);
-          // const minAmountCOMP = new BigNumber(borrowLevels[levelName].minAmountCOMP);
-          // const minAmountCOMP = new BigNumber(governorContract);
-
-          // TS
-          console.log('user ', userCOMPBalance, ' min ', minAmountCOMP, ' Decimals ', decimalsExp);
 
           if (userCOMPBalance.gte(minAmountCOMP)) {
             // a governance threshold has been crossed, generate an alert
