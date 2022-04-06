@@ -28,8 +28,8 @@ function createDistributionAlert(
     description: `Distributed ${accruedToDistributedRatio.toFixed(0)}% more COMP to ${receiver} than expected`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-DISTRIBUTION-EVENT`,
     protocol: protocolName,
-    type: FindingType.Suspicious,
-    severity: FindingSeverity.High,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
     metadata: {
       compDistributed,
       compAccrued,
@@ -116,7 +116,6 @@ function provideHandleTransaction(data) {
 
       // if we don't reach the minimum threshold for distributed COMP do not bother calculating the ratio to the previous accrued amount
       if ( amountCompDistributedBN.div(compDecimalsMultiplier).lt(minimumDistributionAmount) ) {
-        console.log("less than minimum distribution amount");
         continue;
       }
 
@@ -128,7 +127,6 @@ function provideHandleTransaction(data) {
       // if the previous accrual is zero, our heuristic of using the ratio will not work
       if ( prevBlockCompAccruedBN.isZero() ) {
         // TODO: potentially check against a maximum "sane" distribution amount of COMP and alert then even if the previous is zero?
-        console.log("previous accrued is zero")
         continue;
       }
 
