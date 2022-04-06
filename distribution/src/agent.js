@@ -28,8 +28,8 @@ function createDistributionAlert(
     description: `Distributed ${accruedToDistributedRatio.toFixed(0)}% more COMP to ${receiver} than expected`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-DISTRIBUTION-EVENT`,
     protocol: protocolName,
-    type: FindingType.Suspicious,
-    severity: FindingSeverity.High,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
     metadata: {
       compDistributed,
       compAccrued,
@@ -46,44 +46,56 @@ function provideInitialize(data) {
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
 
-    data.distributionThresholdPercent = config.distributionThresholdPercent
+    data.distributionThresholdPercent = config.distributionThresholdPercent;
+    data.minimumDistributionAmount = config.minimumDistributionAmount;
 
     data.provider = getEthersProvider();
 
     const {
       Comptroller: comptroller,
+      CompoundToken: compToken,
     } = config.contracts;
 
     // from the Comptroller contract
-    comptrollerAbi = getAbi(comptroller.abiFile);
-    data.comptrollerAddress = comptrollerAddress = comptroller.address;
+    const comptrollerAbi = getAbi(comptroller.abiFile);
+    const comptrollerAddress = comptroller.address.toLowerCase();
+
+    data.comptrollerAddress = comptrollerAddress;
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
       comptrollerAbi,
       data.provider,
     );
 
-    const sigType =  ethers.utils.FormatTypes.full;
+    const sigType = ethers.utils.FormatTypes.full;
     const iface = new ethers.utils.Interface(comptrollerAbi);
     data.distributionSignatures = [
-      iface.getEvent("DistributedSupplierComp").format(sigType),
-      iface.getEvent("DistributedBorrowerComp").format(sigType),
+      iface.getEvent('DistributedSupplierComp').format(sigType),
+      iface.getEvent('DistributedBorrowerComp').format(sigType),
     ];
 
-    data.tokenAddress = config.contracts.CompoundToken.address;
+    const decimalsAbi = ['function decimals() view returns (uint8)'];
+    const compAddress = compToken.address.toLowerCase();
+    const compContract = new ethers.Contract(compAddress, decimalsAbi, data.provider);
+    const compDecimals = await compContract.decimals();
+
+    data.compDecimalsMultiplier = new BigNumber(10).pow(compDecimals);
+    data.compAddress = compAddress;
   }
 }
 
 function provideHandleTransaction(data) {
   return async function handleTransaction(txEvent) {
     const {
-      tokenAddress,
+      compAddress,
+      compDecimalsMultiplier,
       comptrollerContract,
       comptrollerAddress,
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
       distributionThresholdPercent,
+      minimumDistributionAmount,
       distributionSignatures
     } = data;
 
@@ -97,16 +109,26 @@ function provideHandleTransaction(data) {
     );
 
     if (!compDistributedEvents.length) return findings;
-
     // determine how much COMP distributed using Transfer event
-    const transferEvents = txEvent.filterLog(ERC20_TRANSFER_EVENT, tokenAddress);
+    const transferEvents = txEvent.filterLog(ERC20_TRANSFER_EVENT, compAddress).filter((transferEvent) => transferEvent.args.from.toLowerCase() === comptrollerAddress);
     for ( const transferEvent of transferEvents ) {
       const amountCompDistributedBN = new BigNumber(transferEvent.args.value.toString())
 
+      // if we don't reach the minimum threshold for distributed COMP do not bother calculating the ratio to the previous accrued amount
+      if ( amountCompDistributedBN.div(compDecimalsMultiplier).lt(minimumDistributionAmount) ) {
+        continue;
+      }
+
       // determine Comptroller.compAccrued() in previous block
       const blockNumber = txEvent.blockNumber;
-      const prevBlockCompAccrued = await comptrollerContract.compAccrued(transferEvent.args.to, { blockTag: blockNumber-1 })
+      const prevBlockCompAccrued = await comptrollerContract.compAccrued(transferEvent.args.to, { blockTag: blockNumber-1 });
       const prevBlockCompAccruedBN = new BigNumber(prevBlockCompAccrued.toString());
+      
+      // if the previous accrual is zero, our heuristic of using the ratio will not work
+      if ( prevBlockCompAccruedBN.isZero() ) {
+        // TODO: potentially check against a maximum "sane" distribution amount of COMP and alert then even if the previous is zero?
+        continue;
+      }
 
       // calculate ratio of accrued to distributed COMP
       const accruedToDistributedRatio = amountCompDistributedBN.div(prevBlockCompAccruedBN).times(100)
