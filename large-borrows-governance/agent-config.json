@@ -7,12 +7,10 @@
   "governorAddress": "0xc0dA01a04C3f3E0be433606045bB7017A7323E38",
   "borrowLevels": {
     "proposal": {
-      "minAmountCOMP": 65000,
       "type": "Suspicious",
       "severity": "Medium"
     },
     "votingQuorum": {
-      "minAmountCOMP": 400000,
       "type": "Suspicious",
       "severity": "High"
     }
