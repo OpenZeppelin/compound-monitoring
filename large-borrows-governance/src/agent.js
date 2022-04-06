@@ -5,6 +5,7 @@ const BigNumber = require('bignumber.js');
 const config = require('../agent-config.json');
 const cERC20Abi = require('../abi/CErc20.json');
 const compAbi = require('../abi/CompERC20.json');
+const governorAbi = require('../abi/Governor.json');
 
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
@@ -45,6 +46,7 @@ function provideInitialize(data) {
       protocolAbbreviation,
       cCOMPAddress,
       COMPAddress,
+      governorAddress,
       borrowLevels,
     } = config;
 
@@ -54,6 +56,7 @@ function provideInitialize(data) {
         || protocolAbbreviation === '' || protocolAbbreviation === undefined
         || cCOMPAddress === '' || cCOMPAddress === undefined
         || COMPAddress === '' || COMPAddress === undefined
+        || governorAddress === '' || governorAddress === undefined
         || Object.keys(borrowLevels).length === 0) {
       throw new Error('Required config fields are empty or undefined');
     }
@@ -67,9 +70,23 @@ function provideInitialize(data) {
     const compContract = new ethers.Contract(COMPAddress, compAbi, provider);
     // get the number of decimals for the COMP token
     let compDecimals = await compContract.decimals();
-
     // convert to bignumber.js
     compDecimals = new BigNumber(compDecimals.toString());
+    compDecimals = new BigNumber(10).pow(compDecimals);
+
+    // create a contract instance for the Governor contract
+    const governorContract = new ethers.Contract(governorAddress, governorAbi, provider);
+
+    // get proposalThreshold and quorumVotes from Governor Alpha contract
+    let minProposalVotes = await governorContract.quorumVotes();
+    minProposalVotes = new BigNumber(minProposalVotes.toString()).div(compDecimals);
+    let minQuorumVotes = await governorContract.proposalVotes();
+    minQuorumVotes = new BigNumber(minQuorumVotes.toString()).div(compDecimals);
+
+    const voteMinimums = {
+      proposal: minProposalVotes,
+      votingQuorum: minQuorumVotes,
+    };
 
     /* eslint-disable no-param-reassign */
     data.developerAbbreviation = developerAbbreviation;
@@ -79,7 +96,9 @@ function provideInitialize(data) {
     data.borrowEvent = borrowEvent;
     data.borrowLevels = borrowLevels;
     data.contract = compContract;
-    data.decimalsExp = new BigNumber(10).pow(compDecimals);
+    // data.decimalsExp = new BigNumber(10).pow(compDecimals);
+    data.decimalsExp = compDecimals;
+    data.voteMinimums = voteMinimums;
     /* eslint-enable no-param-reassign */
   };
 }
@@ -95,6 +114,7 @@ function provideHandleTransaction(data) {
       borrowLevels,
       contract,
       decimalsExp,
+      voteMinimums
     } = data;
 
     const parsedLogs = txEvent.filterLog(borrowEvent, cCOMPAddress);
@@ -105,24 +125,37 @@ function provideHandleTransaction(data) {
 
       // convert to bignumber.js and divide by COMP decimals
       userCOMPBalance = new BigNumber(userCOMPBalance.toString()).div(decimalsExp);
+      // userCOMPBalance = new BigNumber(userCOMPBalance.toString());
 
       // iterate over the borrow levels to see if any meaningful thresholds have been crossed
       let findings = Object.keys(borrowLevels).map((levelName) => {
+      // let findings = voteMinimums.map((levelName) => {
         const { type, severity } = borrowLevels[levelName];
-        const minAmountCOMP = new BigNumber(borrowLevels[levelName].minAmountCOMP);
-        if (userCOMPBalance.gte(minAmountCOMP)) {
-          // a governance threshold has been crossed, generate an alert
-          return createAlert(
-            developerAbbreviation,
-            protocolName,
-            protocolAbbreviation,
-            type,
-            severity,
-            levelName,
-            borrowerAddress,
-            minAmountCOMP.toString(),
-            userCOMPBalance.toString(),
-          );
+
+        if (voteMinimums[levelName]) {
+          const minAmountCOMP = voteMinimums[levelName];
+          // TS
+          // console.log(levelName);
+          // const minAmountCOMP = new BigNumber(borrowLevels[levelName].minAmountCOMP);
+          // const minAmountCOMP = new BigNumber(governorContract);
+
+          // TS
+          console.log('user ', userCOMPBalance, ' min ', minAmountCOMP, ' Decimals ', decimalsExp);
+
+          if (userCOMPBalance.gte(minAmountCOMP)) {
+            // a governance threshold has been crossed, generate an alert
+            return createAlert(
+              developerAbbreviation,
+              protocolName,
+              protocolAbbreviation,
+              type,
+              severity,
+              levelName,
+              borrowerAddress,
+              minAmountCOMP.toString(),
+              userCOMPBalance.toString(),
+            );
+          }
         }
 
         return undefined;
