@@ -5,6 +5,10 @@ const config = require('../agent-config.json');
 const multisigAddress = config.contracts.multisig.address;
 
 /// CREATE FINDINGS FOR GNOSIS SAFE INTERACTIONS ///
+/*
+        "AddedOwner",
+        "RemovedOwner",
+*/
 function createAddOwnerFinding(
   log,
   protocolName,
@@ -357,7 +361,6 @@ function createComptrollerFinding(
       developerAbbreviation,
     );
   }
-  
   return finding;
 }
 
