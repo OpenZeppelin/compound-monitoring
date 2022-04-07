@@ -91,7 +91,7 @@ function createProposalCreatedFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Created`,
     description: `Governance Proposal was just created by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-PROPOSAL-CREATED-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-PROPOSAL-CREATED-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });
@@ -107,7 +107,7 @@ function createProposalExecutedFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Executed`,
     description: `Governance Proposal was just executed by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-PROPOSAL-EXECUTED-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-PROPOSAL-EXECUTED-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });
@@ -123,7 +123,7 @@ function createProposalCanceledFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Canceled`,
     description: `Governance Proposal was just canceled by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-PROPOSAL-CANCELED-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-PROPOSAL-CANCELED-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });
@@ -139,7 +139,7 @@ function createVoteCastFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Vote Casted`,
     description: `Governance Proposal vote was casted by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-VOTE-CAST-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-VOTE-CAST-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });
@@ -155,7 +155,7 @@ function createProposalThresholdSetFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Threshold Set`,
     description: `Governance Proposal threshold was set by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-THRESHOLD-SET-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-THRESHOLD-SET-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });
@@ -171,7 +171,7 @@ function createNewAdminFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal New Adimn`,
     description: `Governance New Admin was set by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-NEW-ADMIN-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-NEW-ADMIN-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });
@@ -263,7 +263,7 @@ function createNewPauseGaurdianFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} New Pause Guardian`,
     description: `Governance New Pause Guardian was set by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-NEW-PAUSE-GUARDIAN-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-NEW-PAUSE-GUARDIAN-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });
@@ -279,7 +279,7 @@ function createActionPausedFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} Action Paused`,
     description: `Governance Action Paused by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-ACTION-PAUSED-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-ACTION-PAUSED-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });
@@ -295,7 +295,7 @@ function createNewBorrowCapFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} New Borrow Cap`,
     description: `Governance New Borrow Cap was set by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-NEW-BORROW-CAP-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-NEW-BORROW-CAP-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });
@@ -311,7 +311,7 @@ function createNewBorrowCapGaurdianFinding(
   const finding = Finding.fromObject({
     name: `${protocolName} New Borrow Cap Guardian`,
     description: `Governance New Borrow Guardian was set by multisig ${multisigAddress}`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-COMPOUND-NEW-BORROW-CAP-GUARDIAN-ALERT`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-NEW-BORROW-CAP-GUARDIAN-ALERT`,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
   });

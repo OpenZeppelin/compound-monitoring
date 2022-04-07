@@ -82,7 +82,7 @@ describe('check agent configuration file', () => {
   });
 });
 
-const multisigAddress = (config.contracts.multisig.address).toLowerCase();
+const multisigAddress = '0xbbf3f1421D886E9b2c5D716B5192aC998af2012c'.toLowerCase();
 const multisigAbi = utils.getAbi(config.contracts.multisig.abiFile);
 const governanceAbi = utils.getAbi(config.contracts.governance.abiFile);
 const comptrollerAbi = utils.getAbi(config.contracts.comptroller.abiFile);
@@ -104,6 +104,58 @@ const emptyLog = {
   transactionHash: zeroHash,
   removed: false,
 };
+
+// function to encode default values
+function defaultType(type) {
+  switch (type) {
+    case 'address':
+      return zeroAddress;
+    case 'bool':
+      return false;
+    case 'string':
+      return '';
+    case 'bytes':
+      return '';
+    case 'array':
+      throw new Error('array not implemented');
+    case 'tuple':
+      throw new Error('tuple not implemented');
+    default:
+      return 0;
+  }
+}
+
+// creates log with sparse inputs
+function createLog(eventAbi, inputArgs, logArgs) {
+  const topics = [];
+  const dataTypes = [];
+  const dataValues = [];
+
+  // initialize default log and assign passed in values
+  const log = { ...emptyLog, ...logArgs };
+
+  // build topics and data fields
+  topics.push(ethers.utils.Interface.getEventTopic(eventAbi));
+
+  // parse each input, save into topic or data depending on indexing, may
+  // have to skip if param._isParamType is false, does not support dynamic types
+  eventAbi.inputs.forEach((param) => {
+    const { type } = param;
+    const data = inputArgs[param.name] || defaultType(type);
+    if (param.indexed) {
+      topics.push(ethers.utils.defaultAbiCoder.encode([type], [data]));
+    } else {
+      dataTypes.push(type);
+      dataValues.push(data);
+    }
+  });
+
+  // assign topic and data
+  log.topics = topics;
+  log.data = ethers.utils.defaultAbiCoder.encode(dataTypes, dataValues);
+
+  return log;
+}
 
 describe('monitor multisig contract transactions', () => {
   describe('handleTransaction', () => {
@@ -141,11 +193,19 @@ describe('monitor multisig contract transactions', () => {
 
     it('returns findings if multisig was involed in a transaction and monitored multisig event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
-      mockTxEvent.logs = [emptyLog];
-      const [defaultLog] = mockTxEvent.logs;
 
+      // use AddedOwner event to test
+      const log = createLog(
+        multisigInterface.getEvent(multisigValidEventName),
+        { owner: multisigAddress },
+        { address: zeroAddress },
+      );
+
+      mockTxEvent.logs = [log];
+
+      // run agent with mock transaction event
       const findings = await handleTransaction(mockTxEvent);
-    })
+    });
 
     xit('returns findings if multisig was involed in a transaction and monitored governance event was emitted', async () => {
       
