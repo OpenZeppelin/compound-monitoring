@@ -222,10 +222,11 @@ describe('handleTransaction', () => {
     // set the balanceOf to a value that is greater than the minimum COMP threshold for the proposal
     // governance action
     const { type, severity } = borrowLevels.proposal;
-    const minAmountCOMP = minProposalVotes;
-    // Mock: minAmountCOMP + 1, and then with the rest of the decimals added back on.
-    mockERC20Contract.balanceOf.mockResolvedValue(BigNumber.sum(minAmountCOMP, 1)
-      .multipliedBy(decimals));
+
+    // Mock: minProposalVotes + 1
+    const currCOMPOwned = BigNumber.sum(minProposalVotes, 1);
+    // add the decimals back on before submitting
+    mockERC20Contract.balanceOf.mockResolvedValue(currCOMPOwned.multipliedBy(decimals));
 
     // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
     // the Borrow event with the cCOMP address
@@ -258,8 +259,8 @@ describe('handleTransaction', () => {
       metadata: {
         borrowerAddress: mockBorrowerAddress,
         governanceLevel: 'proposal',
-        minCOMPNeeded: minAmountCOMP.toString(),
-        currCOMPOwned: (BigNumber.sum(minAmountCOMP, 1)).toString(),
+        minCOMPNeeded: minProposalVotes.toString(),
+        currCOMPOwned: currCOMPOwned.toString(),
       },
     })];
 
@@ -277,9 +278,11 @@ describe('handleTransaction', () => {
 
     // set the balanceOf to a value that is greater than the minimum COMP threshold for the proposal
     // and vote quorum governance interactions
-    // Mock: minAmountCOMP + 1, and then with the rest of the decimals added back on.
-    mockERC20Contract.balanceOf.mockResolvedValue(BigNumber.sum(minQuorumVotes, 1)
-      .multipliedBy(decimals));
+
+    // Mock: minProposalVotes + 1
+    const currCOMPOwned = BigNumber.sum(minQuorumVotes, 1);
+    // add the decimals back on before submitting
+    mockERC20Contract.balanceOf.mockResolvedValue(currCOMPOwned.multipliedBy(decimals));
 
     // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
     // the Borrow event with the cCOMP address
