@@ -83,12 +83,11 @@ function provideInitialize(data) {
     let minQuorumVotes = await governorContract.proposalVotes();
     minQuorumVotes = new BigNumber(minQuorumVotes.toString()).div(compDecimals);
 
+    /* eslint-disable no-param-reassign */
     data.voteMinimums = {
       proposal: minProposalVotes,
       votingQuorum: minQuorumVotes,
     };
-
-    /* eslint-disable no-param-reassign */
     data.developerAbbreviation = developerAbbreviation;
     data.protocolName = protocolName;
     data.protocolAbbreviation = protocolAbbreviation;
@@ -97,7 +96,6 @@ function provideInitialize(data) {
     data.borrowLevels = borrowLevels;
     data.contract = compContract;
     data.decimalsExp = compDecimals;
-    data.voteMinimums = voteMinimums;
     /* eslint-enable no-param-reassign */
   };
 }
@@ -129,7 +127,7 @@ function provideHandleTransaction(data) {
         const { type, severity } = borrowLevels[levelName];
         // if the borrowLevel name matches "proposal" or "votingQuorum", use that defined minCOMP
         const minAmountCOMP = voteMinimums[levelName];
-        if ( minAmountCOMP !== undefined && userCOMPBalance.gte(minAmountCOMP ) {
+        if (minAmountCOMP !== undefined && userCOMPBalance.gte(minAmountCOMP)) {
           // a governance threshold has been crossed, generate an alert
           return createAlert(
             developerAbbreviation,
