@@ -270,12 +270,15 @@ describe('handleTransaction', () => {
 
   it('returns two findings when a borrow event is emitted from the cCOMP token contract and the address that borrowed COMP exceeds the proposal and vote quorum thresholds', async () => {
     const {
-      type: proposalType, severity: proposalSeverity,
-    } = borrowLevels.proposal;
-    const {
-      type: votingQuorumType, severity: votingQuorumSeverity,
-    } = borrowLevels.votingQuorum;
-
+      proposal: {
+        type: proposalType,
+        severity: proposalSeverity,
+      },
+      votingQuorum: {
+        type: votingQuorumType,
+        severity: votingQuorumSeverity,
+      },
+    } = borrowLevels;
     // set the balanceOf to a value that is greater than the minimum COMP threshold for the proposal
     // and vote quorum governance interactions
 
