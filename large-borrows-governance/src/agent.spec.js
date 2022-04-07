@@ -7,8 +7,7 @@ const mockMinQuorum = 4400;
 const mockDecimals = 2;
 
 // Convert to bignumber and 10^x
-let decimals = new BigNumber(mockDecimals);
-decimals = new BigNumber(10).pow(decimals);
+const decimals = new BigNumber(10).pow(mockDecimals);
 
 // convert to bignumber.js and divide by COMP decimals
 const minQuorumVotes = new BigNumber(mockMinQuorum).div(decimals);
@@ -17,8 +16,8 @@ const minProposalVotes = new BigNumber(mockMinProposal).div(decimals);
 const mockERC20Contract = {
   decimals: jest.fn().mockResolvedValue(mockDecimals),
   balanceOf: jest.fn(),
-  proposalVotes: jest.fn().mockResolvedValue(mockMinQuorum),
-  quorumVotes: jest.fn().mockResolvedValue(mockMinProposal),
+  proposalThreshold: jest.fn().mockResolvedValue(mockMinProposal),
+  quorumVotes: jest.fn().mockResolvedValue(mockMinQuorum),
 };
 
 // combine the mocked provider and contracts into the ethers import mock
