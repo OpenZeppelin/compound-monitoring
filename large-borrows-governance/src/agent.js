@@ -5,7 +5,7 @@ const BigNumber = require('bignumber.js');
 const config = require('../agent-config.json');
 const cERC20Abi = require('../abi/CErc20.json');
 const compAbi = require('../abi/CompERC20.json');
-const governorAbi = require('../abi/Governor.json');
+const governorAbi = require('../abi/GovernorBravo.json');
 
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
@@ -77,10 +77,10 @@ function provideInitialize(data) {
     // create a contract instance for the Governor contract
     const governorContract = new ethers.Contract(governorAddress, governorAbi, provider);
 
-    // get proposalThreshold and quorumVotes from Governor Alpha contract
-    let minProposalVotes = await governorContract.quorumVotes();
+    // get proposalThreshold and quorumVotes from Governor Bravo contract
+    let minProposalVotes = await governorContract.proposalThreshold();
     minProposalVotes = new BigNumber(minProposalVotes.toString()).div(compDecimals);
-    let minQuorumVotes = await governorContract.proposalVotes();
+    let minQuorumVotes = await governorContract.quorumVotes();
     minQuorumVotes = new BigNumber(minQuorumVotes.toString()).div(compDecimals);
 
     /* eslint-disable no-param-reassign */
