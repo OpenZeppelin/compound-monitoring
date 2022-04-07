@@ -316,7 +316,7 @@ describe('handleTransaction', () => {
         borrowerAddress: mockBorrowerAddress,
         governanceLevel: 'proposal',
         minCOMPNeeded: minProposalVotes.toString(),
-        currCOMPOwned: (BigNumber.sum(minQuorumVotes, 1)).toString(),
+        currCOMPOwned: currCOMPOwned.toString(),
       },
     });
 
