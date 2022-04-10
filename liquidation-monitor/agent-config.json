@@ -1,0 +1,16 @@
+{
+  "developerAbbreviation": "AE",
+  "protocolName": "Compund",
+  "protocolAbbreviation": "COMP",
+  "liquidation-monitor": {
+    "trigger1": {
+      "maximumHealth": 0.999,
+      "minimumBorrowInETH": 1.0,
+      "alert": {
+        "type": "Info",
+        "severity": "Info"
+      }
+    }
+  },
+  "alertMinimumIntervalSeconds": 3600
+}
