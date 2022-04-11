@@ -179,13 +179,13 @@ describe('monitor multisig contract transactions', () => {
       mockTxEvent = createTransactionEvent({});
     });
 
-    it('returns empty findings if multisig was not involed in a a tranasction', async () => {
+    xit('returns empty findings if multisig was not involed in a a tranasction', async () => {
       mockTxEvent.addresses[ethers.constants.AddressZero] = true;
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([]);
     });
 
-    it('returns empty findings if multisig was involved in a transaction, but no monitored events were emitted', async () => {
+    xit('returns empty findings if multisig was involved in a transaction, but no monitored events were emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([]);
@@ -200,8 +200,13 @@ describe('monitor multisig contract transactions', () => {
         { owner: multisigAddress },
         { address: zeroAddress },
       );
+      let data = log.data
+      // let decodedData = ethers.utils.defaultAbiCoder.decode(['string'], data)
+      console.log("data here", data)
+
 
       mockTxEvent.logs = [log];
+      console.log("log here", log)
 
       // run agent with mock transaction event
       const findings = await handleTransaction(mockTxEvent);
