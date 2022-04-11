@@ -1,4 +1,6 @@
 const { Finding, FindingSeverity, FindingType } = require('forta-agent');
+// import fetch from 'node-fetch';
+const fetch = require('node-fetch-commonjs'); // from 'node-fetch';
 // const config = require('../agent-config.json');
 
 const ERC20_TRANSFER_EVENT =
@@ -9,20 +11,19 @@ let findingsCount = 0;
 
 const handleBlock = async (blockEvent) => {
   const findings = [];
-  // detect some block condition
 
   // Compound API, find accounts near liquidation
   // To-do: Save accounts to reduce reliance on Compound calls.
   const requestData = {
     addresses: [], // returns all accounts if empty or not included
     block_number: 0, // returns latest if given 0
-    max_health: { value: '10.0' },
-    min_borrow_value_in_eth: { value: '0.002' },
+    max_health: { value: '0.999' },
+    min_borrow_value_in_eth: { value: '1.0' },
     page_number: 1,
     page_size: 10,
   };
 
-  const usersPromise = fetch('https://api.compound.finance/api/v2/account', {
+  const accountsPromise = fetch('https://api.compound.finance/api/v2/account', {
     method: 'POST',
     body: JSON.stringify(requestData),
   })
@@ -33,17 +34,33 @@ const handleBlock = async (blockEvent) => {
       return response.json();
     })
     .then((responseData) => {
-      return responseData.users;
+      return responseData.accounts;
     });
 
-  usersPromise.then(
-    (users) => {
-      console.log('Known users: ', users);
+  const accounts = await accountsPromise.then(
+    (foundAccounts) => {
+      return foundAccounts;
     },
     (error) => {
-      console.error('Failed to fetch users due to error: ', error);
+      console.error('Failed to fetch accounts due to error: ', error);
     },
   );
+
+  accounts.forEach((account) => {
+    console.log('---Account ', account.address);
+    console.log('---Health: ', account.health.value);
+    console.log(
+      '---Borrowed (in ETH): ',
+      account.total_borrow_value_in_eth.value,
+    );
+    console.log(
+      '---Collateral Value: ',
+      account.total_collateral_value_in_eth.value,
+    );
+  });
+  // console.log('Known users: ', accounts);
+  // Promise.resolve(accounts);
+  // console.log('Known users: ', accounts);
 
   // Get list of possible loanable assets from compound
 
