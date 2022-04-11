@@ -82,7 +82,9 @@ describe('check agent configuration file', () => {
   });
 });
 
-const multisigAddress = '0xbbf3f1421D886E9b2c5D716B5192aC998af2012c'.toLowerCase();
+const multisigAddress = '0xbbf3f1421D886E9b2c5D716B5192aC998af2012c';
+const govAddress = '0xc0Da02939E1441F497fd74F78cE7Decb17B66529';
+const comptrollerAddress = '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B';
 const multisigAbi = utils.getAbi(config.contracts.multisig.abiFile);
 const governanceAbi = utils.getAbi(config.contracts.governance.abiFile);
 const comptrollerAbi = utils.getAbi(config.contracts.comptroller.abiFile);
@@ -162,12 +164,14 @@ describe('monitor multisig contract transactions', () => {
     let initializeData;
     let handleTransaction;
     let mockTxEvent;
-    let mulitsigValidEvent;
-    let governanceValidEvent;
-    let comptrollerValidEvent;
+
     const multisigValidEventName = 'AddedOwner';
-    const governanceValidEventName = 'ProposalCreated';
+    const multisigNotMonitoredEventName = 'EnabledModule';
+    const governanceValidEventName = 'NewAdmin';
     const comptrollerValidEventName = 'NewPauseGuardian';
+
+    // random address to pass in as an argument for test cases
+    const testArgumentAddress = '0xa7EbE1285383bf567818EB6622e52782845C0bE2';
 
     beforeEach(async () => {
       initializeData = {};
@@ -179,15 +183,32 @@ describe('monitor multisig contract transactions', () => {
       mockTxEvent = createTransactionEvent({});
     });
 
-    xit('returns empty findings if multisig was not involed in a a tranasction', async () => {
+    it('returns empty findings if multisig was not involed in a a tranasction', async () => {
       mockTxEvent.addresses[ethers.constants.AddressZero] = true;
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([]);
     });
 
-    xit('returns empty findings if multisig was involved in a transaction, but no monitored events were emitted', async () => {
+    it('returns empty findings if multisig was involved in a transaction, but no monitored events were emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
       const findings = await handleTransaction(mockTxEvent);
+      expect(findings).toStrictEqual([]);
+    });
+
+    it('returns empty findings if multisig was involed in a transaction, but a non-monitored event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use EnabledModule event to test (not on monitored events list)
+      const log = createLog(
+        multisigInterface.getEvent(multisigNotMonitoredEventName),
+        { owner: zeroAddress },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run agent with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
       expect(findings).toStrictEqual([]);
     });
 
@@ -197,27 +218,126 @@ describe('monitor multisig contract transactions', () => {
       // use AddedOwner event to test
       const log = createLog(
         multisigInterface.getEvent(multisigValidEventName),
-        { owner: multisigAddress },
-        { address: zeroAddress },
+        { owner: zeroAddress },
+        { address: multisigAddress },
       );
-      let data = log.data
-      // let decodedData = ethers.utils.defaultAbiCoder.decode(['string'], data)
-      console.log("data here", data)
-
-
       mockTxEvent.logs = [log];
-      console.log("log here", log)
 
       // run agent with mock transaction event
       const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Owner Added',
+        description: `Address ${zeroAddress} was added as an owner`,
+        alertId: 'AE-COMP-MULTISIG-OWNER-ADDED-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {},
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
     });
 
-    xit('returns findings if multisig was involed in a transaction and monitored governance event was emitted', async () => {
-      
-    })
+    it('returns empty findings if multisig was not involved in a transaction, but a monitored gnosis multisig event was emitted', async () => {
+      mockTxEvent.addresses[testArgumentAddress] = true;
 
-    xit('returns findings if multisig was involed in a transaction and monitored comptroller event was emitted', async () => {
-      
-    })
+      // use AddedOwner event to test
+      const log = createLog(
+        multisigInterface.getEvent(multisigValidEventName),
+        { owner: zeroAddress },
+        { address: testArgumentAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run agent with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([]);
+    });
+
+    it('returns findings if multisig was involed in a transaction and monitored governance event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use NewAdmin event to test
+      const log = createLog(
+        governanceInterface.getEvent(governanceValidEventName),
+        { oldAmin: zeroAddress, newAdmin: testArgumentAddress },
+        { address: govAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      const findings = await handleTransaction(mockTxEvent);
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound New Adimn',
+        description: `Governance Admin changed from ${zeroAddress} to ${testArgumentAddress}`,
+        alertId: 'AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {},
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns empty findings if multisig was not involed in a transaction, but a monitored governance event was emitted', async () => {
+      mockTxEvent.addresses[testArgumentAddress] = true;
+
+      // use NewAdmin event to test
+      const log = createLog(
+        governanceInterface.getEvent(governanceValidEventName),
+        { oldAmin: zeroAddress, newAdmin: testArgumentAddress },
+        { address: govAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([]);
+    });
+
+    it('returns findings if multisig was involed in a transaction and monitored comptroller event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use NewPauseGuardian event to test
+      const log = createLog(
+        comptrollerInterface.getEvent(comptrollerValidEventName),
+        { oldPauseGuardian: testArgumentAddress, newPauseGuardian: zeroAddress },
+        { address: comptrollerAddress },
+      );
+
+      mockTxEvent.logs = [log];
+
+      const findings = await handleTransaction(mockTxEvent);
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound New Pause Guardian',
+        description: `Governance Pause Guardian changed from ${testArgumentAddress} to ${zeroAddress}`,
+        alertId: 'AE-COMP-NEW-PAUSE-GUARDIAN-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {},
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns empty findings if multisig was not involved in a transaction, but a monitored comptroller event was emitted', async () => {
+      mockTxEvent.addresses[testArgumentAddress] = true;
+
+      // use NewAdmin event to test
+      const log = createLog(
+        comptrollerInterface.getEvent(comptrollerValidEventName),
+        { oldPauseGuardian: testArgumentAddress, newPauseGuardian: zeroAddress },
+        { address: comptrollerAddress },
+      );
+
+      mockTxEvent.logs = [log];
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([]);
+    });
   });
 });
