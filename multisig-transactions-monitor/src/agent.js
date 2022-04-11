@@ -64,7 +64,6 @@ function provideHandleTransaction(data) {
       contractsInfo.forEach((contract) => {
         // get all tranasaction events from the multisig wallet
         const parsedLogsMultiSig = txEvent.filterLog(contract.eventSignatures, multisigAddress);
-        console.log("parsed logs here", parsedLogsMultiSig)
         const parsedLogsGovernance = txEvent.filterLog(contract.eventSignatures, governanceAddress);
         const parsedLogsComptroller = txEvent.filterLog(
           contract.eventSignatures,
@@ -86,6 +85,7 @@ function provideHandleTransaction(data) {
 
         if (parsedLogsGovernance.length !== 0) {
           // case for governance interactions
+          console.log("parsed gov logs here", parsedLogsGovernance)
           parsedLogsGovernance.forEach((log) => {
             const finding = utils.createGovernanceFinding(
               log,
