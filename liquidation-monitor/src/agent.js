@@ -27,7 +27,8 @@ const comptrollerContract = new ethers.Contract(
 );
 
 // To-do: find highest values of each trigger for the initial filter
-const {} = triggerLevels[0];
+const { maximumHealth, minimumBorrowInETH, minimumLiquidationInUSD } =
+  triggerLevels.trigger1;
 
 let findingsCount = 0;
 
@@ -39,8 +40,8 @@ const handleBlock = async (blockEvent) => {
   const requestData = {
     addresses: [], // returns all accounts if empty or not included
     block_number: 0, // returns latest if given 0
-    max_health: { value: '0.999' },
-    min_borrow_value_in_eth: { value: '1.0' },
+    max_health: { value: maximumHealth },
+    min_borrow_value_in_eth: { value: minimumBorrowInETH },
     page_number: 1,
     page_size: 10,
   };
