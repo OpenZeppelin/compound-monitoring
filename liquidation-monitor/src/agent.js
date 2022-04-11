@@ -1,61 +1,67 @@
-const { Finding, FindingSeverity, FindingType } = require("forta-agent");
+const { Finding, FindingSeverity, FindingType } = require('forta-agent');
 // const config = require('../agent-config.json');
 
-
 const ERC20_TRANSFER_EVENT =
-  "event Transfer(address indexed from, address indexed to, uint256 value)";
-const TETHER_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+  'event Transfer(address indexed from, address indexed to, uint256 value)';
+const TETHER_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
 const TETHER_DECIMALS = 6;
 let findingsCount = 0;
 
 const handleBlock = async (blockEvent) => {
   const findings = [];
   // detect some block condition
-  // console.log(JSON.stringify(blockEvent));
+
+  // Compound API, find accounts near liquidation
+  // To-do: Save accounts to reduce reliance on Compound calls.
+  const requestData = {
+    addresses: [], // returns all accounts if empty or not included
+    block_number: 0, // returns latest if given 0
+    max_health: { value: '10.0' },
+    min_borrow_value_in_eth: { value: '0.002' },
+    page_number: 1,
+    page_size: 10,
+  };
+
+  const usersPromise = fetch('https://api.compound.finance/api/v2/account', {
+    method: 'POST',
+    body: JSON.stringify(requestData),
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Got non-2XX response from API server.');
+      }
+      return response.json();
+    })
+    .then((responseData) => {
+      return responseData.users;
+    });
+
+  usersPromise.then(
+    (users) => {
+      console.log('Known users: ', users);
+    },
+    (error) => {
+      console.error('Failed to fetch users due to error: ', error);
+    },
+  );
+
+  // Get list of possible loanable assets from compound
+
+  // Get prices of all assets in ETH via UNISWAP
+
+  // Loop through found accounts and check on-chain for liquidity in USD
+  // function getAccountLiquidity(address account) view returns (uint, uint, uint)
+  // returns(error, liquidity, shortfall) If shortfall is non-zero, account is underwater.
+
+  // // Extra: Breakdown of which tokens are borrowed and how much
+  // comptroller getMarketsIn(address) to see which tokens are being borrowed from.
+  // go to those cTokens to call borrowBalanceStored() to check for amount borrowed.
+  // To-do: How to look up collateral? Is this needed? Or go with the liquidity function and API?
+
+  // // Add to findings
+
   return findings;
 };
-
-
-// const handleTransaction = async (txEvent) => {
-//   const findings = [];
-
-//   // limiting this agent to emit only 5 findings so that the alert feed is not spammed
-//   if (findingsCount >= 5) return findings;
-
-//   // filter the transaction logs for Tether transfer events
-//   const tetherTransferEvents = txEvent.filterLog(
-//     ERC20_TRANSFER_EVENT,
-//     TETHER_ADDRESS
-//   );
-
-//   tetherTransferEvents.forEach((transferEvent) => {
-//     // extract transfer event arguments
-//     const { to, from, value } = transferEvent.args;
-//     // shift decimals of transfer value
-//     const normalizedValue = value.div(10 ** TETHER_DECIMALS);
-
-//     // if more than 10,000 Tether were transferred, report it
-//     if (normalizedValue.gt(10000)) {
-//       findings.push(
-//         Finding.fromObject({
-//           name: "High Tether Transfer",
-//           description: `High amount of USDT transferred: ${normalizedValue}`,
-//           alertId: "FORTA-1",
-//           severity: FindingSeverity.Low,
-//           type: FindingType.Info,
-//           metadata: {
-//             to,
-//             from,
-//           },
-//         })
-//       );
-//       findingsCount++;
-//     }
-//   });
-
-//   return findings;
-// };
-
 
 module.exports = {
   // handleTransaction,
