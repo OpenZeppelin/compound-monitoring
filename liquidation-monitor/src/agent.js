@@ -1,12 +1,34 @@
-const { Finding, FindingSeverity, FindingType } = require('forta-agent');
-// import fetch from 'node-fetch';
-const fetch = require('node-fetch-commonjs'); // from 'node-fetch';
-// const config = require('../agent-config.json');
+const {
+  Finding,
+  FindingSeverity,
+  FindingType,
+  ethers,
+  getEthersProvider,
+} = require('forta-agent');
 
-const ERC20_TRANSFER_EVENT =
-  'event Transfer(address indexed from, address indexed to, uint256 value)';
-const TETHER_ADDRESS = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
-const TETHER_DECIMALS = 6;
+// To-do: Replace node-fetch with axios
+const fetch = require('node-fetch-commonjs');
+const config = require('../agent-config.json');
+
+function getAbi(abiName) {
+  // eslint-disable-next-line global-require,import/no-dynamic-require
+  const { abi } = require(`../abi/${abiName}`);
+  return abi;
+}
+
+const { comptrollerAddress, triggerLevels } = config.liquidationMonitor;
+
+const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
+const provider = getEthersProvider();
+const comptrollerContract = new ethers.Contract(
+  comptrollerAddress,
+  comptrollerABI,
+  provider,
+);
+
+// To-do: find highest values of each trigger for the initial filter
+const {} = triggerLevels[0];
+
 let findingsCount = 0;
 
 const handleBlock = async (blockEvent) => {
@@ -23,6 +45,7 @@ const handleBlock = async (blockEvent) => {
     page_size: 10,
   };
 
+  // To-do: Replace fetch with axios
   const accountsPromise = fetch('https://api.compound.finance/api/v2/account', {
     method: 'POST',
     body: JSON.stringify(requestData),
@@ -46,6 +69,13 @@ const handleBlock = async (blockEvent) => {
     },
   );
 
+  // Get list of possible loanable assets from compound
+
+  // Get prices of all assets in ETH via UNISWAP ? Maybe rely on compound.
+
+  // Loop through found accounts and check on-chain for liquidity in USD
+  // function getAccountLiquidity(address account) view returns (uint, uint, uint)
+  // returns(error, liquidity, shortfall) If shortfall is non-zero, account is underwater.
   accounts.forEach((account) => {
     console.log('---Account ', account.address);
     console.log('---Health: ', account.health.value);
@@ -54,28 +84,16 @@ const handleBlock = async (blockEvent) => {
       account.total_borrow_value_in_eth.value,
     );
     console.log(
-      '---Collateral Value: ',
+      '---Collateral (in ETH): ',
       account.total_collateral_value_in_eth.value,
     );
+    // // Extra: Breakdown of which tokens are borrowed and how much
+    // comptroller getMarketsIn(address) to see which tokens are being borrowed from.
+    // go to those cTokens to call borrowBalanceStored() to check for amount borrowed.
+    // To-do: How to look up collateral? Is this needed? Or go with the liquidity function and API?
+
+    // // Add to findings
   });
-  // console.log('Known users: ', accounts);
-  // Promise.resolve(accounts);
-  // console.log('Known users: ', accounts);
-
-  // Get list of possible loanable assets from compound
-
-  // Get prices of all assets in ETH via UNISWAP
-
-  // Loop through found accounts and check on-chain for liquidity in USD
-  // function getAccountLiquidity(address account) view returns (uint, uint, uint)
-  // returns(error, liquidity, shortfall) If shortfall is non-zero, account is underwater.
-
-  // // Extra: Breakdown of which tokens are borrowed and how much
-  // comptroller getMarketsIn(address) to see which tokens are being borrowed from.
-  // go to those cTokens to call borrowBalanceStored() to check for amount borrowed.
-  // To-do: How to look up collateral? Is this needed? Or go with the liquidity function and API?
-
-  // // Add to findings
 
   return findings;
 };
@@ -83,7 +101,4 @@ const handleBlock = async (blockEvent) => {
 module.exports = {
   // handleTransaction,
   handleBlock,
-  ERC20_TRANSFER_EVENT, // exported for unit tests
-  TETHER_ADDRESS, // exported for unit tests
-  TETHER_DECIMALS, // exported for unit tests
 };
