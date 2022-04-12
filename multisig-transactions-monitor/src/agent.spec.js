@@ -11,7 +11,7 @@ const { provideHandleTransaction, provideInitialize } = require('./agent');
 
 const config = require('../agent-config.json');
 
-const utils = require('./utils.js');
+const utils = require('./utils');
 
 // check config file
 describe('check agent configuration file', () => {
@@ -82,6 +82,7 @@ describe('check agent configuration file', () => {
   });
 });
 
+// addresses and abi for each contract
 const multisigAddress = '0xbbf3f1421D886E9b2c5D716B5192aC998af2012c';
 const govAddress = '0xc0Da02939E1441F497fd74F78cE7Decb17B66529';
 const comptrollerAddress = '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B';
@@ -89,10 +90,12 @@ const multisigAbi = utils.getAbi(config.contracts.multisig.abiFile);
 const governanceAbi = utils.getAbi(config.contracts.governance.abiFile);
 const comptrollerAbi = utils.getAbi(config.contracts.comptroller.abiFile);
 
+// create interfaces from abi
 const multisigInterface = new ethers.utils.Interface(multisigAbi.abi);
 const governanceInterface = new ethers.utils.Interface(governanceAbi.abi);
 const comptrollerInterface = new ethers.utils.Interface(comptrollerAbi.abi);
 
+// constants for testing
 const zeroAddress = ethers.constants.AddressZero;
 const zeroHash = ethers.constants.HashZero;
 
@@ -144,6 +147,7 @@ function createLog(eventAbi, inputArgs, logArgs) {
   eventAbi.inputs.forEach((param) => {
     const { type } = param;
     const data = inputArgs[param.name] || defaultType(type);
+    // indexed inputs go into topics, otherwise it goes into data
     if (param.indexed) {
       topics.push(ethers.utils.defaultAbiCoder.encode([type], [data]));
     } else {
@@ -165,10 +169,13 @@ describe('monitor multisig contract transactions', () => {
     let handleTransaction;
     let mockTxEvent;
 
+    // monitored events
     const multisigValidEventName = 'AddedOwner';
-    const multisigNotMonitoredEventName = 'EnabledModule';
     const governanceValidEventName = 'NewAdmin';
     const comptrollerValidEventName = 'NewPauseGuardian';
+
+    // non-monitored event for testing
+    const multisigNotMonitoredEventName = 'EnabledModule';
 
     // random address to pass in as an argument for test cases
     const testArgumentAddress = '0xa7EbE1285383bf567818EB6622e52782845C0bE2';
@@ -180,6 +187,7 @@ describe('monitor multisig contract transactions', () => {
       await (provideInitialize(initializeData))();
       handleTransaction = provideHandleTransaction(initializeData);
 
+      // create empty transaction event to populate
       mockTxEvent = createTransactionEvent({});
     });
 
@@ -212,6 +220,7 @@ describe('monitor multisig contract transactions', () => {
       expect(findings).toStrictEqual([]);
     });
 
+    // tests for multisig events
     it('returns findings if multisig was involed in a transaction and monitored multisig event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
@@ -233,7 +242,10 @@ describe('monitor multisig contract transactions', () => {
         protocol: 'Compound',
         type: FindingType.Info,
         severity: FindingSeverity.Info,
-        metadata: {},
+        metadata: {
+          owner: zeroAddress,
+          multisigAddress,
+        },
       });
 
       expect(findings).toStrictEqual([expectedFindings]);
@@ -256,6 +268,7 @@ describe('monitor multisig contract transactions', () => {
       expect(findings).toStrictEqual([]);
     });
 
+    // test for governance events
     it('returns findings if multisig was involed in a transaction and monitored governance event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
@@ -275,7 +288,11 @@ describe('monitor multisig contract transactions', () => {
         protocol: 'Compound',
         type: FindingType.Info,
         severity: FindingSeverity.Info,
-        metadata: {},
+        metadata: {
+          oldAdmin: zeroAddress,
+          newAdmin: testArgumentAddress,
+          multisigAddress,
+        },
       });
 
       expect(findings).toStrictEqual([expectedFindings]);
@@ -297,6 +314,7 @@ describe('monitor multisig contract transactions', () => {
       expect(findings).toStrictEqual([]);
     });
 
+    // test for comptroller events
     it('returns findings if multisig was involed in a transaction and monitored comptroller event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
@@ -312,12 +330,16 @@ describe('monitor multisig contract transactions', () => {
       const findings = await handleTransaction(mockTxEvent);
       const expectedFindings = Finding.fromObject({
         name: 'Compound New Pause Guardian',
-        description: `Governance Pause Guardian changed from ${testArgumentAddress} to ${zeroAddress}`,
+        description: `Pause Guardian changed from ${testArgumentAddress} to ${zeroAddress}`,
         alertId: 'AE-COMP-NEW-PAUSE-GUARDIAN-ALERT',
         protocol: 'Compound',
         type: FindingType.Info,
         severity: FindingSeverity.Info,
-        metadata: {},
+        metadata: {
+          oldPauseGuardian: testArgumentAddress,
+          newPauseGuardian: zeroAddress,
+          multisigAddress,
+        },
       });
 
       expect(findings).toStrictEqual([expectedFindings]);

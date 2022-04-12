@@ -1,3 +1,4 @@
+/* eslint-disable global-require */
 const { Finding, FindingType, FindingSeverity } = require('forta-agent');
 
 const config = require('../agent-config.json');
@@ -15,13 +16,19 @@ function createAddOwnerFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const { owner } = log.args;
+
   const finding = Finding.fromObject({
     name: `${protocolName} Multisig Owner Added`,
-    description: `Address ${log.args.owner} was added as an owner`,
+    description: `Address ${owner} was added as an owner`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-OWNER-ADDED-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      owner,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -32,13 +39,19 @@ function createRemoveOwnerFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const { owner } = log.args;
+
   const finding = Finding.fromObject({
     name: `${protocolName} Multisig Owner Removed`,
-    description: `Address ${log.args.owner} was removed as an owner`,
+    description: `Address ${owner} was removed as an owner`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-OWNER-REMOVED-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      owner,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -90,13 +103,19 @@ function createProposalCreatedFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const proposalId = log.args.id.toString();
+
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Created`,
-    description: `Governance Proposal ${log.args.id.toString()} was just created by multisig ${multisigAddress}`,
+    description: `Governance Proposal ${proposalId} was just created by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-PROPOSAL-CREATED-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      proposalId,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -107,13 +126,19 @@ function createProposalExecutedFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const proposalId = log.args.id.toString();
+
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Executed`,
-    description: `Governance Proposal ${log.args.id.toString()} was just executed by multisig ${multisigAddress}`,
+    description: `Governance Proposal ${proposalId} was just executed by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-PROPOSAL-EXECUTED-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      proposalId,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -124,13 +149,19 @@ function createProposalCanceledFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const proposalId = log.args.id.toString();
+
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Canceled`,
-    description: `Governance Proposal ${log.args.id.toString()} was just canceled by multisig ${multisigAddress}`,
+    description: `Governance Proposal ${proposalId} was just canceled by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-PROPOSAL-CANCELED-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      proposalId,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -141,13 +172,19 @@ function createVoteCastFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const proposalId = log.args.proposalId.toString();
+
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Vote Casted`,
-    description: `Governance Proposal vote was casted by multisig ${multisigAddress}`,
+    description: `Governance Proposal id ${proposalId} was voted on by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-VOTE-CAST-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      proposalId,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -158,13 +195,21 @@ function createProposalThresholdSetFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const oldThreshold = log.args.oldProposalThreshold.toString();
+  const newThreshold = log.args.newProposalThreshold.toString();
+
   const finding = Finding.fromObject({
     name: `${protocolName} Proposal Threshold Set`,
-    description: `Governance Proposal threshold changed from ${log.args.oldProposalThreshold.toString()} to ${log.args.newProposalThreshold.toString()}`,
+    description: `Governance Proposal threshold changed from ${oldThreshold} to ${newThreshold}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-THRESHOLD-SET-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      oldThreshold,
+      newThreshold,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -175,13 +220,20 @@ function createNewAdminFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const { oldAdmin, newAdmin } = log.args;
+
   const finding = Finding.fromObject({
     name: `${protocolName} New Adimn`,
-    description: `Governance Admin changed from ${log.args.oldAdmin} to ${log.args.newAdmin}`,
+    description: `Governance Admin changed from ${oldAdmin} to ${newAdmin}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-NEW-ADMIN-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      oldAdmin,
+      newAdmin,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -267,13 +319,20 @@ function createNewPauseGuardianFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const { oldPauseGuardian, newPauseGuardian } = log.args;
+
   const finding = Finding.fromObject({
     name: `${protocolName} New Pause Guardian`,
-    description: `Governance Pause Guardian changed from ${log.args.oldPauseGuardian} to ${log.args.newPauseGuardian}`,
+    description: `Pause Guardian changed from ${oldPauseGuardian} to ${newPauseGuardian}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-NEW-PAUSE-GUARDIAN-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      oldPauseGuardian,
+      newPauseGuardian,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -284,13 +343,19 @@ function createActionPausedFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const { action } = log.args;
+
   const finding = Finding.fromObject({
     name: `${protocolName} Action Paused`,
-    description: `Governance Action Paused by multisig ${multisigAddress}`,
+    description: `Action ${action} was Paused by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-ACTION-PAUSED-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      action,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -301,13 +366,20 @@ function createNewBorrowCapFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const { cToken, newBorrowCap } = log.args;
+
   const finding = Finding.fromObject({
     name: `${protocolName} New Borrow Cap`,
-    description: `Governance New Borrow Cap was set by multisig ${multisigAddress}`,
+    description: `New Borrow Cap for cToken ${cToken} with a borrow cap of ${newBorrowCap} was set by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-NEW-BORROW-CAP-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      cToken,
+      newBorrowCap,
+      multisigAddress,
+    },
   });
   return finding;
 }
@@ -318,13 +390,20 @@ function createNewBorrowCapGaurdianFinding(
   protocolAbbreviation,
   developerAbbreviation,
 ) {
+  const { oldBorrowCapGuardian, newBorrowCapGuardian } = log.args;
+
   const finding = Finding.fromObject({
     name: `${protocolName} New Borrow Cap Guardian`,
-    description: `Governance New Borrow Guardian was set by multisig ${multisigAddress}`,
+    description: `Borrow Guardian changed from ${oldBorrowCapGuardian} to ${newBorrowCapGuardian}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-NEW-BORROW-CAP-GUARDIAN-ALERT`,
     protocol: config.protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    metadata: {
+      oldBorrowCapGuardian,
+      newBorrowCapGuardian,
+      multisigAddress,
+    },
   });
   return finding;
 }

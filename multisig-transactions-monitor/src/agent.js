@@ -1,6 +1,4 @@
-const {
-  Finding, FindingSeverity, FindingType, ethers,
-} = require('forta-agent');
+const { ethers } = require('forta-agent');
 
 // load agent configuration parameters
 const config = require('../agent-config.json');
@@ -14,14 +12,18 @@ const initializeData = {};
 function provideInitialize(data) {
   return async function initialize() {
     /* eslint-disable no-param-reassign */
+
+    // get protocol and developer info
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
 
     const sigTypeFull = ethers.utils.FormatTypes.full;
+
+    // get contracts' abi and monitored event signatures
     const { contracts } = config;
     data.contractsInfo = Object.entries(contracts).map(([name, entry]) => {
-      const { events: eventNames, address, abiFile } = entry;
+      const { events: eventNames, abiFile } = entry;
       const file = utils.getAbi(abiFile);
       const contractInterface = new ethers.utils.Interface(file.abi);
       const eventSignatures = eventNames.map((eventName) => {
@@ -29,6 +31,7 @@ function provideInitialize(data) {
         return signature;
       });
 
+      // create object to store and return necessary contract information
       const contract = {
         name,
         eventSignatures,
@@ -37,6 +40,8 @@ function provideInitialize(data) {
 
       return contract;
     });
+
+    // get contrat addresses
     data.multisigAddress = (config.contracts.multisig.address).toLowerCase();
     data.governanceAddress = (config.contracts.governance.address).toLowerCase();
     data.comptrollerAddress = (config.contracts.comptroller.address).toLowerCase();
@@ -56,13 +61,14 @@ function provideHandleTransaction(data) {
     } = data;
 
     const findings = [];
+
     // filter for transactions involving the multisig address
     const txAddrs = Object.keys(txEvent.addresses).map((address) => address.toLowerCase());
 
     // if the multisig was involed in a transaction, find out specifically which one
     if (txAddrs.indexOf(multisigAddress) !== -1) {
       contractsInfo.forEach((contract) => {
-        // get all tranasaction events from the multisig wallet
+        // filter for which event and address the multisig transaction was involved in
         const parsedLogsMultiSig = txEvent.filterLog(contract.eventSignatures, multisigAddress);
         const parsedLogsGovernance = txEvent.filterLog(contract.eventSignatures, governanceAddress);
         const parsedLogsComptroller = txEvent.filterLog(
@@ -85,7 +91,6 @@ function provideHandleTransaction(data) {
 
         if (parsedLogsGovernance.length !== 0) {
           // case for governance interactions
-          console.log("parsed gov logs here", parsedLogsGovernance)
           parsedLogsGovernance.forEach((log) => {
             const finding = utils.createGovernanceFinding(
               log,
