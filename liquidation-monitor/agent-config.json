@@ -9,7 +9,7 @@
       "trigger1": {
         "maximumHealth": 0.999,
         "minimumBorrowInETH": 1.0,
-        "minimumLiquidationInUSD": 1.0,
+        "minimumShortfallInUSD": 1.0,
         "alert": {
           "type": "Info",
           "severity": "Info"

@@ -27,7 +27,7 @@ const comptrollerContract = new ethers.Contract(
 );
 
 // To-do: find highest values of each trigger for the initial filter
-const { maximumHealth, minimumBorrowInETH, minimumLiquidationInUSD } =
+const { maximumHealth, minimumBorrowInETH, minimumShortfallInUSD } =
   triggerLevels.trigger1;
 
 let findingsCount = 0;
@@ -77,29 +77,38 @@ const handleBlock = async (blockEvent) => {
   // Loop through found accounts and check on-chain for liquidity in USD
   // accounts.forEach((account) => {
   const promises = accounts.map(async (account) => {
+    const {
+      address,
+      health: { value: health },
+      total_borrow_value_in_eth: { value: borrowValue },
+      total_collateral_value_in_eth: { value: collateralValue },
+    } = account;
+
     // function getAccountLiquidity(address account) view returns (uint, uint, uint)
     // returns(error, liquidity, shortfall) If shortfall is non-zero, account is underwater.
     const accLiquidity = await comptrollerContract.getAccountLiquidity(
       account.address,
     );
-    const shortfall = ethers.utils.formatEther(accLiquidity[2]);
-    console.log('---Account ', account.address);
-    console.log('---Health: ', account.health.value);
-    console.log(
-      '---Borrowed (in ETH): ',
-      account.total_borrow_value_in_eth.value,
-    );
-    console.log(
-      '---Collateral (in ETH): ',
-      account.total_collateral_value_in_eth.value,
-    );
-    console.log('---Liquidation amount (in USD): ', shortfall);
-    // // Extra: Breakdown of which tokens are borrowed and how much
-    // comptroller getMarketsIn(address) to see which tokens are being borrowed from.
-    // go to those cTokens to call borrowBalanceStored() to check for amount borrowed.
-    // To-do: How to look up collateral? Is this needed? Or go with the liquidity function and API?
+    const shortfallUSD = ethers.utils.formatEther(accLiquidity[2]);
 
-    // // Add to findings
+    if (
+      health <= maximumHealth &&
+      borrowValue >= minimumBorrowInETH &&
+      collateralValue >= minimumShortfallInUSD
+    ) {
+      console.log('---Account ', address);
+      console.log('---Health: ', health);
+      console.log('---Borrowed (in ETH): ', borrowValue);
+      console.log('---Collateral (in ETH): ', collateralValue);
+      console.log('---Liquidatable amount (in USD): ', shortfallUSD);
+
+      // // Extra: Breakdown of which tokens are borrowed and how much
+      // comptroller getMarketsIn(address) to see which tokens are being borrowed from.
+      // go to those cTokens to call borrowBalanceStored() to check for amount borrowed.
+      // To-do: How to look up collateral? Is this needed? Or go with the liquidity function and API?
+
+      // // Add to findings
+    }
   });
   await Promise.all(promises);
   return findings;
