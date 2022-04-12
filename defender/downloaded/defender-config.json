@@ -1,0 +1,326 @@
+{
+  "sentinels": [
+    {
+      "name": "Compound Large Borrows Governance",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": [
+          "AE-COMP-GOVERNANCE-THRESHOLD"
+        ],
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "agentIDs": [
+        "0x704a35d97dfae2caf3b409206f1bc4c8a06671170108d07f9b3c7ea5026916fc"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Philip Compound"
+      ]
+    },
+    {
+      "type": "BLOCK",
+      "network": "mainnet",
+      "confirmLevel": 1,
+      "paused": false,
+      "name": "cToken Monitor",
+      "addresses": [
+        "0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c",
+        "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
+        "0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4",
+        "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
+        "0x7713DD9Ca933848F6819F38B8352D9A15EA73F67",
+        "0xFAce851a4921ce59e912d19329929CE6da6EB0c7",
+        "0x95b4eF2869eBD94BEb4eEE400a99824BF5DC325b",
+        "0x158079Ee67Fce2f58472A96584A73C7Ab9AC95c1",
+        "0xF5DCe57282A584D2746FaF1593d3121Fcac444dC",
+        "0x4B0181102A0112A2ef11AbEE5563bb4a3176c9d7",
+        "0x12392F67bdf24faE0AF363c24aC620a2f67DAd86",
+        "0x35A18000230DA775CAc24873d00Ff85BccdeD550",
+        "0x39AA39c021dfbaE8faC545936693aC917d5E7563",
+        "0x041171993284df560249B57358F931D9eB7b925D",
+        "0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9",
+        "0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
+        "0xccF4429DB6322D5C611ee964527D42E5d685DD6a",
+        "0x80a2AE356fc9ef4305676f7a3E2Ed04e12C33946",
+        "0xB3319f5D18Bc0D84dD1b4825Dcde5d5f7266d407"
+      ],
+      "abi": "./downloaded/cToken_Monitor_ABI.json",
+      "functionConditions": [],
+      "eventConditions": [
+        {
+          "eventSignature": "Borrow(address,uint256,uint256,uint256)"
+        },
+        {
+          "eventSignature": "LiquidateBorrow(address,address,uint256,address,uint256)"
+        },
+        {
+          "eventSignature": "Mint(address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "Redeem(address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "RepayBorrow(address,address,uint256,uint256,uint256)"
+        }
+      ],
+      "txCondition": "",
+      "autotaskTrigger": "Contract Sentinel cToken Discord",
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Philip Compound"
+      ]
+    },
+    {
+      "name": "Compound cToken Asset Monitor",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": [
+          "AE-COMP-DISTRIBUTION-EVENT"
+        ],
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "agentIDs": [
+        "0xfca83adc900f88f22dafcd91117d0929343cba3f18e4607bcd861ff0bcd706fa"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Philip Compound"
+      ]
+    },
+    {
+      "type": "BLOCK",
+      "network": "mainnet",
+      "confirmLevel": 1,
+      "paused": false,
+      "name": "cEther Monitor",
+      "addresses": [
+        "0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5"
+      ],
+      "abi": "./downloaded/cEther_Monitor_ABI.json",
+      "functionConditions": [],
+      "eventConditions": [
+        {
+          "eventSignature": "Mint(address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "Redeem(address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "Borrow(address,uint256,uint256,uint256)"
+        },
+        {
+          "eventSignature": "RepayBorrow(address,address,uint256,uint256,uint256)"
+        },
+        {
+          "eventSignature": "LiquidateBorrow(address,address,uint256,address,uint256)"
+        }
+      ],
+      "txCondition": "",
+      "autotaskTrigger": "Contract Sentinel cToken Discord",
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Philip Compound"
+      ]
+    },
+    {
+      "name": "Compound Governance",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": [
+          "AE-COMP-GOVERNANCE-PROPOSAL-CREATED",
+          "AE-COMP-GOVERNANCE-VOTE-CAST",
+          "AE-COMP-GOVERNANCE-PROPOSAL-CANCELED",
+          "AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED",
+          "AE-COMP-GOVERNANCE-PROPOSAL-QUEUED",
+          "AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET"
+        ],
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "autotaskTrigger": "Forta Sentinel Governance",
+      "agentIDs": [
+        "0xc6c224fb57f6bf4c14b88afc1b3e8ec44522363abb740d3d19915837bc57d605"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Philip Compound",
+        "Darian Compound"
+      ]
+    },
+    {
+      "name": "Compound cToken Monitor",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": [
+          "AE-COMP-CTOKEN-EVENT"
+        ],
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "autotaskTrigger": "Forta Sentinel cToken Discord",
+      "agentIDs": [
+        "0xaa38a409ae01559bb1ebc34e3d7a2ecfc0250126908f4cb097829000a5ca791b"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Darian Compound cToken",
+        "Philip Compound"
+      ]
+    },
+    {
+      "name": "Test Sentitel w/ autotask",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "autotaskCondition": {
+        "autotaskId": "6c49aaa2-d5a5-4c22-a955-2769f0fcc5ef"
+      },
+      "agentIDs": [
+        "0xdff18ae470ccefbeb8298a950210b816f6f1c0139cede1775c5ddb9cf264c600"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Darian Compound"
+      ]
+    },
+    {
+      "type": "BLOCK",
+      "network": "mainnet",
+      "confirmLevel": 1,
+      "paused": false,
+      "name": "Contract Sentinel Governance",
+      "addresses": [
+        "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+      ],
+      "abi": "./downloaded/Contract_Sentinel_Governance_ABI.json",
+      "functionConditions": [],
+      "eventConditions": [
+        {
+          "eventSignature": "ProposalCanceled(uint256)"
+        },
+        {
+          "eventSignature": "ProposalCreated(uint256,address,address[],uint256[],string[],bytes[],uint256,uint256,string)"
+        },
+        {
+          "eventSignature": "ProposalExecuted(uint256)"
+        },
+        {
+          "eventSignature": "ProposalQueued(uint256,uint256)"
+        },
+        {
+          "eventSignature": "VoteCast(address,uint256,uint8,uint256,string)"
+        }
+      ],
+      "txCondition": "",
+      "autotaskTrigger": "Contract Sentinel Governance",
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Philip Compound"
+      ]
+    },
+    {
+      "name": "Compound Oracle Price Monitor",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": [
+          "AE-COMP-CTOKEN-PRICE-REJECTED"
+        ],
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "agentIDs": [
+        "0x8a6e2ae3b279c561f7ba64e5011313df19e08b1f398d59d94dfbd4148e6cafce"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Darian Compound"
+      ]
+    }
+  ],
+  "autotasks": [
+    {
+      "name": "Forta Sentinel cToken Discord",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
+      },
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Sentinel_cToken_Discord.js"
+    },
+    {
+      "name": "Forta Sentinel Governance",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
+      },
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Sentinel_Governance.js"
+    },
+    {
+      "name": "Contract Sentinel Governance",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
+      },
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Contract_Sentinel_Governance.js"
+    },
+    {
+      "name": "Contract Sentinel cToken Discord",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
+      },
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Contract_Sentinel_cToken_Discord.js"
+    }
+  ],
+  "notificationChannels": [
+    {
+      "type": "email",
+      "name": "Darian Compound",
+      "config": {
+        "emails": [
+          "darian+comp@arbitraryexecution.com"
+        ]
+      },
+      "paused": false
+    },
+    {
+      "type": "email",
+      "name": "Philip Compound",
+      "config": {
+        "emails": [
+          "philip+comp@arbitraryexecution.com"
+        ]
+      },
+      "paused": false
+    },
+    {
+      "type": "email",
+      "name": "Darian Compound cToken",
+      "config": {
+        "emails": [
+          "darian+comp@arbitraryexecution.com"
+        ]
+      },
+      "paused": false
+    }
+  ]
+}

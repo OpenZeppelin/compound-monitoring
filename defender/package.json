@@ -1,0 +1,25 @@
+{
+  "name": "defender-compound-monitoring",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "download": "node download.js",
+    "deploy": "node deploy.js",
+    "wipe": "node wipeAccount.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "defender-autotask-client": "^1.18.0",
+    "defender-sentinel-client": "^1.19.0",
+    "dotenv": "^16.0.0",
+    "jszip": "^3.7.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.9.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.25.4",
+    "nodemon": "^2.0.15"
+  }
+}
