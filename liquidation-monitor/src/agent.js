@@ -92,12 +92,29 @@ function provideInitialize(data) {
       apiResults.accounts.forEach((account) => {
         accounts.push(account);
       });
-      ts(String('Importing page ' + page + ' complete'));
+      ts(String('Imported ' + page + '00 accounts'));
     }
     // #endregion
 
     // #region Parse Compound data into new objects
-    ts(accounts.length);
+    ts(String('Tracking ' + accounts.length + ' accounts'));
+    // Preview of account 0
+    ts(accounts[0]);
+    // Consider borrow[token][user] = 5
+    // const a = 'c';
+    // const b = 'd';
+    // const test = {};
+    // test[a] = {};
+    // test[a][b] = 100;
+    // ts(test.c.d);
+    data.health = {}; // Health of all accounts
+    data.supply = {}; // qty of cTokens (not Token)
+    data.borrow = {}; // qty of Tokens (not cToken!)
+    data.tokens = {}; // each cToken's address, name, ratio, price, lastUpdatePrice
+
+    accounts.forEach((account) => {
+      // Do stuff
+    });
 
     // #endregion
   };
