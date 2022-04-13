@@ -35,7 +35,7 @@ function provideInitialize(data) {
 
     // Assign contracts
     const provider = getEthersProvider();
-    const { comptrollerAddress } = config.liquidationMonitor;
+    const { comptrollerAddress, maxResults } = config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
@@ -70,8 +70,8 @@ function provideInitialize(data) {
     );
     const results = await callAPI(apiURL, initialRequest);
     const totalEntries = results.pagination_summary.total_entries;
-    ts(totalEntries);
-
+    ts(String('Total Entries ' + totalEntries));
+    ts(String('maxResults ' + maxResults));
     // #endregion
   };
 }
