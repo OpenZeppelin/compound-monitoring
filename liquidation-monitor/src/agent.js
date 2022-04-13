@@ -6,29 +6,79 @@ const {
   getEthersProvider,
 } = require('forta-agent');
 
-// To-do: Replace node-fetch with axios
+// To-do: Replace node-fetch with axios and remove TS
 const fetch = require('node-fetch-commonjs');
 const config = require('../agent-config.json');
+const { getAbi, ts, callAPI } = require('./utils');
 
-function getAbi(abiName) {
-  // eslint-disable-next-line global-require,import/no-dynamic-require
-  const { abi } = require(`../abi/${abiName}`);
-  return abi;
+// Stores information about each account
+const initializeData = {};
+
+ts('Starting bot');
+
+// Initializes data required for handler
+function provideInitialize(data) {
+  return async function initialize() {
+    /* eslint-disable no-param-reassign */
+
+    // #region Assign configurable fields
+    data.alertMinimumIntervalSeconds = config.alertMinimumIntervalSeconds;
+    data.protocolName = config.protocolName;
+    data.protocolAbbreviation = config.protocolAbbreviation;
+    data.developerAbbreviation = config.developerAbbreviation;
+    data.alert = config.liquidationMonitor.alert;
+    data.minimumShortfallInUSD =
+      config.liquidationMonitor.triggerLevels.minimumShortfallInUSD;
+
+    const { maximumHealth, minimumBorrowInETH } =
+      config.liquidationMonitor.triggerLevels;
+
+    // Assign contracts
+    const provider = getEthersProvider();
+    const { comptrollerAddress } = config.liquidationMonitor;
+    const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
+    data.comptrollerContract = new ethers.Contract(
+      comptrollerAddress,
+      comptrollerABI,
+      provider,
+    );
+    /* eslint-enable no-param-reassign */
+    // #endregion
+
+    // #region Get accounts from Compound API
+    const apiURL = 'https://api.compound.finance/api/v2/account';
+
+    // Helper for Compound API
+    function buildJsonRequest(maxHealth, minBorrow, pageNumber, pageSize) {
+      const jsonRequest = {
+        addresses: [], // returns all accounts if empty or not included
+        block_number: 0, // returns latest if given 0
+        max_health: { value: maxHealth },
+        min_borrow_value_in_eth: { value: minBorrow },
+        page_number: pageNumber,
+        page_size: pageSize,
+      };
+      return jsonRequest;
+    }
+
+    // Find total number of results with the first request
+    const initialRequest = buildJsonRequest(
+      maximumHealth,
+      minimumBorrowInETH,
+      1,
+      1,
+    );
+    const results = await callAPI(apiURL, initialRequest);
+    const totalEntries = results.pagination_summary.total_entries;
+    ts(totalEntries);
+
+    // #endregion
+  };
 }
 
-const { comptrollerAddress, triggerLevels } = config.liquidationMonitor;
-
-const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
-const provider = getEthersProvider();
-const comptrollerContract = new ethers.Contract(
-  comptrollerAddress,
-  comptrollerABI,
-  provider,
-);
-
 // To-do: find highest values of each trigger for the initial filter
-const { maximumHealth, minimumBorrowInETH, minimumShortfallInUSD } =
-  triggerLevels.trigger1;
+// const { maximumHealth, minimumBorrowInETH, minimumShortfallInUSD } =
+//   triggerLevels;
 
 let findingsCount = 0;
 
@@ -117,4 +167,9 @@ const handleBlock = async (blockEvent) => {
 module.exports = {
   // handleTransaction,
   handleBlock,
+  provideInitialize,
+  initialize: provideInitialize(initializeData),
+  // provideHandleTransaction,
+  // handleTransaction: provideHandleTransaction(initializeData),
+  // createDistributionAlert,
 };
