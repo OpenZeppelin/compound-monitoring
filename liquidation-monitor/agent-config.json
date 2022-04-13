@@ -5,7 +5,7 @@
   "liquidationMonitor": {
     "comptrollerAddress": "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B",
     "comptrollerABI": "Comptroller.json",
-    "maxResults": 500,
+    "maxTrackedAccounts": 110,
     "triggerLevels": {
       "maximumHealth": 2,
       "minimumBorrowInETH": 1.0,
