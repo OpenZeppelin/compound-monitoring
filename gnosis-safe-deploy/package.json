@@ -1,0 +1,25 @@
+{
+  "name": "gnosis-safe-deploy",
+  "version": "1.0.0",
+  "description": "Example deployment",
+  "main": "index.js",
+  "chainIds": [
+    1
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "node scripts/deploySafe.js",
+    "propose": "node scripts/proposeFortaAgent.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@gnosis.pm/safe-core-sdk": "^2.0.0",
+    "@gnosis.pm/safe-ethers-lib": "^1.1.0",
+    "@gnosis.pm/safe-service-client": "^1.1.2",
+    "dotenv": "^16.0.0",
+    "ethers": "^5.6.2",
+    "forta-agent": "^0.0.41"
+  }
+}
