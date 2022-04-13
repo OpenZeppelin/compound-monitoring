@@ -35,7 +35,8 @@ function provideInitialize(data) {
 
     // Assign contracts
     const provider = getEthersProvider();
-    const { comptrollerAddress, maxResults } = config.liquidationMonitor;
+    const { comptrollerAddress, maxTrackedAccounts } =
+      config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
@@ -45,7 +46,7 @@ function provideInitialize(data) {
     /* eslint-enable no-param-reassign */
     // #endregion
 
-    // #region Get accounts from Compound API
+    // #region Get initial accounts from Compound API
     const apiURL = 'https://api.compound.finance/api/v2/account';
 
     // Helper for Compound API
@@ -68,10 +69,36 @@ function provideInitialize(data) {
       1,
       1,
     );
-    const results = await callAPI(apiURL, initialRequest);
-    const totalEntries = results.pagination_summary.total_entries;
+    const initialResults = await callAPI(apiURL, initialRequest);
+    const totalEntries = initialResults.pagination_summary.total_entries;
     ts(String('Total Entries ' + totalEntries));
-    ts(String('maxResults ' + maxResults));
+    ts(String('maxTrackedAccounts ' + maxTrackedAccounts));
+
+    // Determine number of pages needed to query. Results vs config limit.
+    const maxEntries = Math.min(maxTrackedAccounts, totalEntries);
+    const maxPages = Math.ceil(maxEntries / 100);
+    ts(String('maxPages ' + maxPages));
+
+    // Query each page and add accounts. Starting at 1 and including maxPages
+    let accounts = [];
+    for (page = 1; page <= maxPages; page++) {
+      const initialRequest = buildJsonRequest(
+        maximumHealth,
+        minimumBorrowInETH,
+        page,
+        2, // Testing, so only pulling 2 accounts per page. Later increase to 100.
+      );
+      const apiResults = await callAPI(apiURL, initialRequest);
+      apiResults.accounts.forEach((account) => {
+        accounts.push(account);
+      });
+      ts(String('Importing page ' + page + ' complete'));
+    }
+    // #endregion
+
+    // #region Parse Compound data into new objects
+    ts(accounts.length);
+
     // #endregion
   };
 }
@@ -87,38 +114,6 @@ const handleBlock = async (blockEvent) => {
 
   // Compound API, find accounts near liquidation
   // To-do: Save accounts to reduce reliance on Compound calls.
-  const requestData = {
-    addresses: [], // returns all accounts if empty or not included
-    block_number: 0, // returns latest if given 0
-    max_health: { value: maximumHealth },
-    min_borrow_value_in_eth: { value: minimumBorrowInETH },
-    page_number: 1,
-    page_size: 10,
-  };
-
-  // To-do: Replace fetch with axios
-  const accountsPromise = fetch('https://api.compound.finance/api/v2/account', {
-    method: 'POST',
-    body: JSON.stringify(requestData),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Got non-2XX response from API server.');
-      }
-      return response.json();
-    })
-    .then((responseData) => {
-      return responseData.accounts;
-    });
-
-  const accounts = await accountsPromise.then(
-    (foundAccounts) => {
-      return foundAccounts;
-    },
-    (error) => {
-      console.error('Failed to fetch accounts due to error: ', error);
-    },
-  );
 
   // Get list of possible loanable assets from compound
 
