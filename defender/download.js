@@ -244,7 +244,7 @@ function parseContractSentinel(item, notifications, autotasks) {
 
         /* eslint-disable no-param-reassign */
         delete item.encodedZippedCode;
-        item.autotaskFilePath = "./" + path.relative(__dirname, filePath);
+        item.autotaskFilePath = `./${path.relative(__dirname, filePath)}`;
         /* eslint-enable no-param-reassign */
       }
     });
@@ -258,7 +258,7 @@ function parseContractSentinel(item, notifications, autotasks) {
       if (sentinel.abi) {
         fs.writeFileSync(filePath, sentinel.abi);
         // eslint-disable-next-line no-param-reassign
-        sentinel.abi = "./" + path.relative(__dirname, filePath);
+        sentinel.abi = `./${path.relative(__dirname, filePath)}`;
       }
     });
 

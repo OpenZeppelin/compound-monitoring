@@ -1,9 +1,12 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
 const fortaApiEndpoint = 'https://api.forta.network/graphql';
 
 async function post(url, method, headers, data) {
-  return axios({ url, method, headers, data });
+  return axios({
+    url, method, headers, data,
+  });
 }
 
 async function postToDiscord(url, message) {
@@ -12,7 +15,7 @@ async function postToDiscord(url, message) {
     'Content-Type': 'application/json',
   };
   const data = JSON.stringify({ content: message });
-  
+
   let response;
   try {
     // perform the POST request
@@ -22,7 +25,8 @@ async function postToDiscord(url, message) {
     if (error.response && error.response.status === 429) {
       // the request was made and a response was received
       // try again after waiting 5 seconds
-      const promise = new Promise(resolve => setTimeout(resolve, 5000));
+      // eslint-disable-next-line no-promise-executor-return
+      const promise = new Promise((resolve) => setTimeout(resolve, 5000));
       await promise;
       response = await post(url, method, headers, data);
     } else {
@@ -30,7 +34,7 @@ async function postToDiscord(url, message) {
       throw error;
     }
   }
-  
+
   return response;
 }
 
@@ -232,6 +236,7 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
   return message;
 }
 
+// eslint-disable-next-line func-names
 exports.handler = async function (autotaskEvent) {
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
@@ -297,7 +302,7 @@ exports.handler = async function (autotaskEvent) {
 
   // create promises for posting message to the Discord webhook
   const discordPromises = messages.map((message) => postToDiscord(discordUrl, message));
-  
+
   // wait for the promises to settle
   await Promise.all(discordPromises);
 

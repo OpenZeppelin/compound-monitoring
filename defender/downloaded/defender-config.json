@@ -178,26 +178,6 @@
       ]
     },
     {
-      "name": "Test Sentitel w/ autotask",
-      "paused": false,
-      "type": "FORTA",
-      "fortaConditions": {
-        "severity": 1,
-        "minimumScannerCount": 1
-      },
-      "addresses": [],
-      "autotaskCondition": {
-        "autotaskId": "6c49aaa2-d5a5-4c22-a955-2769f0fcc5ef"
-      },
-      "agentIDs": [
-        "0xdff18ae470ccefbeb8298a950210b816f6f1c0139cede1775c5ddb9cf264c600"
-      ],
-      "alertTimeoutMs": 0,
-      "notificationChannels": [
-        "Darian Compound"
-      ]
-    },
-    {
       "type": "BLOCK",
       "network": "mainnet",
       "confirmLevel": 1,
