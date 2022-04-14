@@ -1,9 +1,7 @@
 /* eslint-disable global-require */
 const { Finding, FindingType, FindingSeverity } = require('forta-agent');
 
-const config = require('../agent-config.json');
-
-const multisigAddress = config.contracts.multisig.address;
+const { contracts: { multisig: { address: multisigAddress } } } = require('../agent-config.json');
 
 /// CREATE FINDINGS FOR GNOSIS SAFE INTERACTIONS ///
 /*
