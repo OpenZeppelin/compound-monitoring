@@ -191,7 +191,7 @@ describe('monitor multisig contract transactions', () => {
       mockTxEvent = createTransactionEvent({});
     });
 
-    it('returns empty findings if multisig was not involed in a a tranasction', async () => {
+    it('returns empty findings if multisig was not involved in a a tranasction', async () => {
       mockTxEvent.addresses[ethers.constants.AddressZero] = true;
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([]);
@@ -269,7 +269,7 @@ describe('monitor multisig contract transactions', () => {
     });
 
     // test for governance events
-    it('returns findings if multisig was involed in a transaction and monitored governance event was emitted', async () => {
+    it('returns findings if multisig was involved in a transaction and monitored governance event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
       mockTxEvent.addresses[govAddress] = true;
 
@@ -299,7 +299,7 @@ describe('monitor multisig contract transactions', () => {
       expect(findings).toStrictEqual([expectedFindings]);
     });
 
-    it('returns empty findings if multisig was not involed in a transaction, but a monitored governance event was emitted', async () => {
+    it('returns empty findings if multisig was not involved in a transaction, but a monitored governance event was emitted', async () => {
       mockTxEvent.addresses[govAddress] = true;
 
       // use NewAdmin event to test
@@ -316,7 +316,7 @@ describe('monitor multisig contract transactions', () => {
     });
 
     // test for comptroller events
-    it('returns findings if multisig was involed in a transaction and monitored comptroller event was emitted', async () => {
+    it('returns findings if multisig was involved in a transaction and monitored comptroller event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
       mockTxEvent.addresses[comptrollerAddress] = true;
 
