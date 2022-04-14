@@ -7,25 +7,18 @@ jest.mock('forta-agent', () => ({
   getEthersBatchProvider: mockedGetProvider,
   ethers: {
     ...jest.requireActual('ethers'),
-    Contract: mockedGetContract
+    Contract: mockedGetContract,
   },
 }));
 
 const {
-  TransactionEvent, ethers, FindingType, FindingSeverity, Finding
+  TransactionEvent, ethers, FindingType, FindingSeverity, Finding,
 } = require('forta-agent');
 
 const { provideHandleTransaction, provideInitialize, createMarketAttackAlert } = require('./agent');
-const {
-  getObjectsFromAbi,
-  getEventFromConfig,
-  createMockEventLogs,
-} = require('./test-utils');
-
+const { createMockEventLogs } = require('./test-utils');
 const { getAbi } = require('./utils');
-
 const config = require('../agent-config.json');
-const { BigNumber } = require('ethers');
 
 // utility function specific for this test module
 // we are intentionally not using the Forta SDK function due to issues with
@@ -47,25 +40,25 @@ function createTransactionEvent(txObject) {
 describe('check agent configuration file', () => {
   it('protocolName key required', () => {
     const { protocolName } = config;
-    expect(typeof(protocolName)).toBe('string');
+    expect(typeof protocolName).toBe('string');
     expect(protocolName).not.toBe('');
   });
 
   it('protocolAbbreviation key required', () => {
     const { protocolAbbreviation } = config;
-    expect(typeof(protocolAbbreviation)).toBe('string');
+    expect(typeof protocolAbbreviation).toBe('string');
     expect(protocolAbbreviation).not.toBe('');
   });
 
   it('developerAbbreviation key required', () => {
     const { developerAbbreviation } = config;
-    expect(typeof(developerAbbreviation)).toBe('string');
+    expect(typeof developerAbbreviation).toBe('string');
     expect(developerAbbreviation).not.toBe('');
   });
 
   it('contracts key required', () => {
     const { contracts } = config;
-    expect(typeof(contracts)).toBe('object');
+    expect(typeof contracts).toBe('object');
     expect(contracts).not.toBe({});
   });
 
@@ -73,10 +66,10 @@ describe('check agent configuration file', () => {
     const { contracts } = config;
 
     const { Comptroller, CompoundToken } = contracts;
-    expect(typeof(Comptroller)).toBe('object');
+    expect(typeof Comptroller).toBe('object');
     expect(Comptroller).not.toBe({});
 
-    expect(typeof(CompoundToken)).toBe('object');
+    expect(typeof CompoundToken).toBe('object');
     expect(CompoundToken).not.toBe({});
 
     const { abiFile: ComptrollerAbiFile, address: ComptrollerAddress } = Comptroller;
@@ -91,7 +84,9 @@ describe('check agent configuration file', () => {
     // load the ABI from the specified file
     // the call to getAbi will fail if the file does not exist
     const ComptrollerAbi = getAbi(ComptrollerAbiFile);
+    expect(typeof ComptrollerAbi).toBe('object');
     const cTokenAbi = getAbi(cTokenAbiFile);
+    expect(typeof cTokenAbi).toBe('object');
   });
 
   it('excludeAddresses key required', () => {
@@ -104,7 +99,7 @@ describe('check agent configuration file', () => {
   });
 });
 
-describe('test createMarketAttackAlert', () =>  {
+describe('test createMarketAttackAlert', () => {
   let protocolName;
   let protocolAbbreviation;
   let developerAbbreviation;
@@ -122,10 +117,10 @@ describe('test createMarketAttackAlert', () =>  {
   });
 
   it('returns a proper finding', () => {
-    compTokenSymbol = "TEST";
-    compTokenAddress = "0x1234";
+    compTokenSymbol = 'TEST';
+    compTokenAddress = '0x1234';
 
-    expectedFinding = Finding.fromObject({
+    const expectedFinding = Finding.fromObject({
       name: `${protocolName} cToken Market Attack Event`,
       description: `The address ${maliciousAddress} is potentially manipulating the cToken ${compTokenSymbol} market`,
       alertId: `${developerAbbreviation}-${protocolAbbreviation}-MARKET-ATTACK-EVENT`,
@@ -138,11 +133,11 @@ describe('test createMarketAttackAlert', () =>  {
         mintAmount,
         mintTokens,
         maliciousAddress,
-        maliciousAmount
-      }
-    }); 
+        maliciousAmount,
+      },
+    });
 
-    finding = createMarketAttackAlert(
+    const finding = createMarketAttackAlert(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
@@ -151,11 +146,11 @@ describe('test createMarketAttackAlert', () =>  {
       mintAmount,
       mintTokens,
       maliciousAddress,
-      maliciousAmount      
-    )
+      maliciousAmount,
+    );
 
     expect(finding).toStrictEqual(expectedFinding);
-  })
+  });
 });
 
 // tests
@@ -172,10 +167,13 @@ describe('monitor compound for attacks on cToken markets', () => {
     let mockTxEvent;
     let compTokenAbi;
     let compTokenInterface;
+
+    /* eslint-disable prefer-const */
     let validCompTokenAddress = `0x1${'0'.repeat(39)}`;
-    let validCompTokenSymbol = "TEST";
+    let validCompTokenSymbol = 'TEST';
     let validAttackAddress = `0x9${'0'.repeat(39)}`;
-    
+    /* eslint-enable prefer-const */
+
     beforeEach(async () => {
       initializeData = {};
 
@@ -199,18 +197,18 @@ describe('monitor compound for attacks on cToken markets', () => {
       protocolAbbreviation = initializeData.protocolAbbreviation;
       developerAbbreviation = initializeData.developerAbbreviation;
 
-      compTokenAbi = initializeData.compTokenAbi
+      compTokenAbi = initializeData.compTokenAbi;
       compTokenInterface = new ethers.utils.Interface(compTokenAbi);
 
       mockTxEvent = createTransactionEvent({
         receipt: {
-          "logs": []
+          logs: [],
         },
       });
     });
 
     it('returns empty findings if no direct transfer events were emitted in the transaction', async () => {
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([])
+      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([]);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -218,24 +216,24 @@ describe('monitor compound for attacks on cToken markets', () => {
     });
 
     it('returns empty findings if no mint events were emitted in the transaction', async () => {
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([])
+      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([]);
 
-      const override = {
+      override = {
         from: validAttackAddress,
         to: validCompTokenAddress,
         amount: 0,
-      }
+      };
 
-      const transferEventAbi = compTokenInterface.getEvent("Transfer");
+      const transferEventAbi = compTokenInterface.getEvent('Transfer');
       const transferEvent = createMockEventLogs(transferEventAbi, compTokenInterface, override);
 
       const transferLog = {
-        "address": validAttackAddress,
-        "topics": transferEvent.mockTopics,
-        "args": transferEvent.mockArgs,
-        "data": transferEvent.data,
-        "signature": transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6)
-      }
+        address: validAttackAddress,
+        topics: transferEvent.mockTopics,
+        args: transferEvent.mockArgs,
+        data: transferEvent.data,
+        signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
+      };
 
       mockTxEvent.receipt.logs.push(transferLog);
 
@@ -245,48 +243,48 @@ describe('monitor compound for attacks on cToken markets', () => {
     });
 
     it('returns finding if attacker minted cTokens and made a direct transfer in the transaction', async () => {
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([])
+      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([]);
 
-      const maliciousAmount = BigNumber.from("10000");
+      const maliciousAmount = '10000';
 
       override = {
         from: validAttackAddress,
         to: validCompTokenAddress,
-        amount: maliciousAmount,
-      }
+        amount: maliciousAmount.toString(),
+      };
 
-      const transferEventAbi = compTokenInterface.getEvent("Transfer");
+      const transferEventAbi = compTokenInterface.getEvent('Transfer');
       const transferEvent = createMockEventLogs(transferEventAbi, compTokenInterface, override);
 
       const transferLog = {
-        "address": validAttackAddress,
-        "topics": transferEvent.mockTopics,
-        "args": transferEvent.mockArgs,
-        "data": transferEvent.data,
-        "signature": transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6)
-      }
+        address: validAttackAddress,
+        topics: transferEvent.mockTopics,
+        args: transferEvent.mockArgs,
+        data: transferEvent.data,
+        signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
+      };
 
       mockTxEvent.receipt.logs.push(transferLog);
 
-      const mintAmount = BigNumber.from("1");
-      const mintTokens = BigNumber.from("100");
+      const mintAmount = '1';
+      const mintTokens = '100';
 
       override = {
         minter: validAttackAddress,
-        mintAmount: mintAmount,
-        mintTokens: mintTokens,
-      }
+        mintAmount,
+        mintTokens,
+      };
 
-      const mintEventAbi = compTokenInterface.getEvent("Mint");
+      const mintEventAbi = compTokenInterface.getEvent('Mint');
       const mintEvent = createMockEventLogs(mintEventAbi, compTokenInterface, override);
 
       const mintLog = {
-        "address": validCompTokenAddress,
-        "topics": mintEvent.mockTopics,
-        "args": mintEvent.mockArgs,
-        "data": mintEvent.data,
-        "signature": mintEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6)
-      }
+        address: validCompTokenAddress,
+        topics: mintEvent.mockTopics,
+        args: mintEvent.mockArgs,
+        data: mintEvent.data,
+        signature: mintEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
+      };
 
       mockTxEvent.receipt.logs.push(mintLog);
 
@@ -298,20 +296,20 @@ describe('monitor compound for attacks on cToken markets', () => {
         developerAbbreviation,
         validCompTokenSymbol,
         validCompTokenAddress,
-        mintAmount.toString(),
-        mintTokens.toString(),
+        mintAmount,
+        mintTokens,
         validAttackAddress,
-        maliciousAmount.toString()
-      )
+        maliciousAmount,
+      );
 
       expect(findings).toStrictEqual([expectedFinding]);
     });
 
     it('returns finding if new market was added and attacked', async () => {
-      let newCompTokenAddress = `0x2${'0'.repeat(39)}`;
-      let newCompSymbol = "NEWTEST";
+      const newCompTokenAddress = `0x2${'0'.repeat(39)}`;
+      const newCompSymbol = 'NEWTEST';
 
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([newCompTokenAddress])
+      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([newCompTokenAddress]);
 
       mockedCompTokenContract = {
         symbol: jest.fn().mockReturnValueOnce(newCompSymbol),
@@ -319,46 +317,46 @@ describe('monitor compound for attacks on cToken markets', () => {
 
       mockedGetContract.mockReturnValueOnce(mockedCompTokenContract);
 
-      const maliciousAmount = BigNumber.from("10000");
+      const maliciousAmount = '10000';
 
       override = {
         from: validAttackAddress,
         to: newCompTokenAddress,
-        amount: maliciousAmount,
-      }
+        amount: maliciousAmount.toString(),
+      };
 
-      const transferEventAbi = compTokenInterface.getEvent("Transfer");
+      const transferEventAbi = compTokenInterface.getEvent('Transfer');
       const transferEvent = createMockEventLogs(transferEventAbi, compTokenInterface, override);
 
       const transferLog = {
-        "address": validAttackAddress,
-        "topics": transferEvent.mockTopics,
-        "args": transferEvent.mockArgs,
-        "data": transferEvent.data,
-        "signature": transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6)
-      }
+        address: validAttackAddress,
+        topics: transferEvent.mockTopics,
+        args: transferEvent.mockArgs,
+        data: transferEvent.data,
+        signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
+      };
 
       mockTxEvent.receipt.logs.push(transferLog);
 
-      const mintAmount = BigNumber.from("1");
-      const mintTokens = BigNumber.from("100");
+      const mintAmount = '1';
+      const mintTokens = '100';
 
       override = {
         minter: validAttackAddress,
-        mintAmount: mintAmount,
-        mintTokens: mintTokens,
-      }
+        mintAmount,
+        mintTokens,
+      };
 
-      const mintEventAbi = compTokenInterface.getEvent("Mint");
+      const mintEventAbi = compTokenInterface.getEvent('Mint');
       const mintEvent = createMockEventLogs(mintEventAbi, compTokenInterface, override);
 
       const mintLog = {
-        "address": newCompTokenAddress,
-        "topics": mintEvent.mockTopics,
-        "args": mintEvent.mockArgs,
-        "data": mintEvent.data,
-        "signature": mintEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6)
-      }
+        address: newCompTokenAddress,
+        topics: mintEvent.mockTopics,
+        args: mintEvent.mockArgs,
+        data: mintEvent.data,
+        signature: mintEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
+      };
 
       mockTxEvent.receipt.logs.push(mintLog);
 
@@ -370,13 +368,13 @@ describe('monitor compound for attacks on cToken markets', () => {
         developerAbbreviation,
         newCompSymbol,
         newCompTokenAddress,
-        mintAmount.toString(),
-        mintTokens.toString(),
+        mintAmount,
+        mintTokens,
         validAttackAddress,
-        maliciousAmount.toString()
-      )
+        maliciousAmount,
+      );
 
       expect(findings).toStrictEqual([expectedFinding]);
-    });    
+    });
   });
 });
