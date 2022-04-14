@@ -1,5 +1,5 @@
 {
-  "name": "forta-ae-market-attack-events",
+  "name": "forta-ae-comp-market-attack-events",
   "version": "0.0.1",
   "description": "This agent monitors Compound Finance cToken contracts for market attack events.",
   "scripts": {
