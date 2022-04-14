@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
 async function postToDiscord(discordWebhook, message) {
@@ -63,6 +64,9 @@ function getProposalTitleFromDescription(description) {
 }
 
 async function createDiscordMessage(eventName, params, transactionHash) {
+  let description;
+  let support;
+  let proposalId;
   let proposer;
   let voter;
   let votes;
@@ -113,7 +117,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       } else {
         // keep the most significant digit and add the appropriate
         // number of zeros to create an accurate decimal representation
-        votes = '0.' + '0'.repeat(18 - votes.length) + votes[0];
+        votes = `0.${'0'.repeat(18 - votes.length)}${votes[0]}`;
       }
       votes = internationalNumberFormat.format(votes);
 
@@ -150,6 +154,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
   return message;
 }
 
+// eslint-disable-next-line func-names
 exports.handler = async function (autotaskEvent) {
   console.log(autotaskEvent);
   // ensure that the autotaskEvent Object exists
@@ -184,18 +189,12 @@ exports.handler = async function (autotaskEvent) {
   const {
     matchReasons,
     hash: transactionHash,
-    sentinel: {
-      abi
-    },
-    matchedAddresses,
   } = body;
   if (matchReasons === undefined) {
     return {};
   }
 
-  const contractAddress = matchedAddresses[0];
-
-    // create messages for Discord
+  // create messages for Discord
   const promises = matchReasons.map(async (reason) => {
     // determine the type of event it was
     const { signature, params } = reason;
@@ -211,10 +210,11 @@ exports.handler = async function (autotaskEvent) {
   for (let i = 0; i < messages.length; i++) {
     console.log('Posting to Discord');
     console.log(messages[i]);
+    // eslint-disable-next-line no-await-in-loop
     await postToDiscord(discordUrl, messages[i]);
   }
 
   console.log('Posted!');
-  
+
   return {};
 };

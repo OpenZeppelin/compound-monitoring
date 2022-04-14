@@ -1,8 +1,10 @@
+/* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
 const axios = require('axios');
 const ethers = require('ethers');
 
 // import the DefenderRelayProvider to interact with its JSON-RPC endpoint
 const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
+/* eslint-enable import/no-extraneous-dependencies,import/no-unresolved */
 
 const TOKEN_ABI = [
   'function decimals() view returns (uint8)',
@@ -19,33 +21,33 @@ const saiTokenAddress = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'.toLowerCase
 const oddTokens = [makerTokenAddress, saiTokenAddress];
 const cEtherAddress = '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'.toLowerCase();
 
-const eventMapping = { 
+const eventMapping = {
   Borrow: {
-    amountKey: "borrowAmount",
-    byKey: "borrower",
-    action: "borrow",
+    amountKey: 'borrowAmount',
+    byKey: 'borrower',
+    action: 'borrow',
   },
   LiquidateBorrow: {
-    amountKey: "repayAmount",
-    byKey: "liquidator",
-    fromKey: "borrower",
-    action: "liquidate",
+    amountKey: 'repayAmount',
+    byKey: 'liquidator',
+    fromKey: 'borrower',
+    action: 'liquidate',
   },
   Mint: {
-    amountKey: "mintAmount",
-    byKey: "minter",
-    action: "supply",
+    amountKey: 'mintAmount',
+    byKey: 'minter',
+    action: 'supply',
   },
   Redeem: {
-    amountKey: "redeemAmount",
-    byKey: "redeemer",
-    action: "withdraw",
+    amountKey: 'redeemAmount',
+    byKey: 'redeemer',
+    action: 'withdraw',
   },
   RepayBorrow: {
-    amountKey: "repayAmount",
-    byKey: "payer",
-    forKey: "borrower",
-    action: "repay",
+    amountKey: 'repayAmount',
+    byKey: 'payer',
+    forKey: 'borrower',
+    action: 'repay',
   },
 };
 
@@ -79,7 +81,8 @@ async function getCoinGeckoData(url) {
     if (err.response && err.response.status === 403) {
       // the request was made and a response was received
       // try again after waiting 15 seconds
-      const promise = new Promise(resolve => setTimeout(resolve, 15000));
+      // eslint-disable-next-line no-promise-executor-return
+      const promise = new Promise((resolve) => setTimeout(resolve, 15000));
       await promise;
       response = await axios.get(url);
     } else {
@@ -102,7 +105,7 @@ async function getTokenPrice(tokenAddress) {
 
   // parse the response and convert the prices to ethers.jd BigNumber type
   const usdPerToken = (data[tokenAddress.toLowerCase()].usd).toString();
-  
+
   let usdPerTokenDecimals = 0;
   let usdPerTokenBN;
   const index = usdPerToken.indexOf('.');
@@ -114,7 +117,7 @@ async function getTokenPrice(tokenAddress) {
   } else {
     usdPerTokenBN = ethers.BigNumber.from(usdPerToken);
   }
-  
+
   return { usdPerTokenBN, usdPerTokenDecimals };
 }
 
@@ -130,7 +133,7 @@ async function getTokenInfo(cTokenAddress, provider) {
     );
     underlyingTokenAddress = await cTokenContract.underlying();
   }
-  
+
   let decimals;
   let symbol;
   if (oddTokens.indexOf(underlyingTokenAddress.toLowerCase()) !== -1) {
@@ -139,20 +142,20 @@ async function getTokenInfo(cTokenAddress, provider) {
       MAKER_TOKEN_ABI,
       provider,
     );
-    
+
     decimals = await underlyingTokenContract.decimals();
     // need to convert decimals from uint256 to uint8
-    decimals = parseInt(decimals.toString());
-    
+    decimals = parseInt(decimals.toString(), 10);
+
     symbol = await underlyingTokenContract.symbol();
     // need to convert symbol from bytes32 to string
     symbol = ethers.utils.parseBytes32String(symbol);
   } else {
-  	const underlyingTokenContract = new ethers.Contract(
+    const underlyingTokenContract = new ethers.Contract(
       underlyingTokenAddress,
       TOKEN_ABI,
       provider,
-    );    
+    );
     decimals = await underlyingTokenContract.decimals();
     symbol = await underlyingTokenContract.symbol();
   }
@@ -172,14 +175,14 @@ function formatAmountString(amount, decimals, usdPerTokenBN, usdPerTokenDecimals
   const amountBN = ethers.BigNumber.from(amount);
   const divisorBN = ethers.BigNumber.from(10).pow(decimals);
   const result = amountBN.div(divisorBN);
-  
+
   let resultString = amountBN.toString();
   if (resultString.length <= decimals) {
-    resultString = '0.' + '0'.repeat(decimals - resultString.length) + resultString[0];
+    resultString = `0.${'0'.repeat(decimals - resultString.length)}${resultString[0]}`;
   } else {
     resultString = floorBigNumberString(result.toString());
   }
-  
+
   const usdValueDivisor = ethers.BigNumber.from(10).pow(usdPerTokenDecimals);
   const usdValue = usdPerTokenBN.mul(result).div(usdValueDivisor);
   const usdValueString = floorBigNumberString(usdValue.toString());
@@ -202,18 +205,18 @@ function createDiscordMessage(
 ) {
   const eventObject = eventMapping[eventName];
   if (eventObject !== undefined) {
-    const amount = params[eventObject.amountKey];   
+    const amount = params[eventObject.amountKey];
     const {
       amountString,
       usdValueString,
     } = formatAmountString(amount, decimals, usdPerTokenBN, usdPerTokenDecimals);
-    
+
     const eventEmoji = emojiForEvent(eventName, usdValueString);
-    
+
     const byAddress = params[eventObject.byKey];
     const { action } = eventObject;
-    let message = `${eventEmoji} **${amountString} ${symbol}** ${action}`
-    
+    let message = `${eventEmoji} **${amountString} ${symbol}** ${action}`;
+
     if (action === 'liquidate') {
       const fromAddress = params[eventObject.fromKey];
       message += ` from ${fromAddress.slice(0, 6)} by ${byAddress.slice(0, 6)}`;
@@ -221,7 +224,7 @@ function createDiscordMessage(
       const forAddress = params[eventObject.forKey];
       message += ` by ${byAddress.slice(0, 6)}`;
       if (forAddress !== byAddress) {
-        message += ` for ${forAddress.slice(0, 6)}`; 
+        message += ` for ${forAddress.slice(0, 6)}`;
       }
     } else {
       message += ` by ${byAddress.slice(0, 6)}`;
@@ -239,7 +242,7 @@ async function postToDiscord(discordWebhook, message) {
   const body = {
     content: message,
   };
-  
+
   // perform the POST request
   const response = await axios({
     url: discordWebhook,
@@ -247,59 +250,57 @@ async function postToDiscord(discordWebhook, message) {
     headers,
     data: JSON.stringify(body),
   });
-  
+
   return response;
 }
 
-exports.handler = async function(autotaskEvent) {
+// eslint-disable-next-line func-names
+exports.handler = async function (autotaskEvent) {
   console.log(JSON.stringify(autotaskEvent, null, 2));
-  
+
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
     return {};
   }
-  
+
   const { secrets } = autotaskEvent;
   if (secrets === undefined) {
     return {};
   }
-  
+
   // ensure that there is a DiscordUrl secret
   const { DiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
     return {};
   }
-  
+
   // ensure that the request key exists within the autotaskEvent Object
   const { request } = autotaskEvent;
   if (request === undefined) {
     return {};
   }
-  
+
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
     return {};
   }
-  
+
   // ensure that the alert key exists within the body Object
   const {
     matchReasons,
     hash: transactionHash,
-    sentinel: {
-      abi
-    },
     matchedAddresses,
   } = body;
   if (matchReasons === undefined) {
     return {};
   }
-  
+
   // use the relayer provider for JSON-RPC requests
   const provider = new DefenderRelayProvider(autotaskEvent);
-  
+
   const contractAddress = matchedAddresses[0];
-  
+
   // create messages for Discord
   const promises = matchReasons.map(async (reason) => {
     // determine the type of event it was
@@ -310,7 +311,7 @@ exports.handler = async function(autotaskEvent) {
       symbol,
       underlyingTokenAddress,
     } = await getTokenInfo(contractAddress, provider);
-    
+
     // get the conversion rate for this token to USD
     const {
       usdPerTokenBN,
@@ -327,21 +328,19 @@ exports.handler = async function(autotaskEvent) {
       usdPerTokenDecimals,
     );
   });
-  
+
   // wait for the promises to settle
   const messages = await Promise.all(promises);
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-  
-  const discordPromises = messages.map((message) => {
-    return postToDiscord(discordUrl, etherscanLink + ' ' + message);
-  });
-  
+
+  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
+
   // wait for the promises to settle
-  const responses = await Promise.all(discordPromises);
-  
+  await Promise.all(discordPromises);
+
   console.log('Messages sent to Discord webhook');
-  
+
   return {};
-}
+};
