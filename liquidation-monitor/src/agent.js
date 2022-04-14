@@ -108,8 +108,8 @@ function provideInitialize(data) {
     // test[a][b] = 100;
     // ts(test.c.d);
     data.health = {}; // Health of all accounts
-    data.supply = {}; // qty of cTokens (not Token)
-    data.borrow = {}; // qty of Tokens (not cToken!)
+    data.supply = {}; // qty of cTokens (not Tokens)
+    data.borrow = {}; // qty of Tokens (not cTokens)
     data.tokens = {}; // each cToken's address, name, ratio, price, lastUpdatePrice
 
     accounts.forEach((account) => {
