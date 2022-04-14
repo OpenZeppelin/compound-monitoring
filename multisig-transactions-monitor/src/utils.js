@@ -22,7 +22,7 @@ function createAddOwnerFinding(
     name: `${protocolName} Multisig Owner Added`,
     description: `Address ${owner} was added as an owner`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-OWNER-ADDED-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -45,7 +45,7 @@ function createRemoveOwnerFinding(
     name: `${protocolName} Multisig Owner Removed`,
     description: `Address ${owner} was removed as an owner`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-OWNER-REMOVED-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -109,7 +109,7 @@ function createProposalCreatedFinding(
     name: `${protocolName} Proposal Created`,
     description: `Governance Proposal ${proposalId} was just created by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-PROPOSAL-CREATED-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -132,7 +132,7 @@ function createProposalExecutedFinding(
     name: `${protocolName} Proposal Executed`,
     description: `Governance Proposal ${proposalId} was just executed by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-PROPOSAL-EXECUTED-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -155,7 +155,7 @@ function createProposalCanceledFinding(
     name: `${protocolName} Proposal Canceled`,
     description: `Governance Proposal ${proposalId} was just canceled by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-PROPOSAL-CANCELED-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -178,7 +178,7 @@ function createVoteCastFinding(
     name: `${protocolName} Proposal Vote Casted`,
     description: `Governance Proposal id ${proposalId} was voted on by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-VOTE-CAST-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -202,7 +202,7 @@ function createProposalThresholdSetFinding(
     name: `${protocolName} Proposal Threshold Set`,
     description: `Governance Proposal threshold changed from ${oldThreshold} to ${newThreshold}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-THRESHOLD-SET-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -226,7 +226,7 @@ function createNewAdminFinding(
     name: `${protocolName} New Adimn`,
     description: `Governance Admin changed from ${oldAdmin} to ${newAdmin}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-NEW-ADMIN-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -325,7 +325,7 @@ function createNewPauseGuardianFinding(
     name: `${protocolName} New Pause Guardian`,
     description: `Pause Guardian changed from ${oldPauseGuardian} to ${newPauseGuardian}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-NEW-PAUSE-GUARDIAN-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -349,7 +349,7 @@ function createActionPausedFinding(
     name: `${protocolName} Action Paused`,
     description: `Action ${action} was Paused by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-ACTION-PAUSED-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -372,7 +372,7 @@ function createNewBorrowCapFinding(
     name: `${protocolName} New Borrow Cap`,
     description: `New Borrow Cap for cToken ${cToken} with a borrow cap of ${newBorrowCap} was set by multisig ${multisigAddress}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-NEW-BORROW-CAP-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {
@@ -396,7 +396,7 @@ function createNewBorrowCapGaurdianFinding(
     name: `${protocolName} New Borrow Cap Guardian`,
     description: `Borrow Guardian changed from ${oldBorrowCapGuardian} to ${newBorrowCapGuardian}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-NEW-BORROW-CAP-GUARDIAN-ALERT`,
-    protocol: config.protocolName,
+    protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
     metadata: {

@@ -2,14 +2,13 @@
 
 ## Description
 
-This agent detects specific transactions from and with Compound's multisig wallet.
+This agent detects specific transactions originating from and/or interacting with the Compound Community Multisig wallet.
 
 ## Supported Chains
 
 - Ethereum
 
 ## Alerts
-
 
 - AE-COMP-MULTISIG-OWNER-ADDED-ALERT
   - Fired when an owner is added to the Compound multisig wallet
@@ -24,11 +23,11 @@ This agent detects specific transactions from and with Compound's multisig walle
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
-    - Wwner address removed
+    - Owner address removed
     - Compound multisig address
 
 - AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT
-  - Fired when a proposal is created from Compound's multisig wallet
+  - Fired when a proposal is created from the Compound multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
@@ -36,7 +35,7 @@ This agent detects specific transactions from and with Compound's multisig walle
     - Compound multisig address
 
 - AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT
-  - Fired when a proposal is executed by Compound's multisig wallet
+  - Fired when a proposal is executed by the Compound multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
@@ -44,7 +43,7 @@ This agent detects specific transactions from and with Compound's multisig walle
     - Compound multisig address
 
 - AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT
-  - Fired when a proposal is cancelled by Compound's multisig wallet
+  - Fired when a proposal is canceled by the Compound multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
@@ -52,7 +51,7 @@ This agent detects specific transactions from and with Compound's multisig walle
     - Compound multisig address
 
 - AE-COMP-GOVERNANCE-VOTE-CAST-ALERT
-  - Fired when a vote is casted from Compound's multisig wallet
+  - Fired when a vote is cast from the Compound multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
@@ -60,7 +59,7 @@ This agent detects specific transactions from and with Compound's multisig walle
     - Compound multisig address
 
 - AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET-ALERT
-  - Fired when a proposal threshold is set from Compound's multisig wallet
+  - Fired when a proposal threshold is set from the Compound multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
@@ -69,7 +68,7 @@ This agent detects specific transactions from and with Compound's multisig walle
     - Compound multisig address
 
 - AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT
-  - Fired when a new admin is changed by Compound's multisig wallet
+  - Fired when a new admin is set by Compound's multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
@@ -78,7 +77,7 @@ This agent detects specific transactions from and with Compound's multisig walle
     - Compound multisig address
 
 - AE-COMP-NEW-PAUSE-GUARDIAN-ALERT
-  - Fired when a new pause guardian is changed by Compound's multisig wallet
+  - Fired when a new pause guardian is changed by the Compound multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
@@ -87,7 +86,7 @@ This agent detects specific transactions from and with Compound's multisig walle
     - Compound multisig address
 
 - AE-COMP-ACTION-PAUSED-ALERT
-  - Fired when a global action is paused by Compound's multisig wallet
+  - Fired when a global action is paused by the Compound multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
@@ -95,7 +94,7 @@ This agent detects specific transactions from and with Compound's multisig walle
     - Compound multisig address
 
 - AE-COMP-NEW-BORROW-CAP-ALERT
-  - Fired when a new borrow cap is set by Compound's multisig wallet
+  - Fired when a new borrow cap is set by the Compound multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
@@ -104,7 +103,7 @@ This agent detects specific transactions from and with Compound's multisig walle
     - Compound multisig address
 
 - AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT
-  - Fired when a new borrow cap guadian is set by Compound's multisig wallet
+  - Fired when a new borrow cap guardian is set by the Compound multisig wallet
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
