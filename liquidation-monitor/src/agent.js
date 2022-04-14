@@ -31,11 +31,14 @@ function provideInitialize(data) {
       config.liquidationMonitor.triggerLevels.minimumShortfallInUSD;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersProvider();
+    data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assets in addresses]?
+    data.supply = {}; // qty of cTokens (not Tokens)
+    data.borrow = {}; // qty of Tokens (not cTokens)
+    data.tokens = {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
 
+    // Compound API filter and Comptroller contract
     const { maximumHealth, minimumBorrowInETH } =
       config.liquidationMonitor.triggerLevels;
-
-    // Assign contracts
     const { comptrollerAddress, maxTrackedAccounts } =
       config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
@@ -99,12 +102,6 @@ function provideInitialize(data) {
     // #endregion
 
     // #region Parse Compound data into new objects
-    // Consider borrow[token][user] = 5
-    data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assets in addresses]?
-    data.supply = {}; // qty of cTokens (not Tokens)
-    data.borrow = {}; // qty of Tokens (not cTokens)
-    data.tokens = {}; // each cToken's address, name, ratio, price, lastUpdatePrice, contract
-
     // Loop through found accounts
     accounts.forEach((account) => {
       // add to tracked accounts
@@ -122,15 +119,53 @@ function provideInitialize(data) {
             data.provider,
           );
           const cContract = data.tokens[token.address].contract;
-          data.tokens[token.address].decimals = await cContract.decimals();
+          data.tokens[token.address].symbol = await cContract.symbol();
           data.tokens[token.address].exchangeRate =
             await cContract.exchangeRateStored();
-        }
-        // Stuff
-        // #endregion
-      }); // end token loop
-    });
+          data.tokens[token.address].cTokenDecimals =
+            await cContract.decimals();
+          // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
+          // So the trick to get token decimals is exchangeRate.lenth - 9
+          data.tokens[token.address].tokenDecimals =
+            data.tokens[token.address].exchangeRate.toString().length - 9;
 
+          // TS
+          const tokenDecimals = data.tokens[token.address].cTokenDecimals;
+          ts(
+            String(
+              'Now tracking ' +
+                data.tokens[token.address].symbol +
+                ' with ' +
+                data.tokens[token.address].tokenDecimals +
+                ' decimals at address ' +
+                token.address,
+            ),
+          );
+        }
+        // #endregion
+
+        // assign borrowed amounts
+        if (
+          token.borrow_balance_underlying !== undefined &&
+          token.borrow_balance_underlying.value != 0
+        ) {
+          // to ethers bigNumber
+          // data.borrow[account.address] = ethers.BigNumber.from(
+          //   token.borrow_balance_underlying.value.toString(),
+          // );
+          // ts(data.borrow[account.address]);
+        }
+        if (
+          token.supply_balance_underlying !== undefined &&
+          token.supply_balance_underlying.value != 0
+        ) {
+          // // adjust supply from token to cToken
+          // data.supply[account.address] = data.tokens[
+          //   token.address
+          // ].exchangeRate.mul(token.supply_balance_underlying.value.toString());
+        }
+      }); // end token loop
+    }); // end account loop
     // #endregion
   };
 }
