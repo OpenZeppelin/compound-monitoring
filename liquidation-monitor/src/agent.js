@@ -29,19 +29,20 @@ function provideInitialize(data) {
     data.alert = config.liquidationMonitor.alert;
     data.minimumShortfallInUSD =
       config.liquidationMonitor.triggerLevels.minimumShortfallInUSD;
+    data.cTokenABI = getAbi('cErc20.json');
+    data.provider = getEthersProvider();
 
     const { maximumHealth, minimumBorrowInETH } =
       config.liquidationMonitor.triggerLevels;
 
     // Assign contracts
-    const provider = getEthersProvider();
     const { comptrollerAddress, maxTrackedAccounts } =
       config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
       comptrollerABI,
-      provider,
+      data.provider,
     );
     /* eslint-enable no-param-reassign */
     // #endregion
@@ -94,26 +95,40 @@ function provideInitialize(data) {
       });
       ts(String('Imported ' + page + '00 accounts'));
     }
+    ts(String('Tracking ' + accounts.length + ' accounts'));
     // #endregion
 
     // #region Parse Compound data into new objects
-    ts(String('Tracking ' + accounts.length + ' accounts'));
-    // Preview of account 0
-    ts(accounts[0]);
     // Consider borrow[token][user] = 5
-    // const a = 'c';
-    // const b = 'd';
-    // const test = {};
-    // test[a] = {};
-    // test[a][b] = 100;
-    // ts(test.c.d);
-    data.health = {}; // Health of all accounts
+    data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assets in addresses]?
     data.supply = {}; // qty of cTokens (not Tokens)
     data.borrow = {}; // qty of Tokens (not cTokens)
-    data.tokens = {}; // each cToken's address, name, ratio, price, lastUpdatePrice
+    data.tokens = {}; // each cToken's address, name, ratio, price, lastUpdatePrice, contract
 
+    // Loop through found accounts
     accounts.forEach((account) => {
-      // Do stuff
+      // add to tracked accounts
+      if (data.accounts[account.address] === undefined) {
+        data.accounts[account.address] = {};
+      }
+      // Loop through tokens and update balances.
+      account.tokens.forEach(async (token) => {
+        // #region Add token and update info
+        if (data.tokens[token.address] === undefined) {
+          data.tokens[token.address] = {};
+          data.tokens[token.address].contract = new ethers.Contract(
+            token.address,
+            data.cTokenABI,
+            data.provider,
+          );
+          const cContract = data.tokens[token.address].contract;
+          data.tokens[token.address].decimals = await cContract.decimals();
+          data.tokens[token.address].exchangeRate =
+            await cContract.exchangeRateStored();
+        }
+        // Stuff
+        // #endregion
+      }); // end token loop
     });
 
     // #endregion
@@ -138,6 +153,8 @@ const handleBlock = async (blockEvent) => {
 
   // Loop through found accounts and check on-chain for liquidity in USD
   // accounts.forEach((account) => {
+
+  /*
   const promises = accounts.map(async (account) => {
     const {
       address,
@@ -173,6 +190,8 @@ const handleBlock = async (blockEvent) => {
     }
   });
   await Promise.all(promises);
+  */
+
   return findings;
 };
 
