@@ -5,7 +5,7 @@
   "contracts": {
     "multisig": {
       "address": "0xbbf3f1421D886E9b2c5D716B5192aC998af2012c",
-      "abiFile": "Gnosis_safe.json",
+      "abiFile": "GnosisSafe.json",
       "events": [
         "AddedOwner",
         "RemovedOwner"

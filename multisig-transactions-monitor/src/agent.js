@@ -23,7 +23,7 @@ function provideInitialize(data) {
     // get contracts' abi and monitored event signatures
     const { contracts } = config;
     data.contractsInfo = Object.entries(contracts).map(([name, entry]) => {
-      const { events: eventNames, abiFile } = entry;
+      const { events: eventNames, address, abiFile } = entry;
       const file = utils.getAbi(abiFile);
       const contractInterface = new ethers.utils.Interface(file.abi);
       const eventSignatures = eventNames.map((eventName) => {
@@ -31,8 +31,21 @@ function provideInitialize(data) {
         return signature;
       });
 
+      // determine which create finding function to use
+      let createFinding;
+
+      if (address === contracts.multisig.address) {
+        createFinding = utils.createGnosisFinding;
+      } else if (address === contracts.governance.address) {
+        createFinding = utils.createGovernanceFinding;
+      } else if (address === contracts.comptroller.address) {
+        createFinding = utils.createComptrollerFinding;
+      }
+
       // create object to store and return necessary contract information
       const contract = {
+        createFinding,
+        address,
         name,
         eventSignatures,
         eventNames,
@@ -41,10 +54,8 @@ function provideInitialize(data) {
       return contract;
     });
 
-    // get contrat addresses
-    data.multisigAddress = (config.contracts.multisig.address).toLowerCase();
-    data.governanceAddress = (config.contracts.governance.address).toLowerCase();
-    data.comptrollerAddress = (config.contracts.comptroller.address).toLowerCase();
+    // get contract address of multisig wallet
+    data.multisigAddress = config.contracts.multisig.address.toLowerCase();
   };
 }
 
@@ -56,8 +67,6 @@ function provideHandleTransaction(data) {
       developerAbbreviation,
       contractsInfo,
       multisigAddress,
-      governanceAddress,
-      comptrollerAddress,
     } = data;
 
     const findings = [];
@@ -65,55 +74,21 @@ function provideHandleTransaction(data) {
     // filter for transactions involving the multisig address
     const txAddrs = Object.keys(txEvent.addresses).map((address) => address.toLowerCase());
 
-    // if the multisig was involed in a transaction, find out specifically which one
+    // if the multisig was involved in a transaction, find out specifically which one
     if (txAddrs.indexOf(multisigAddress) !== -1) {
       contractsInfo.forEach((contract) => {
         // filter for which event and address the multisig transaction was involved in
-        const parsedLogsMultiSig = txEvent.filterLog(contract.eventSignatures, multisigAddress);
-        const parsedLogsGovernance = txEvent.filterLog(contract.eventSignatures, governanceAddress);
-        const parsedLogsComptroller = txEvent.filterLog(
-          contract.eventSignatures,
-          comptrollerAddress,
-        );
+        const parsedLogs = txEvent.filterLog(contract.eventSignatures, contract.address);
 
-        if (parsedLogsMultiSig.length !== 0) {
-          // case if interaction is with gnosis wallet (add/remove owner)
-          parsedLogsMultiSig.forEach((log) => {
-            const finding = utils.createGnosisFinding(
-              log,
-              protocolName,
-              protocolAbbreviation,
-              developerAbbreviation,
-            );
-            findings.push(finding);
-          });
-        }
-
-        if (parsedLogsGovernance.length !== 0) {
-          // case for governance interactions
-          parsedLogsGovernance.forEach((log) => {
-            const finding = utils.createGovernanceFinding(
-              log,
-              protocolName,
-              protocolAbbreviation,
-              developerAbbreviation,
-            );
-            findings.push(finding);
-          });
-        }
-
-        if (parsedLogsComptroller.length !== 0) {
-          // case for comptroller interactions
-          parsedLogsComptroller.forEach((log) => {
-            const finding = utils.createComptrollerFinding(
-              log,
-              protocolName,
-              protocolAbbreviation,
-              developerAbbreviation,
-            );
-            findings.push(finding);
-          });
-        }
+        parsedLogs.forEach((log) => {
+          const finding = contract.createFinding(
+            log,
+            protocolName,
+            protocolAbbreviation,
+            developerAbbreviation,
+          );
+          findings.push(finding);
+        });
       });
     }
     return findings;
