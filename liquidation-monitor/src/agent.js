@@ -145,11 +145,11 @@ function provideInitialize(data) {
         data.accounts[account.address] = {};
       }
       // Loop through tokens and update balances.
-      account.tokens.forEach((token) => {
+      account.tokens.forEach(async (token) => {
         // Add tokens to tracked list of they don't exist
         // TS: This needs to happen first
         ts(String('Starting ' + token.address));
-        verifyToken(token.address);
+        await verifyToken(token.address);
         ts(String('Finished ' + token.address));
         // Process borrows
         if (
@@ -162,6 +162,7 @@ function provideInitialize(data) {
           if (data.borrow[token.address] === undefined) {
             data.borrow[token.address] = {};
           }
+          // Lines 166-179 can only run after 152 completes
           data.borrow[token.address][account.address] = BigNumber(
             token.borrow_balance_underlying.value,
           ).multipliedBy(decimalsMultiplier);
