@@ -42,13 +42,11 @@ async function callAPI(url, jsonRequest) {
   return responseData;
 }
 
-function getBorrowerAccounts(maxHealth, minBorrow, maxResults) {
-  url = 'https://api.compound.finance/api/v2/account';
-}
+// #endregion
 
 module.exports = {
   getAbi,
   ts,
-  getBorrowerAccounts,
   callAPI,
+  // verifyToken,
 };
