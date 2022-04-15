@@ -93,10 +93,10 @@ function provideInitialize(data) {
       data.provider,
     );
 
-    // cToken contracts
     data.compTokenAbi = getAbi(compToken.abiFile);
     data.compTokens = {};
 
+    // from the Comptroller contract, get all of the cTokens
     await getCompoundTokens(
       data.provider,
       data.comptrollerContract,
