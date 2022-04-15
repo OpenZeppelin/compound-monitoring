@@ -52,11 +52,10 @@ async function getCompoundTokens(
   compTokens,
 ) {
   let compTokenAddresses = await comptrollerContract.getAllMarkets();
-  compTokenAddresses = compTokenAddresses.map((addr) => addr.toLowerCase());
-  compTokenAddresses = compTokenAddresses.filter((addr) => excludeAddresses.indexOf(addr) === -1);
-  compTokenAddresses = compTokenAddresses.filter(
-    (addr) => !Object.keys(compTokens).includes(addr),
-  );
+  compTokenAddresses = compTokenAddresses
+    .map((addr) => addr.toLowerCase())
+    .filter((addr) => excludeAddresses.indexOf(addr) === -1)
+    .filter((addr) => !Object.keys(compTokens).includes(addr));
 
   const promises = compTokenAddresses.map(async (tokenAddress) => {
     const contract = new ethers.Contract(tokenAddress, compTokenAbi, provider);
