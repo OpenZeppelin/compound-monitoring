@@ -85,7 +85,7 @@ function provideInitialize(data) {
       CompoundToken: compToken,
     } = config.contracts;
 
-    // from the Comptroller contract, get all of the cTokens
+    // create an ethers.js Contract Object to interact with the Comptroller contract
     const comptrollerAbi = getAbi(comptroller.abiFile);
     data.comptrollerContract = new ethers.Contract(
       comptroller.address,
