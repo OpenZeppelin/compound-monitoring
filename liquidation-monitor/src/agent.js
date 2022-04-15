@@ -5,9 +5,10 @@ const {
   ethers,
   getEthersProvider,
 } = require('forta-agent');
+const BigNumber = require('bignumber.js');
 
 // To-do: Replace node-fetch with axios and remove TS
-const fetch = require('node-fetch-commonjs');
+//const fetch = require('node-fetch-commonjs');
 const config = require('../agent-config.json');
 const { getAbi, ts, callAPI } = require('./utils');
 
@@ -101,6 +102,41 @@ function provideInitialize(data) {
     ts(String('Tracking ' + accounts.length + ' accounts'));
     // #endregion
 
+    // Async function verifies or builds data.token[token]
+    // used in the next 2 loops
+    // To-do: Can this be moved to utils and still reference data.tokens?
+    async function verifyToken(tokenAddress) {
+      // To-do: move this region to a function, for cleaner DRY code.
+      if (data.tokens[tokenAddress] === undefined) {
+        data.tokens[tokenAddress] = {};
+        data.tokens[tokenAddress].contract = new ethers.Contract(
+          tokenAddress,
+          data.cTokenABI,
+          data.provider,
+        );
+        const cContract = data.tokens[tokenAddress].contract;
+        data.tokens[tokenAddress].symbol = await cContract.symbol();
+        data.tokens[tokenAddress].exchangeRate =
+          await cContract.exchangeRateStored();
+        data.tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
+        // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
+        // So the trick to get token decimals is exchangeRate.lenth - 9
+        data.tokens[tokenAddress].tokenDecimals =
+          data.tokens[tokenAddress].exchangeRate.toString().length - 9;
+
+        ts(
+          String(
+            'Now tracking ' +
+              data.tokens[tokenAddress].symbol +
+              ' with ' +
+              data.tokens[tokenAddress].tokenDecimals +
+              ' decimals at address ' +
+              tokenAddress,
+          ),
+        );
+      }
+    }
+
     // #region Parse Compound data into new objects
     // Loop through found accounts
     accounts.forEach((account) => {
@@ -109,52 +145,40 @@ function provideInitialize(data) {
         data.accounts[account.address] = {};
       }
       // Loop through tokens and update balances.
-      account.tokens.forEach(async (token) => {
-        // #region Add token and update info
-        if (data.tokens[token.address] === undefined) {
-          data.tokens[token.address] = {};
-          data.tokens[token.address].contract = new ethers.Contract(
-            token.address,
-            data.cTokenABI,
-            data.provider,
-          );
-          const cContract = data.tokens[token.address].contract;
-          data.tokens[token.address].symbol = await cContract.symbol();
-          data.tokens[token.address].exchangeRate =
-            await cContract.exchangeRateStored();
-          data.tokens[token.address].cTokenDecimals =
-            await cContract.decimals();
-          // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
-          // So the trick to get token decimals is exchangeRate.lenth - 9
-          data.tokens[token.address].tokenDecimals =
-            data.tokens[token.address].exchangeRate.toString().length - 9;
-
-          // TS
-          const tokenDecimals = data.tokens[token.address].cTokenDecimals;
-          ts(
-            String(
-              'Now tracking ' +
-                data.tokens[token.address].symbol +
-                ' with ' +
-                data.tokens[token.address].tokenDecimals +
-                ' decimals at address ' +
-                token.address,
-            ),
-          );
-        }
-        // #endregion
-
-        // assign borrowed amounts
+      account.tokens.forEach((token) => {
+        // Add tokens to tracked list of they don't exist
+        // TS: This needs to happen first
+        ts(String('Starting ' + token.address));
+        verifyToken(token.address);
+        ts(String('Finished ' + token.address));
+        // Process borrows
         if (
           token.borrow_balance_underlying !== undefined &&
           token.borrow_balance_underlying.value != 0
         ) {
-          // to ethers bigNumber
-          // data.borrow[account.address] = ethers.BigNumber.from(
-          //   token.borrow_balance_underlying.value.toString(),
-          // );
-          // ts(data.borrow[account.address]);
+          const decimalsMultiplier = new BigNumber(10).pow(
+            data.tokens[token.address].tokenDecimals,
+          );
+          if (data.borrow[token.address] === undefined) {
+            data.borrow[token.address] = {};
+          }
+          data.borrow[token.address][account.address] = BigNumber(
+            token.borrow_balance_underlying.value,
+          ).multipliedBy(decimalsMultiplier);
+          // Add the token to the borrow list if it doesn't exist
+          ts(
+            String(
+              'User ' +
+                [account.address] +
+                ' just deposited ' +
+                Math.round(token.borrow_balance_underlying.value) +
+                ' ' +
+                data.tokens[token.address].symbol,
+            ),
+          );
         }
+
+        // Process supplies
         if (
           token.supply_balance_underlying !== undefined &&
           token.supply_balance_underlying.value != 0
