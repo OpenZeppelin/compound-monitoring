@@ -8,7 +8,6 @@ const {
 const BigNumber = require('bignumber.js');
 
 // To-do: Replace node-fetch with axios and remove TS
-//const fetch = require('node-fetch-commonjs');
 const config = require('../agent-config.json');
 const { getAbi, ts, callAPI } = require('./utils');
 
@@ -102,8 +101,18 @@ function provideInitialize(data) {
     ts(String('Tracking ' + accounts.length + ' accounts'));
     // #endregion
 
+    // #region Parse Compound data into new objects
+
+    // Get a unique list of token addresses
+    ts('Processing tokens now')
+    const tokenSet = new Set();
+    accounts.forEach((account) => {
+      account.tokens.forEach(async (token) => {
+        tokenSet.add(token.address);
+      });
+    });
+
     // Async function verifies or builds data.token[token]
-    // used in the next 2 loops
     // To-do: Can this be moved to utils and still reference data.tokens?
     async function verifyToken(tokenAddress) {
       // To-do: move this region to a function, for cleaner DRY code.
@@ -149,15 +158,7 @@ function provideInitialize(data) {
       }
     }
 
-    // #region Parse Compound data into new objects
-    // Process all tokens first
-    ts('Processing tokens now')
-    const tokenSet = new Set();
-    accounts.forEach((account) => {
-      account.tokens.forEach(async (token) => {
-        tokenSet.add(token.address);
-      });
-    });
+    // Initialize token objects
     await Promise.all(Array.from(tokenSet).map(async (token) => {
       await verifyToken(token);
     }));
@@ -219,72 +220,90 @@ function provideInitialize(data) {
   };
 }
 
-// To-do: find highest values of each trigger for the initial filter
-// const { maximumHealth, minimumBorrowInETH, minimumShortfallInUSD } =
-//   triggerLevels;
-
 let findingsCount = 0;
 
-const handleBlock = async (blockEvent) => {
-  const findings = [];
 
-  // Compound API, find accounts near liquidation
-  // To-do: Save accounts to reduce reliance on Compound calls.
+function provideHandleBlock(data) {
+  return async function handleBlock(blockEvent) {
+    // upon the mining of a new block, check the specified accounts to make sure the balance of
+    // each account has not fallen below the specified threshold
+    const findings = [];
 
-  // Get list of possible loanable assets from compound
+    const { comptrollerContract } = data;
 
-  // Get prices of all assets in ETH via UNISWAP ? Maybe rely on compound.
 
-  // Loop through found accounts and check on-chain for liquidity in USD
-  // accounts.forEach((account) => {
+    // To-do: add listener to find new and updated accounts
+    //  account health 0 means needs a balance re-scan.
+    //  account health null means balances ok, just needs a new calculation.
+    //  add tokens first
 
-  /*
-  const promises = accounts.map(async (account) => {
-    const {
-      address,
-      health: { value: health },
-      total_borrow_value_in_eth: { value: borrowValue },
-      total_collateral_value_in_eth: { value: collateralValue },
-    } = account;
 
-    // function getAccountLiquidity(address account) view returns (uint, uint, uint)
-    // returns(error, liquidity, shortfall) If shortfall is non-zero, account is underwater.
-    const accLiquidity = await comptrollerContract.getAccountLiquidity(
-      account.address,
-    );
-    const shortfallUSD = ethers.utils.formatEther(accLiquidity[2]);
+    // Update Balances on zero health accountAssets and low health?
+    ts(data.accounts);
+    ts(typeof data.accounts);
+    await Promise.all(Object.keys(data.accounts).forEach(async (account) => {
+      ts(account);
+      if (account.health != null && account.health === 0) {
+        const assetsIn = await comptrollerContract.getAssetsIn(account);
+        ts(typeof assetsIn);
+      }
+    }));
 
-    if (
-      health <= maximumHealth &&
-      borrowValue >= minimumBorrowInETH &&
-      collateralValue >= minimumShortfallInUSD
-    ) {
-      console.log('---Account ', address);
-      console.log('---Health: ', health);
-      console.log('---Borrowed (in ETH): ', borrowValue);
-      console.log('---Collateral (in ETH): ', collateralValue);
-      console.log('---Liquidatable amount (in USD): ', shortfallUSD);
+    // Get prices of all assets in ETH via UNISWAP ? Maybe rely on compound.
 
-      // // Extra: Breakdown of which tokens are borrowed and how much
-      // comptroller getMarketsIn(address) to see which tokens are being borrowed from.
-      // go to those cTokens to call borrowBalanceStored() to check for amount borrowed.
-      // To-do: How to look up collateral? Is this needed? Or go with the liquidity function and API?
 
-      // // Add to findings
-    }
-  });
-  await Promise.all(promises);
-  */
+    // Calculate health on all null accounts and low health?
 
-  return findings;
-};
 
+    // Accounts with low health can be checked on chain for a final health score.
+    /*
+    const promises = accounts.map(async (account) => {
+      const {
+        address,
+        health: { value: health },
+        total_borrow_value_in_eth: { value: borrowValue },
+        total_collateral_value_in_eth: { value: collateralValue },
+      } = account;
+  
+      // function getAccountLiquidity(address account) view returns (uint, uint, uint)
+      // returns(error, liquidity, shortfall) If shortfall is non-zero, account is underwater.
+      const accLiquidity = await comptrollerContract.getAccountLiquidity(
+        account.address,
+      );
+      const shortfallUSD = ethers.utils.formatEther(accLiquidity[2]);
+  
+      if (
+        health <= maximumHealth &&
+        borrowValue >= minimumBorrowInETH &&
+        collateralValue >= minimumShortfallInUSD
+      ) {
+        console.log('---Account ', address);
+        console.log('---Health: ', health);
+        console.log('---Borrowed (in ETH): ', borrowValue);
+        console.log('---Collateral (in ETH): ', collateralValue);
+        console.log('---Liquidatable amount (in USD): ', shortfallUSD);
+  
+        // // Extra: Breakdown of which tokens are borrowed and how much
+        // comptroller getMarketsIn(address) to see which tokens are being borrowed from.
+        // go to those cTokens to call borrowBalanceStored() to check for amount borrowed.
+        // To-do: How to look up collateral? Is this needed? Or go with the liquidity function and API?
+  
+        // // Add to findings
+      }
+    });
+    await Promise.all(promises);
+    */
+
+
+
+    return findings;
+  };
+}
+
+// exports
 module.exports = {
-  // handleTransaction,
-  handleBlock,
+  provideHandleBlock,
+  handleBlock: provideHandleBlock(initializeData),
   provideInitialize,
   initialize: provideInitialize(initializeData),
-  // provideHandleTransaction,
-  // handleTransaction: provideHandleTransaction(initializeData),
-  // createDistributionAlert,
 };
