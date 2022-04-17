@@ -13,6 +13,36 @@ const config = require('../agent-config.json');
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
 
+// the Forta SDK filterLog function does not supply the logIndex with the results
+//  we need this to determine the order the events were emitted in
+/* eslint-disable */
+function filterLog(eventLogs, eventAbi, contractAddress) {
+  var logs = eventLogs;
+  eventAbi = Array.isArray(eventAbi) ? eventAbi : [eventAbi];
+  if (contractAddress) {
+      contractAddress = Array.isArray(contractAddress)
+          ? contractAddress
+          : [contractAddress];
+      var contractAddressMap_1 = {};
+      contractAddress.forEach(function (address) {
+          contractAddressMap_1[address.toLowerCase()] = true;
+      });
+      logs = logs.filter(function (log) { return contractAddressMap_1[log.address.toLowerCase()]; });
+  }
+  var results = [];
+  var iface = new ethers.utils.Interface(eventAbi);
+  for (var _i = 0, logs_1 = logs; _i < logs_1.length; _i++) {
+      var log = logs_1[_i];
+      try {
+          var parsedLog = iface.parseLog(log);
+          results.push(Object.assign(parsedLog, { address: log.address, logIndex: log.logIndex }));
+      }
+      catch (e) { }
+  }
+  return results;
+}
+/* eslint-enable */
+
 // helper function to create cToken alerts
 function createMarketAttackAlert(
   protocolName,
@@ -60,9 +90,13 @@ async function getCompoundTokens(
   const promises = compTokenAddresses.map(async (tokenAddress) => {
     const contract = new ethers.Contract(tokenAddress, compTokenAbi, provider);
     const symbol = await contract.symbol();
+    const underlying = await contract.underlying();
 
     // eslint-disable-next-line no-param-reassign
-    compTokens[tokenAddress] = symbol;
+    compTokens[tokenAddress] = {
+      symbol,
+      underlying,
+    };
   });
   await Promise.all(promises);
 }
@@ -129,25 +163,31 @@ function provideHandleTransaction(data) {
       compTokens,
     );
 
-    const directTransferEvents = txEvent.filterLog(ERC20_TRANSFER_EVENT).filter(
-      (transferEvent) => Object.keys(compTokens).includes(transferEvent.args.to),
-    );
+    const transferEvents = filterLog(txEvent.logs, ERC20_TRANSFER_EVENT);
 
-    directTransferEvents.forEach((transferEvent) => {
-      const mintEvents = txEvent.filterLog(CERC20_MINT_EVENT, transferEvent.args.to);
-
-      mintEvents.forEach((mintEvent) => {
-        findings.push(createMarketAttackAlert(
-          protocolName,
-          protocolAbbreviation,
-          developerAbbreviation,
-          compTokens[transferEvent.args.to],
-          transferEvent.args.to,
-          mintEvent.args.mintAmount.toString(),
-          mintEvent.args.mintTokens.toString(),
-          transferEvent.args.from,
-          transferEvent.args.amount.toString(),
-        ));
+    transferEvents.forEach((transferEvent) => {
+      Object.entries(compTokens).forEach(([compTokenAddress, compToken]) => {
+        if (transferEvent.address === compToken.underlying
+          && transferEvent.args.to === compTokenAddress) {
+          filterLog(txEvent.logs, CERC20_MINT_EVENT)
+            .filter((mintEvent) => mintEvent.address === compTokenAddress)
+            // This shouldn't really ever return more than one result not sure
+            .forEach((mintEvent) => {
+              if (transferEvent.logIndex > mintEvent.logIndex) {
+                findings.push(createMarketAttackAlert(
+                  protocolName,
+                  protocolAbbreviation,
+                  developerAbbreviation,
+                  compToken.symbol,
+                  transferEvent.args.to,
+                  mintEvent.args.mintAmount.toString(),
+                  mintEvent.args.mintTokens.toString(),
+                  transferEvent.args.from,
+                  transferEvent.args.amount.toString(),
+                ));
+              }
+            });
+        }
       });
     });
 
