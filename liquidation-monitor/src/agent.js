@@ -116,13 +116,19 @@ function provideInitialize(data) {
         );
         const cContract = data.tokens[tokenAddress].contract;
         data.tokens[tokenAddress].symbol = await cContract.symbol();
-        data.tokens[tokenAddress].exchangeRate =
-          await cContract.exchangeRateStored();
+        const exchangeRate = await cContract.exchangeRateStored();
         data.tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
         // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
         // So the trick to get token decimals is exchangeRate.lenth - 9
-        data.tokens[tokenAddress].tokenDecimals =
-          data.tokens[tokenAddress].exchangeRate.toString().length - 9;
+        data.tokens[tokenAddress].tokenDecimals = exchangeRate.toString().length - 9;
+        data.tokens[tokenAddress].tokenDecimalsMult = BigNumber(10).pow(data.tokens[tokenAddress].tokenDecimals);
+        data.tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10).pow(data.tokens[tokenAddress].cTokenDecimals);
+        data.tokens[tokenAddress].exchangeRate = BigNumber(exchangeRate.toString());
+        // Adjusting the multiplier for easier use later.
+        data.tokens[tokenAddress].exchangeRateMult = BigNumber(exchangeRate.toString()).
+          dividedBy(data.tokens[tokenAddress].tokenDecimalsMult).
+          dividedBy(data.tokens[tokenAddress].cTokenDecimalsMult).
+          dividedBy(100); // Not sure where this 100 comes from I didn't see it in the docs
 
         ts(
           String(
@@ -165,17 +171,14 @@ function provideInitialize(data) {
       }
       // Loop through tokens and update balances.
       account.tokens.forEach((token) => {
-        // Process borrows
+        // Process borrows as 'token'
         if (
           token.borrow_balance_underlying !== undefined &&
           token.borrow_balance_underlying.value != 0
         ) {
-          const decimalsMultiplier = new BigNumber(10).pow(
-            data.tokens[token.address].tokenDecimals,
-          );
           data.borrow[token.address][account.address] = BigNumber(
-            token.borrow_balance_underlying.value,
-          ).multipliedBy(decimalsMultiplier);
+            token.borrow_balance_underlying.value);
+
           ts(
             String(
               'User ' +
@@ -187,17 +190,15 @@ function provideInitialize(data) {
             ),
           );
         }
-        // Process supplies
+        // Process supplies as 'cTokens' 
         if (
           token.supply_balance_underlying !== undefined &&
           token.supply_balance_underlying.value != 0
         ) {
-          const decimalsMultiplier = new BigNumber(10).pow(
-            data.tokens[token.address].tokenDecimals,
-          );
           data.supply[token.address][account.address] = BigNumber(
             token.supply_balance_underlying.value,
-          ).multipliedBy(decimalsMultiplier);
+          ).dividedBy(data.tokens[token.address].exchangeRateMult);
+
           ts(
             String(
               'User ' +
@@ -205,7 +206,10 @@ function provideInitialize(data) {
               ' supplied ' +
               Math.round(token.supply_balance_underlying.value) +
               ' ' +
-              data.tokens[token.address].symbol,
+              data.tokens[token.address].symbol +
+              ' ( ' +
+              Math.round(data.supply[token.address][account.address]) +
+              ' cTokens ) '
             ),
           );
         }
