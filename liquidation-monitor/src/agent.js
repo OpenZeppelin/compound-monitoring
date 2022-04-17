@@ -127,30 +127,44 @@ function provideInitialize(data) {
         ts(
           String(
             'Now tracking ' +
-              data.tokens[tokenAddress].symbol +
-              ' with ' +
-              data.tokens[tokenAddress].tokenDecimals +
-              ' decimals at address ' +
-              tokenAddress,
+            data.tokens[tokenAddress].symbol +
+            ' with ' +
+            data.tokens[tokenAddress].tokenDecimals +
+            ' decimals at address ' +
+            tokenAddress,
           ),
         );
+      }
+      if (data.borrow[tokenAddress] === undefined) {
+        data.borrow[tokenAddress] = {};
+      }
+      if (data.supply[tokenAddress] === undefined) {
+        data.supply[tokenAddress] = {};
       }
     }
 
     // #region Parse Compound data into new objects
+    // Process all tokens first
+    ts('Processing tokens now')
+    const tokenSet = new Set();
+    accounts.forEach((account) => {
+      account.tokens.forEach(async (token) => {
+        tokenSet.add(token.address);
+      });
+    });
+    await Promise.all(Array.from(tokenSet).map(async (token) => {
+      await verifyToken(token);
+    }));
+
     // Loop through found accounts
+    ts('Updating user balances');
     accounts.forEach((account) => {
       // add to tracked accounts
       if (data.accounts[account.address] === undefined) {
         data.accounts[account.address] = {};
       }
       // Loop through tokens and update balances.
-      account.tokens.forEach(async (token) => {
-        // Add tokens to tracked list of they don't exist
-        // TS: This needs to happen first
-        ts(String('Starting ' + token.address));
-        await verifyToken(token.address);
-        ts(String('Finished ' + token.address));
+      account.tokens.forEach((token) => {
         // Process borrows
         if (
           token.borrow_balance_underlying !== undefined &&
@@ -159,35 +173,41 @@ function provideInitialize(data) {
           const decimalsMultiplier = new BigNumber(10).pow(
             data.tokens[token.address].tokenDecimals,
           );
-          if (data.borrow[token.address] === undefined) {
-            data.borrow[token.address] = {};
-          }
-          // Lines 166-179 can only run after 152 completes
           data.borrow[token.address][account.address] = BigNumber(
             token.borrow_balance_underlying.value,
           ).multipliedBy(decimalsMultiplier);
-          // Add the token to the borrow list if it doesn't exist
           ts(
             String(
               'User ' +
-                [account.address] +
-                ' just deposited ' +
-                Math.round(token.borrow_balance_underlying.value) +
-                ' ' +
-                data.tokens[token.address].symbol,
+              [account.address] +
+              ' borrowed ' +
+              Math.round(token.borrow_balance_underlying.value) +
+              ' ' +
+              data.tokens[token.address].symbol,
             ),
           );
         }
-
         // Process supplies
         if (
           token.supply_balance_underlying !== undefined &&
           token.supply_balance_underlying.value != 0
         ) {
-          // // adjust supply from token to cToken
-          // data.supply[account.address] = data.tokens[
-          //   token.address
-          // ].exchangeRate.mul(token.supply_balance_underlying.value.toString());
+          const decimalsMultiplier = new BigNumber(10).pow(
+            data.tokens[token.address].tokenDecimals,
+          );
+          data.supply[token.address][account.address] = BigNumber(
+            token.supply_balance_underlying.value,
+          ).multipliedBy(decimalsMultiplier);
+          ts(
+            String(
+              'User ' +
+              [account.address] +
+              ' supplied ' +
+              Math.round(token.supply_balance_underlying.value) +
+              ' ' +
+              data.tokens[token.address].symbol,
+            ),
+          );
         }
       }); // end token loop
     }); // end account loop
