@@ -28,10 +28,11 @@ function createTransactionEvent(txObject) {
     null,
     null,
     txObject.transaction,
-    txObject.receipt,
     [],
     txObject.addresses,
     txObject.block,
+    txObject.logs,
+    null,
   );
   return txEvent;
 }
@@ -169,6 +170,7 @@ describe('monitor compound for attacks on cToken markets', () => {
     let compTokenInterface;
 
     /* eslint-disable prefer-const */
+    let validUnderlyingAddress = `0x5${'0'.repeat(39)}`;
     let validCompTokenAddress = `0x1${'0'.repeat(39)}`;
     let validCompTokenSymbol = 'TEST';
     let validAttackAddress = `0x9${'0'.repeat(39)}`;
@@ -185,6 +187,7 @@ describe('monitor compound for attacks on cToken markets', () => {
 
       mockedCompTokenContract = {
         symbol: jest.fn().mockReturnValueOnce(validCompTokenSymbol),
+        underlying: jest.fn().mockReturnValueOnce(validUnderlyingAddress),
       };
 
       mockedGetContract.mockReturnValueOnce(mockedCompTokenContract);
@@ -201,9 +204,7 @@ describe('monitor compound for attacks on cToken markets', () => {
       compTokenInterface = new ethers.utils.Interface(compTokenAbi);
 
       mockTxEvent = createTransactionEvent({
-        receipt: {
-          logs: [],
-        },
+        logs: [],
       });
     });
 
@@ -235,7 +236,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
-      mockTxEvent.receipt.logs.push(transferLog);
+      mockTxEvent.logs.push(transferLog);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -257,14 +258,15 @@ describe('monitor compound for attacks on cToken markets', () => {
       const transferEvent = createMockEventLogs(transferEventAbi, compTokenInterface, override);
 
       const transferLog = {
-        address: validAttackAddress,
+        logIndex: 10,
+        address: validUnderlyingAddress,
         topics: transferEvent.mockTopics,
         args: transferEvent.mockArgs,
         data: transferEvent.data,
         signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
-      mockTxEvent.receipt.logs.push(transferLog);
+      mockTxEvent.logs.push(transferLog);
 
       const mintAmount = '1';
       const mintTokens = '100';
@@ -279,6 +281,7 @@ describe('monitor compound for attacks on cToken markets', () => {
       const mintEvent = createMockEventLogs(mintEventAbi, compTokenInterface, override);
 
       const mintLog = {
+        logIndex: 5,
         address: validCompTokenAddress,
         topics: mintEvent.mockTopics,
         args: mintEvent.mockArgs,
@@ -286,7 +289,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         signature: mintEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
-      mockTxEvent.receipt.logs.push(mintLog);
+      mockTxEvent.logs.push(mintLog);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -306,6 +309,7 @@ describe('monitor compound for attacks on cToken markets', () => {
     });
 
     it('returns finding if new market was added and attacked', async () => {
+      const newUnderlyingAddress = `0x6${'0'.repeat(39)}`;
       const newCompTokenAddress = `0x2${'0'.repeat(39)}`;
       const newCompSymbol = 'NEWTEST';
 
@@ -313,6 +317,7 @@ describe('monitor compound for attacks on cToken markets', () => {
 
       mockedCompTokenContract = {
         symbol: jest.fn().mockReturnValueOnce(newCompSymbol),
+        underlying: jest.fn().mockReturnValueOnce(newUnderlyingAddress),
       };
 
       mockedGetContract.mockReturnValueOnce(mockedCompTokenContract);
@@ -329,14 +334,15 @@ describe('monitor compound for attacks on cToken markets', () => {
       const transferEvent = createMockEventLogs(transferEventAbi, compTokenInterface, override);
 
       const transferLog = {
-        address: validAttackAddress,
+        logIndex: 10,
+        address: newUnderlyingAddress,
         topics: transferEvent.mockTopics,
         args: transferEvent.mockArgs,
         data: transferEvent.data,
         signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
-      mockTxEvent.receipt.logs.push(transferLog);
+      mockTxEvent.logs.push(transferLog);
 
       const mintAmount = '1';
       const mintTokens = '100';
@@ -351,6 +357,7 @@ describe('monitor compound for attacks on cToken markets', () => {
       const mintEvent = createMockEventLogs(mintEventAbi, compTokenInterface, override);
 
       const mintLog = {
+        logIndex: 5,
         address: newCompTokenAddress,
         topics: mintEvent.mockTopics,
         args: mintEvent.mockArgs,
@@ -358,7 +365,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         signature: mintEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
-      mockTxEvent.receipt.logs.push(mintLog);
+      mockTxEvent.logs.push(mintLog);
 
       const findings = await handleTransaction(mockTxEvent);
 
