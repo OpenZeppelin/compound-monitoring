@@ -9,7 +9,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "node scripts/deploySafe.js",
-    "propose": "node scripts/proposeFortaAgent.js"
+    "propose": "node scripts/proposeFortaAgent.js",
+    "approve": "node scripts/approveTransaction.js",
+    "execute": "node scripts/executeTransaction.js"
   },
   "keywords": [],
   "author": "",
