@@ -82,6 +82,7 @@ async function main() {
     to: txUnsigned.to,
     data: txUnsigned.data,
     value: '0',
+    gasPrice: ethers.utils.parseUnits('40', 'gwei'), // specify for Polygon to ensure that we won't hit any 'transaction underpriced' errors
   };
   const safeTransaction = await safeSdk.createTransaction(transaction);
 
