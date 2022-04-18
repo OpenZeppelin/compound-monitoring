@@ -87,7 +87,7 @@ async function getCompoundTokens(
     .filter((addr) => excludeAddresses.indexOf(addr) === -1)
     .filter((addr) => !Object.keys(compTokens).includes(addr));
 
-  const promises = compTokenAddresses.map(async (tokenAddress) => {
+  await Promise.all(compTokenAddresses.map(async (tokenAddress) => {
     const contract = new ethers.Contract(tokenAddress, compTokenAbi, provider);
     const symbol = await contract.symbol();
     const underlying = await contract.underlying();
@@ -95,10 +95,9 @@ async function getCompoundTokens(
     // eslint-disable-next-line no-param-reassign
     compTokens[tokenAddress] = {
       symbol,
-      underlying,
+      underlying: underlying.toLowerCase(),
     };
-  });
-  await Promise.all(promises);
+  }));
 }
 
 function provideInitialize(data) {
@@ -116,7 +115,7 @@ function provideInitialize(data) {
 
     const {
       Comptroller: comptroller,
-      CompoundToken: compToken,
+      CompToken: compToken,
     } = config.contracts;
 
     // create an ethers.js Contract Object to interact with the Comptroller contract
@@ -165,13 +164,17 @@ function provideHandleTransaction(data) {
 
     const transferEvents = filterLog(txEvent.logs, ERC20_TRANSFER_EVENT);
 
+    // return findings under the following circumstances
+    // - A Mint event was emitted before a Transfer event
+    // - The Mint event was emitted by a Compound cToken contract
+    // - The Transfer event was emitted by the underlying token contract
+    //    corresponding to that Compound cToken contract and
+    //    was being transferred directly to said Compound cToken contract
     transferEvents.forEach((transferEvent) => {
       Object.entries(compTokens).forEach(([compTokenAddress, compToken]) => {
         if (transferEvent.address === compToken.underlying
-          && transferEvent.args.to === compTokenAddress) {
-          filterLog(txEvent.logs, CERC20_MINT_EVENT)
-            .filter((mintEvent) => mintEvent.address === compTokenAddress)
-            // This shouldn't really ever return more than one result not sure
+          && transferEvent.args.to.toLowerCase() === compTokenAddress) {
+          filterLog(txEvent.logs, CERC20_MINT_EVENT, compTokenAddress)
             .forEach((mintEvent) => {
               if (transferEvent.logIndex > mintEvent.logIndex) {
                 findings.push(createMarketAttackAlert(

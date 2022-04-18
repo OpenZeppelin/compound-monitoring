@@ -66,21 +66,18 @@ describe('check agent configuration file', () => {
   it('contracts key values must be valid', () => {
     const { contracts } = config;
 
-    const { Comptroller, CompoundToken } = contracts;
+    const { Comptroller, CompToken } = contracts;
     expect(typeof Comptroller).toBe('object');
     expect(Comptroller).not.toBe({});
 
-    expect(typeof CompoundToken).toBe('object');
-    expect(CompoundToken).not.toBe({});
+    expect(typeof CompToken).toBe('object');
+    expect(CompToken).not.toBe({});
 
     const { abiFile: ComptrollerAbiFile, address: ComptrollerAddress } = Comptroller;
-    const { abiFile: cTokenAbiFile, address: compTokenAddress } = CompoundToken;
+    const { abiFile: cTokenAbiFile } = CompToken;
 
     // check that the comptroller address is a valid address
     expect(ethers.utils.isHexString(ComptrollerAddress, 20)).toBe(true);
-
-    // check that the compound token address is a valid address
-    expect(ethers.utils.isHexString(compTokenAddress, 20)).toBe(true);
 
     // load the ABI from the specified file
     // the call to getAbi will fail if the file does not exist
@@ -180,14 +177,14 @@ describe('monitor compound for attacks on cToken markets', () => {
       initializeData = {};
 
       mockComptrollerContract = {
-        getAllMarkets: jest.fn().mockReturnValueOnce([validCompTokenAddress]),
+        getAllMarkets: jest.fn().mockResolvedValueOnce([validCompTokenAddress]),
       };
 
       mockedGetContract.mockReturnValueOnce(mockComptrollerContract);
 
       mockedCompTokenContract = {
-        symbol: jest.fn().mockReturnValueOnce(validCompTokenSymbol),
-        underlying: jest.fn().mockReturnValueOnce(validUnderlyingAddress),
+        symbol: jest.fn().mockResolvedValueOnce(validCompTokenSymbol),
+        underlying: jest.fn().mockResolvedValueOnce(validUnderlyingAddress),
       };
 
       mockedGetContract.mockReturnValueOnce(mockedCompTokenContract);
@@ -209,7 +206,7 @@ describe('monitor compound for attacks on cToken markets', () => {
     });
 
     it('returns empty findings if no direct transfer events were emitted in the transaction', async () => {
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([]);
+      mockComptrollerContract.getAllMarkets.mockResolvedValueOnce([]);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -217,7 +214,7 @@ describe('monitor compound for attacks on cToken markets', () => {
     });
 
     it('returns empty findings if no mint events were emitted in the transaction', async () => {
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([]);
+      mockComptrollerContract.getAllMarkets.mockResolvedValueOnce([]);
 
       override = {
         from: validAttackAddress,
@@ -231,9 +228,7 @@ describe('monitor compound for attacks on cToken markets', () => {
       const transferLog = {
         address: validAttackAddress,
         topics: transferEvent.mockTopics,
-        args: transferEvent.mockArgs,
         data: transferEvent.data,
-        signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
       mockTxEvent.logs.push(transferLog);
@@ -244,7 +239,7 @@ describe('monitor compound for attacks on cToken markets', () => {
     });
 
     it('returns finding if attacker minted cTokens and made a direct transfer in the transaction', async () => {
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([]);
+      mockComptrollerContract.getAllMarkets.mockResolvedValueOnce([]);
 
       const maliciousAmount = '10000';
 
@@ -261,9 +256,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         logIndex: 10,
         address: validUnderlyingAddress,
         topics: transferEvent.mockTopics,
-        args: transferEvent.mockArgs,
         data: transferEvent.data,
-        signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
       mockTxEvent.logs.push(transferLog);
@@ -284,9 +277,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         logIndex: 5,
         address: validCompTokenAddress,
         topics: mintEvent.mockTopics,
-        args: mintEvent.mockArgs,
         data: mintEvent.data,
-        signature: mintEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
       mockTxEvent.logs.push(mintLog);
@@ -313,11 +304,11 @@ describe('monitor compound for attacks on cToken markets', () => {
       const newCompTokenAddress = `0x2${'0'.repeat(39)}`;
       const newCompSymbol = 'NEWTEST';
 
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([newCompTokenAddress]);
+      mockComptrollerContract.getAllMarkets.mockResolvedValueOnce([newCompTokenAddress]);
 
       mockedCompTokenContract = {
-        symbol: jest.fn().mockReturnValueOnce(newCompSymbol),
-        underlying: jest.fn().mockReturnValueOnce(newUnderlyingAddress),
+        symbol: jest.fn().mockResolvedValueOnce(newCompSymbol),
+        underlying: jest.fn().mockResolvedValueOnce(newUnderlyingAddress),
       };
 
       mockedGetContract.mockReturnValueOnce(mockedCompTokenContract);
@@ -337,9 +328,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         logIndex: 10,
         address: newUnderlyingAddress,
         topics: transferEvent.mockTopics,
-        args: transferEvent.mockArgs,
         data: transferEvent.data,
-        signature: transferEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
       mockTxEvent.logs.push(transferLog);
@@ -360,9 +349,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         logIndex: 5,
         address: newCompTokenAddress,
         topics: mintEvent.mockTopics,
-        args: mintEvent.mockArgs,
         data: mintEvent.data,
-        signature: mintEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
       };
 
       mockTxEvent.logs.push(mintLog);
