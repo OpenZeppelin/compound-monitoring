@@ -1,0 +1,18 @@
+
+{
+  "developerAbbreviation": "AE",
+  "protocolName": "Compound",
+  "protocolAbbreviation": "COMP",
+  "contracts": {
+    "Comptroller": {
+      "address": "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B",
+      "abiFile": "Comptroller.json"
+    },
+    "CompToken": {
+      "abiFile": "cErc20.json"
+    }
+  },
+  "excludeAddresses": [
+    "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5"
+  ]
+}
