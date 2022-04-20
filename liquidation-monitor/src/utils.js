@@ -10,12 +10,13 @@ function ts(input) {
   const hours = String(today.getHours()).padStart(2, '0');
   const minutes = String(today.getMinutes()).padStart(2, '0');
   const seconds = String(today.getSeconds()).padStart(2, '0');
-  const time = hours + ':' + minutes + ':' + seconds;
+  const time = `${hours}:${minutes}:${seconds}`;
   console.log('TS -', time, input);
 }
 
 // To-do: Replace fetch with axios
 const fetch = require('node-fetch-commonjs');
+
 async function callAPI(url, jsonRequest) {
   const callPromise = fetch(url, {
     method: 'POST',
@@ -27,14 +28,10 @@ async function callAPI(url, jsonRequest) {
       }
       return response.json();
     })
-    .then((responseData) => {
-      return responseData;
-    });
+    .then((responseData) => responseData);
 
   const responseData = await callPromise.then(
-    (responseData) => {
-      return responseData;
-    },
+    (data) => data,
     (error) => {
       console.error('Failed to fetch accounts due to error: ', error);
     },
@@ -42,11 +39,8 @@ async function callAPI(url, jsonRequest) {
   return responseData;
 }
 
-// #endregion
-
 module.exports = {
   getAbi,
   ts,
   callAPI,
-  // verifyToken,
 };
