@@ -1,53 +1,55 @@
-const EthersAdapter = require('@gnosis.pm/safe-ethers-lib')["default"];
-const { default: Safe } = require('@gnosis.pm/safe-core-sdk');
-const SafeServiceClient = require('@gnosis.pm/safe-service-client')["default"];
+const EthersAdapter = require('@gnosis.pm/safe-ethers-lib').default;
+const Safe = require('@gnosis.pm/safe-core-sdk').default;
+const SafeServiceClient = require('@gnosis.pm/safe-service-client').default;
 const fortaAgent = require('forta-agent');
 
 const { ethers } = fortaAgent;
 
+// load values from the .env file
 require('dotenv').config();
 
+// load the Gnosis Safe proxy contract address
 const polygonSafeAddress = process.env.POLYGON_SAFE_ADDRESS;
+
+// load the JSON-RPC endpoint URL
 const polygonEndpoint = process.env.POLYGON_ENDPOINT;
 
 // load the private key for the account that will be signing the transaction
 const ownerPrivateKey = process.env.OWNER_TWO_PRIVATE_KEY;
 
 // load the transaction hash to approve
-// const safeTxHash = process.env.SAFE_TX_HASH;
-const safeTxHash = process.env.SAFE_TX_HASH_REJECT_FIRST_BOT;
-
-const provider = new ethers.providers.JsonRpcProvider(polygonEndpoint);
-
-// create a wallet (signer) and connect it to the provider
-const safeWallet = new ethers.Wallet(ownerPrivateKey, provider);
-const signer = safeWallet.connect(provider);
-
-const ethAdapter = new EthersAdapter({
-  ethers,
-  signer,
-  provider,
-});
-
-// initialize the Safe Service Client
-const transactionServiceUrl = 'https://safe-transaction.polygon.gnosis.io/';
-const safeService = new SafeServiceClient({
-  txServiceUrl: transactionServiceUrl,
-  ethAdapter,
-});
+const safeTxHash = process.env.SAFE_TX_HASH;
 
 async function main() {
-  console.log('Getting deployed Gnosis Safe Contract');
-  const safeSdk = await Safe.create({
-      ethAdapter,
-      safeAddress: polygonSafeAddress,
+  // create an ethers.js provider
+  const provider = new ethers.providers.JsonRpcProvider(polygonEndpoint);
+
+  // create an ethers.js wallet (signer) and connect it to the provider
+  const safeWallet = new ethers.Wallet(ownerPrivateKey, provider);
+  const signer = safeWallet.connect(provider);
+
+  // create an ethAdapter Object
+  const ethAdapter = new EthersAdapter({
+    ethers,
+    signer,
+    provider,
   });
 
-  console.log('Getting pending transactions');
-  const tx = await safeService.getTransaction(safeTxHash);
-  console.log(tx);
+  // initialize the Safe Service Client
+  const transactionServiceUrl = 'https://safe-transaction.polygon.gnosis.io/';
+  const safeService = new SafeServiceClient({
+    txServiceUrl: transactionServiceUrl,
+    ethAdapter,
+  });
 
-  let signature = await safeSdk.signTransactionHash(safeTxHash);
+  console.log('Getting deployed Gnosis Safe Contract');
+  const safeSdk = await Safe.create({
+    ethAdapter,
+    safeAddress: polygonSafeAddress,
+  });
+
+  // sign the transaction hash and provide confirmation to the Safe Service Client
+  const signature = await safeSdk.signTransactionHash(safeTxHash);
   await safeService.confirmTransaction(safeTxHash, signature.data);
   console.log('Transaction confirmed');
 }
