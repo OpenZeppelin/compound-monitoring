@@ -67,9 +67,8 @@ async function verifyToken(data, tokenAddress) {
 // Initializes data required for handler
 function provideInitialize(data) {
   return async function initialize() {
-    /* eslint-disable no-param-reassign */
-
     // #region Assign configurable fields
+    /* eslint-disable no-param-reassign */
     data.alertMinimumIntervalSeconds = config.alertMinimumIntervalSeconds;
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
@@ -85,11 +84,17 @@ function provideInitialize(data) {
 
     // Compound API filter and Comptroller contract
     const { maximumHealth, minimumBorrowInETH } = config.liquidationMonitor.triggerLevels;
-    const { comptrollerAddress, maxTrackedAccounts } = config.liquidationMonitor;
+    const { comptrollerAddress, maxTrackedAccounts, oracleAddress } = config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
+    const oracleABI = getAbi(config.liquidationMonitor.oracleABI);
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
       comptrollerABI,
+      data.provider,
+    );
+    data.oracleContract = new ethers.Contract(
+      oracleAddress,
+      oracleABI,
       data.provider,
     );
     /* eslint-enable no-param-reassign */
@@ -130,10 +135,6 @@ function provideInitialize(data) {
 
     // Query each page and add accounts. Starting at 1 and including maxPages
     const accounts = [];
-    // const pages = [1, 2, 3, 4, 5];
-    // pages.map(async (page) => {
-    //   // do stuff
-    // });
     const pages = [...Array(maxPages)].map((_, i) => 1 + i);
     await Promise.all(pages.map(async (page) => {
       // for (let page = 1; page <= maxPages; page++) {
@@ -229,7 +230,7 @@ function provideHandleBlock(data) {
     // upon the mining of a new block, check the specified accounts to make sure the balance of
     // each account has not fallen below the specified threshold
     const findings = [];
-    const { comptrollerContract } = data;
+    const { comptrollerContract, oracleContract } = data;
 
     // To-do: add listener to find new and updated accounts
     //  account health 0 means needs a balance re-scan.
@@ -321,8 +322,23 @@ function provideHandleBlock(data) {
 
     // #endregion
 
-    // Get prices of all assets in ETH via UNISWAP ? Maybe rely on compound.
-
+    // #region Update all token prices
+    await Promise.all(Object.keys(data.tokens).map(async (currentToken) => {
+      const price = await oracleContract.getUnderlyingPrice(currentToken);
+      // data.tokens[currentToken].price = BigNumber(ethers.utils.formatEther(price));
+      // ts(data.tokens[currentToken]);
+      // ts(price);
+      ts(BigNumber(price.toString()));
+      ts(price.toString());
+      ts(data.tokens[currentToken].tokenDecimalsMult);
+      data.tokens[currentToken].price = BigNumber(price)
+        .dividedBy(data.tokens[currentToken].tokenDecimalsMult);
+      ts(
+        `Updated price of ${data.tokens[currentToken].symbol
+        } is ${data.tokens[currentToken].price.toString()}`,
+      );
+    }));
+    // #endregion
     // Calculate health on all null accounts and low health?
 
     // Accounts with low health can be checked on chain for a final health score.

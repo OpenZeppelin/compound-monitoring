@@ -5,6 +5,8 @@
   "liquidationMonitor": {
     "comptrollerAddress": "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B",
     "comptrollerABI": "Comptroller.json",
+    "oracleAddress": "0x65c816077C29b557BEE980ae3cC2dCE80204A0C5",
+    "oracleABI": "Oracle.json",
     "maxTrackedAccounts": 110,
     "triggerLevels": {
       "maximumHealth": 2,
