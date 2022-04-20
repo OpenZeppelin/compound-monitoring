@@ -1,7 +1,7 @@
 const {
-  Finding,
-  FindingSeverity,
-  FindingType,
+  // Finding,
+  // FindingSeverity,
+  // FindingType,
   ethers,
   getEthersProvider,
 } = require('forta-agent');
@@ -16,6 +16,54 @@ const initializeData = {};
 
 ts('Starting bot');
 
+// #region Global functions
+async function verifyToken(data, tokenAddress) {
+  // To-do: move this region to a function, for cleaner DRY code.
+  /* eslint-disable no-param-reassign */
+  if (data.tokens[tokenAddress] === undefined) {
+    data.tokens[tokenAddress] = {};
+    data.tokens[tokenAddress].contract = new ethers.Contract(
+      tokenAddress,
+      data.cTokenABI,
+      data.provider,
+    );
+    const cContract = data.tokens[tokenAddress].contract;
+    data.tokens[tokenAddress].symbol = await cContract.symbol();
+    const exchangeRate = await cContract.exchangeRateStored();
+    data.tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
+    // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
+    // So the trick to get token decimals is exchangeRate.lenth - 9
+    data.tokens[tokenAddress].tokenDecimals = exchangeRate.toString().length - 9;
+    data.tokens[tokenAddress].tokenDecimalsMult = BigNumber(10)
+      .pow(data.tokens[tokenAddress].tokenDecimals);
+    data.tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10)
+      .pow(data.tokens[tokenAddress].cTokenDecimals);
+    data.tokens[tokenAddress].exchangeRate = BigNumber(exchangeRate.toString());
+    // Adjusting the multiplier for easier use later.
+    data.tokens[tokenAddress].exchangeRateMult = BigNumber(exchangeRate.toString())
+      .dividedBy(data.tokens[tokenAddress].tokenDecimalsMult)
+      .dividedBy(data.tokens[tokenAddress].cTokenDecimalsMult)
+      .dividedBy(100); // Not sure where this 100 comes from I didn't see it in the docs
+
+    if (data.borrow[tokenAddress] === undefined) {
+      data.borrow[tokenAddress] = {};
+    }
+    if (data.supply[tokenAddress] === undefined) {
+      data.supply[tokenAddress] = {};
+    }
+    /* eslint-enable no-param-reassign */
+
+    ts(
+      String(
+        `Now tracking ${data.tokens[tokenAddress].symbol
+        } with ${data.tokens[tokenAddress].tokenDecimals
+        } decimals at address ${tokenAddress}`,
+      ),
+    );
+  }
+}
+// #endregion
+
 // Initializes data required for handler
 function provideInitialize(data) {
   return async function initialize() {
@@ -27,20 +75,17 @@ function provideInitialize(data) {
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
     data.alert = config.liquidationMonitor.alert;
-    data.minimumShortfallInUSD =
-      config.liquidationMonitor.triggerLevels.minimumShortfallInUSD;
+    data.minimumShortfallInUSD = config.liquidationMonitor.triggerLevels.minimumShortfallInUSD;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersProvider();
-    data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assets in addresses]?
+    data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assetsIn addresses]?
     data.supply = {}; // qty of cTokens (not Tokens)
     data.borrow = {}; // qty of Tokens (not cTokens)
     data.tokens = {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
 
     // Compound API filter and Comptroller contract
-    const { maximumHealth, minimumBorrowInETH } =
-      config.liquidationMonitor.triggerLevels;
-    const { comptrollerAddress, maxTrackedAccounts } =
-      config.liquidationMonitor;
+    const { maximumHealth, minimumBorrowInETH } = config.liquidationMonitor.triggerLevels;
+    const { comptrollerAddress, maxTrackedAccounts } = config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
@@ -75,36 +120,42 @@ function provideInitialize(data) {
     );
     const initialResults = await callAPI(apiURL, initialRequest);
     const totalEntries = initialResults.pagination_summary.total_entries;
-    ts(String('Total Entries ' + totalEntries));
-    ts(String('maxTrackedAccounts ' + maxTrackedAccounts));
+    ts(String(`Total Entries ${totalEntries}`));
+    ts(String(`maxTrackedAccounts ${maxTrackedAccounts}`));
 
     // Determine number of pages needed to query. Results vs config limit.
     const maxEntries = Math.min(maxTrackedAccounts, totalEntries);
     const maxPages = Math.ceil(maxEntries / 100);
-    ts(String('maxPages ' + maxPages));
+    ts(String(`maxPages ${maxPages}`));
 
     // Query each page and add accounts. Starting at 1 and including maxPages
-    let accounts = [];
-    for (page = 1; page <= maxPages; page++) {
-      const initialRequest = buildJsonRequest(
+    const accounts = [];
+    // const pages = [1, 2, 3, 4, 5];
+    // pages.map(async (page) => {
+    //   // do stuff
+    // });
+    const pages = [...Array(maxPages)].map((_, i) => 1 + i);
+    await Promise.all(pages.map(async (page) => {
+      // for (let page = 1; page <= maxPages; page++) {
+      const currentRequest = buildJsonRequest(
         maximumHealth,
         minimumBorrowInETH,
         page,
         2, // Testing, so only pulling 2 accounts per page. Later increase to 100.
       );
-      const apiResults = await callAPI(apiURL, initialRequest);
+      const apiResults = await callAPI(apiURL, currentRequest);
       apiResults.accounts.forEach((account) => {
         accounts.push(account);
       });
-      ts(String('Imported ' + page + '00 accounts'));
-    }
-    ts(String('Tracking ' + accounts.length + ' accounts'));
+      ts(String(`Imported ${page}00 accounts`));
+    }));
+    ts(String(`Tracking ${accounts.length} accounts`));
     // #endregion
 
     // #region Parse Compound data into new objects
 
     // Get a unique list of token addresses
-    ts('Processing tokens now')
+    ts('Processing tokens now');
     const tokenSet = new Set();
     accounts.forEach((account) => {
       account.tokens.forEach(async (token) => {
@@ -114,59 +165,17 @@ function provideInitialize(data) {
 
     // Async function verifies or builds data.token[token]
     // To-do: Can this be moved to utils and still reference data.tokens?
-    async function verifyToken(tokenAddress) {
-      // To-do: move this region to a function, for cleaner DRY code.
-      if (data.tokens[tokenAddress] === undefined) {
-        data.tokens[tokenAddress] = {};
-        data.tokens[tokenAddress].contract = new ethers.Contract(
-          tokenAddress,
-          data.cTokenABI,
-          data.provider,
-        );
-        const cContract = data.tokens[tokenAddress].contract;
-        data.tokens[tokenAddress].symbol = await cContract.symbol();
-        const exchangeRate = await cContract.exchangeRateStored();
-        data.tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
-        // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
-        // So the trick to get token decimals is exchangeRate.lenth - 9
-        data.tokens[tokenAddress].tokenDecimals = exchangeRate.toString().length - 9;
-        data.tokens[tokenAddress].tokenDecimalsMult = BigNumber(10).pow(data.tokens[tokenAddress].tokenDecimals);
-        data.tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10).pow(data.tokens[tokenAddress].cTokenDecimals);
-        data.tokens[tokenAddress].exchangeRate = BigNumber(exchangeRate.toString());
-        // Adjusting the multiplier for easier use later.
-        data.tokens[tokenAddress].exchangeRateMult = BigNumber(exchangeRate.toString()).
-          dividedBy(data.tokens[tokenAddress].tokenDecimalsMult).
-          dividedBy(data.tokens[tokenAddress].cTokenDecimalsMult).
-          dividedBy(100); // Not sure where this 100 comes from I didn't see it in the docs
-
-        ts(
-          String(
-            'Now tracking ' +
-            data.tokens[tokenAddress].symbol +
-            ' with ' +
-            data.tokens[tokenAddress].tokenDecimals +
-            ' decimals at address ' +
-            tokenAddress,
-          ),
-        );
-      }
-      if (data.borrow[tokenAddress] === undefined) {
-        data.borrow[tokenAddress] = {};
-      }
-      if (data.supply[tokenAddress] === undefined) {
-        data.supply[tokenAddress] = {};
-      }
-    }
 
     // Initialize token objects
     await Promise.all(Array.from(tokenSet).map(async (token) => {
-      await verifyToken(token);
+      await verifyToken(data, token);
     }));
 
     // Loop through found accounts
     ts('Updating user balances');
     accounts.forEach((account) => {
       // add to tracked accounts
+      /* eslint-disable no-param-reassign */
       if (data.accounts[account.address] === undefined) {
         data.accounts[account.address] = {};
       }
@@ -174,27 +183,25 @@ function provideInitialize(data) {
       account.tokens.forEach((token) => {
         // Process borrows as 'token'
         if (
-          token.borrow_balance_underlying !== undefined &&
-          token.borrow_balance_underlying.value != 0
+          token.borrow_balance_underlying !== undefined
+          && token.borrow_balance_underlying.value !== 0
         ) {
           data.borrow[token.address][account.address] = BigNumber(
-            token.borrow_balance_underlying.value);
+            token.borrow_balance_underlying.value,
+          );
 
           ts(
             String(
-              'User ' +
-              [account.address] +
-              ' borrowed ' +
-              Math.round(token.borrow_balance_underlying.value) +
-              ' ' +
-              data.tokens[token.address].symbol,
+              `User ${[account.address]
+              } borrowed ${Math.round(token.borrow_balance_underlying.value)
+              } ${data.tokens[token.address].symbol}`,
             ),
           );
         }
-        // Process supplies as 'cTokens' 
+        // Process supplies as 'cTokens'
         if (
-          token.supply_balance_underlying !== undefined &&
-          token.supply_balance_underlying.value != 0
+          token.supply_balance_underlying !== undefined
+          && token.supply_balance_underlying.value !== 0
         ) {
           data.supply[token.address][account.address] = BigNumber(
             token.supply_balance_underlying.value,
@@ -202,58 +209,88 @@ function provideInitialize(data) {
 
           ts(
             String(
-              'User ' +
-              [account.address] +
-              ' supplied ' +
-              Math.round(token.supply_balance_underlying.value) +
-              ' ' +
-              data.tokens[token.address].symbol +
-              ' ( ' +
-              Math.round(data.supply[token.address][account.address]) +
-              ' cTokens ) '
+              `User ${[account.address]
+              } supplied ${Math.round(token.supply_balance_underlying.value)
+              } ${data.tokens[token.address].symbol
+              } ( ${Math.round(data.supply[token.address][account.address])
+              } cTokens ) `,
             ),
           );
         }
       }); // end token loop
+      /* eslint-enable no-param-reassign */
     }); // end account loop
     // #endregion
   };
 }
-
-let findingsCount = 0;
-
 
 function provideHandleBlock(data) {
   return async function handleBlock(blockEvent) {
     // upon the mining of a new block, check the specified accounts to make sure the balance of
     // each account has not fallen below the specified threshold
     const findings = [];
-
     const { comptrollerContract } = data;
-
 
     // To-do: add listener to find new and updated accounts
     //  account health 0 means needs a balance re-scan.
     //  account health null means balances ok, just needs a new calculation.
     //  add tokens first
 
-
-    // Update Balances on zero health accountAssets and low health?
-    ts(data.accounts);
-    ts(typeof data.accounts);
-    await Promise.all(Object.keys(data.accounts).forEach(async (account) => {
-      ts(account);
-      if (account.health != null && account.health === 0) {
-        const assetsIn = await comptrollerContract.getAssetsIn(account);
-        ts(typeof assetsIn);
+    // #region Update Balances on zero health accountAssets and low health?
+    const filteredAccounts = [];
+    Object.keys(data.accounts).forEach((currentAccount) => {
+      // Uncomment this line when done testing
+      // if (data.accounts[currentAccount].health != null
+      // && data.accounts[currentAccount].health == 0) {
+      if (data.accounts[currentAccount].health == null
+        || data.accounts[currentAccount].health === 0) {
+        filteredAccounts.push(currentAccount);
+        // const assetsIn = await comptrollerContract.getAssetsIn(currentAccount);
       }
+    });
+
+    // Grab the assets in first, and make sure they are initialized
+    ts('Getting assetsIn list for new accounts');
+    const tokenSet = new Set();
+    await Promise.all(filteredAccounts.map(async (currentAccount) => {
+      ts(currentAccount);
+      let assetsIn = await comptrollerContract.getAssetsIn(currentAccount);
+      assetsIn = assetsIn.map((asset) => asset.toLowerCase());
+      assetsIn.forEach((asset) => { tokenSet.add(asset); });
+      data.accounts[currentAccount].assetsIn = assetsIn;
+      ts(String(`Assets for ${currentAccount}`));
+      ts(data.accounts[currentAccount].assetsIn);
     }));
+
+    // // Initialize token objects
+    // ts('before');
+    // const testToken = '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5';
+    // await verifyToken(testToken);
+    // ts('after');
+
+    ts('Checking for new tokens');
+    ts(tokenSet);
+    await Promise.all(Array.from(tokenSet).map(async (token) => {
+      ts(token);
+      await verifyToken(data, token);
+      ts('finished');
+    }));
+
+    ts(filteredAccounts);
+    // await Promise.all(data.accounts.forEach(async (currentAccount) => {
+    //   ts(currentAccount);
+    //   ts(data.accounts[currentAccount]);
+    // }));
+
+    // ts(data.accounts[currentAccount].health);
+    // ts(comptrollerContract);
+    // ts(String(currentAccount + ' has ' + assetsIn));
+
+    // #endregion
 
     // Get prices of all assets in ETH via UNISWAP ? Maybe rely on compound.
 
-
     // Calculate health on all null accounts and low health?
-
 
     // Accounts with low health can be checked on chain for a final health score.
     /*
@@ -264,14 +301,14 @@ function provideHandleBlock(data) {
         total_borrow_value_in_eth: { value: borrowValue },
         total_collateral_value_in_eth: { value: collateralValue },
       } = account;
-  
+
       // function getAccountLiquidity(address account) view returns (uint, uint, uint)
       // returns(error, liquidity, shortfall) If shortfall is non-zero, account is underwater.
       const accLiquidity = await comptrollerContract.getAccountLiquidity(
         account.address,
       );
       const shortfallUSD = ethers.utils.formatEther(accLiquidity[2]);
-  
+
       if (
         health <= maximumHealth &&
         borrowValue >= minimumBorrowInETH &&
@@ -282,19 +319,16 @@ function provideHandleBlock(data) {
         console.log('---Borrowed (in ETH): ', borrowValue);
         console.log('---Collateral (in ETH): ', collateralValue);
         console.log('---Liquidatable amount (in USD): ', shortfallUSD);
-  
+
         // // Extra: Breakdown of which tokens are borrowed and how much
         // comptroller getMarketsIn(address) to see which tokens are being borrowed from.
         // go to those cTokens to call borrowBalanceStored() to check for amount borrowed.
-        // To-do: How to look up collateral? Is this needed? Or go with the liquidity function and API?
-  
+
         // // Add to findings
       }
     });
     await Promise.all(promises);
     */
-
-
 
     return findings;
   };
