@@ -182,9 +182,10 @@ function provideInitialize(data) {
       // Loop through tokens and update balances.
       account.tokens.forEach((token) => {
         // Process borrows as 'token'
+        /* eslint-disable eqeqeq */
         if (
           token.borrow_balance_underlying !== undefined
-          && token.borrow_balance_underlying.value !== 0
+          && token.borrow_balance_underlying.value != 0
         ) {
           data.borrow[token.address][account.address] = BigNumber(
             token.borrow_balance_underlying.value,
@@ -201,22 +202,21 @@ function provideInitialize(data) {
         // Process supplies as 'cTokens'
         if (
           token.supply_balance_underlying !== undefined
-          && token.supply_balance_underlying.value !== 0
+          && token.supply_balance_underlying.value != 0
         ) {
           data.supply[token.address][account.address] = BigNumber(
             token.supply_balance_underlying.value,
           ).dividedBy(data.tokens[token.address].exchangeRateMult);
 
           ts(
-            String(
-              `User ${[account.address]
-              } supplied ${Math.round(token.supply_balance_underlying.value)
-              } ${data.tokens[token.address].symbol
-              } ( ${Math.round(data.supply[token.address][account.address])
-              } cTokens ) `,
-            ),
+            `User ${[account.address]
+            } supplied ${Math.round(token.supply_balance_underlying.value)
+            } ${data.tokens[token.address].symbol
+            } ( ${Math.round(data.supply[token.address][account.address])
+            } cTokens ) `,
           );
         }
+        /* eslint-enable eqeqeq */
       }); // end token loop
       /* eslint-enable no-param-reassign */
     }); // end account loop
@@ -236,16 +236,24 @@ function provideHandleBlock(data) {
     //  account health null means balances ok, just needs a new calculation.
     //  add tokens first
 
-    // #region Update Balances on zero health accountAssets and low health?
+    // #region Update Balances on zero health accounts
     const filteredAccounts = [];
     Object.keys(data.accounts).forEach((currentAccount) => {
       // Uncomment this line when done testing
       // if (data.accounts[currentAccount].health != null
-      // && data.accounts[currentAccount].health == 0) {
+      // && data.accounts[currentAccount].health === 0) {
       if (data.accounts[currentAccount].health == null
         || data.accounts[currentAccount].health === 0) {
         filteredAccounts.push(currentAccount);
-        // const assetsIn = await comptrollerContract.getAssetsIn(currentAccount);
+        // Zero account balances
+        /* eslint-disable no-param-reassign */
+        Object.keys(data.supply).forEach((currentToken) => {
+          data.supply[currentToken][currentAccount] = null;
+        });
+        Object.keys(data.borrow).forEach((currentToken) => {
+          data.borrow[currentToken][currentAccount] = null;
+          /* eslint-enable no-param-reassign */
+        });
       }
     });
 
@@ -253,30 +261,55 @@ function provideHandleBlock(data) {
     ts('Getting assetsIn list for new accounts');
     const tokenSet = new Set();
     await Promise.all(filteredAccounts.map(async (currentAccount) => {
-      ts(currentAccount);
       let assetsIn = await comptrollerContract.getAssetsIn(currentAccount);
       assetsIn = assetsIn.map((asset) => asset.toLowerCase());
       assetsIn.forEach((asset) => { tokenSet.add(asset); });
+      /* eslint-disable no-param-reassign */
       data.accounts[currentAccount].assetsIn = assetsIn;
-      ts(String(`Assets for ${currentAccount}`));
-      ts(data.accounts[currentAccount].assetsIn);
+      /* eslint-enable no-param-reassign */
     }));
 
     // // Initialize token objects
-    // ts('before');
-    // const testToken = '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5';
-    // await verifyToken(testToken);
-    // ts('after');
-
     ts('Checking for new tokens');
-    ts(tokenSet);
     await Promise.all(Array.from(tokenSet).map(async (token) => {
-      ts(token);
       await verifyToken(data, token);
-      ts('finished');
     }));
 
-    ts(filteredAccounts);
+    // Grab token balances from on-chain
+    ts('Updating balances');
+    await Promise.all(filteredAccounts.map(async (currentAccount) => {
+      await Promise.all(data.accounts[currentAccount].assetsIn.map(async (currentToken) => {
+        const snapshot = await data.tokens[currentToken].contract
+          .getAccountSnapshot(currentAccount);
+
+        /* eslint-disable no-param-reassign */
+        if (snapshot && snapshot[1].toString() !== '0') {
+          data.supply[currentToken][currentAccount] = BigNumber(snapshot[1].toString())
+            .dividedBy(data.tokens[currentToken].cTokenDecimalsMult);
+          const tokenQty = data.supply[currentToken][currentAccount]
+            .multipliedBy(data.tokens[currentToken].exchangeRateMult);
+          ts(
+            `User ${currentAccount
+            } supplied ${Math.round(tokenQty)
+            } ${data.tokens[currentToken].symbol
+            } ( ${Math.round(data.supply[currentToken][currentAccount])
+            } cTokens ) `,
+          );
+        }
+        if (snapshot && snapshot[2].toString() !== '0') {
+          data.borrow[currentToken][currentAccount] = BigNumber(snapshot[2].toString())
+            .dividedBy(data.tokens[currentToken].tokenDecimalsMult);
+          ts(
+            `User ${currentAccount
+            } borrowed ${Math.round(data.borrow[currentToken][currentAccount])
+            } ${data.tokens[currentToken].symbol}`,
+          );
+        }
+        /* eslint-enable no-param-reassign */
+        return null;
+      }));
+    }));
+    ts('end');
     // await Promise.all(data.accounts.forEach(async (currentAccount) => {
     //   ts(currentAccount);
     //   ts(data.accounts[currentAccount]);
