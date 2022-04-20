@@ -14,7 +14,8 @@ const polygonEndpoint = process.env.POLYGON_ENDPOINT;
 const ownerPrivateKey = process.env.OWNER_TWO_PRIVATE_KEY;
 
 // load the transaction hash to approve
-const safeTxHash = process.env.SAFE_TX_HASH;
+// const safeTxHash = process.env.SAFE_TX_HASH;
+const safeTxHash = process.env.SAFE_TX_HASH_REJECT_FIRST_BOT;
 
 const provider = new ethers.providers.JsonRpcProvider(polygonEndpoint);
 
