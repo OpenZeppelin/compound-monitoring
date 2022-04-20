@@ -73,16 +73,26 @@ async function main() {
 
   // create the transaction that will add the information to the Agent Registry contract
   const from = fortaDeployerWallet.address;
+  console.log(`from: ${from}`);
   const gas = await contract.estimateGas.createAgent(agentId, from, manifestReference, chainIds);
+  console.log(`gas: ${gas}`);
   const txOptions = await agentRegistry.getTxOptions(gas, fortaDeployerWallet);
+  console.log(`txOptions: ${JSON.stringify(txOptions, null, 2)}`);
   const txUnsigned = await contract.populateTransaction.createAgent(agentId, from, manifestReference, chainIds, txOptions);
+  console.log(`txUnsigned: ${JSON.stringify(txUnsigned, null, 2)}`);
+
+  // get the next available nonce
+  console.log('Get nonce');
+  const nonce = await safeService.getNextNonce(polygonSafeAddress);
+  console.log(`nonce: ${nonce}`);
 
   // create the transaction Object that we will pass to the Gnosis Safe contract
   const transaction = {
     to: txUnsigned.to,
     data: txUnsigned.data,
     value: '0',
-    gasPrice: ethers.utils.parseUnits('40', 'gwei'), // specify for Polygon to ensure that we won't hit any 'transaction underpriced' errors
+    gasPrice: (ethers.utils.parseUnits('40', 'gwei')).toString(), // specify for Polygon to ensure that we won't hit any 'transaction underpriced' errors
+    nonce,
   };
   const safeTransaction = await safeSdk.createTransaction(transaction);
 
@@ -92,7 +102,7 @@ async function main() {
   // propose the transaction to the service
   await safeSdk.signTransaction(safeTransaction);
   const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
-  const origin = "A test transaction to deploy a Forta Bot";
+  const origin = "A SECOND test transaction to deploy a Forta Bot";
 
   console.log('safeTxHash');
   console.log(JSON.stringify(safeTxHash, null, 2));

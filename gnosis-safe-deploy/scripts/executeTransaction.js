@@ -11,10 +11,11 @@ const polygonSafeAddress = process.env.POLYGON_SAFE_ADDRESS;
 const polygonEndpoint = process.env.POLYGON_ENDPOINT;
 
 // load the private key for the account that will be signing the transaction
-const ownerPrivateKey = process.env.OWNER_TWO_PRIVATE_KEY;
+const ownerPrivateKey = process.env.OWNER_ONE_PRIVATE_KEY;
 
 // load the transaction hash to approve
-const safeTxHash = process.env.SAFE_TX_HASH;
+// const safeTxHash = process.env.SAFE_TX_HASH;
+const safeTxHash = process.env.SAFE_TX_HASH_REJECT_FIRST_BOT;
 
 const provider = new ethers.providers.JsonRpcProvider(polygonEndpoint);
 
@@ -59,13 +60,20 @@ async function main() {
     nonce: transaction.nonce
   }
 
-  const safeTransaction = await safeSdk.createTransaction(safeTransactionData);
+  console.log(`safeTransactionData: ${JSON.stringify(safeTransactionData, null, 2)}`);
+
+  const options = { gasPrice: (ethers.utils.parseUnits('40', 'gwei')).toString() };
+  const safeTransaction = await safeSdk.createTransaction(safeTransactionData, options);
   transaction.confirmations.forEach(confirmation => {
     const signature = new EthSignSignature(confirmation.owner, confirmation.signature);
     safeTransaction.addSignature(signature);
   });
 
+  console.log(`safeTransaction: ${JSON.stringify(safeTransaction, null, 2)}`);
+
   const executeTxResponse = await safeSdk.executeTransaction(safeTransaction);
+  console.log(`executeTxResponse: ${JSON.stringify(executeTxResponse, null, 2)}`);
+
   const receipt = executeTxResponse.transactionResponse && (await executeTxResponse.transactionResponse.wait());
   console.log(`Receipt: ${JSON.stringify(receipt, null, 2)}`);
 }
