@@ -29,6 +29,12 @@ async function verifyToken(data, tokenAddress) {
     );
     const cContract = data.tokens[tokenAddress].contract;
     data.tokens[tokenAddress].symbol = await cContract.symbol();
+    // cETH does not have an underlying contract, so we peg it to wETH instead
+    if (tokenAddress === '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5') {
+      data.tokens[tokenAddress].underlying = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+    } else {
+      data.tokens[tokenAddress].underlying = await cContract.underlying();
+    }
     const exchangeRate = await cContract.exchangeRateStored();
     data.tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
     // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
@@ -84,19 +90,44 @@ function provideInitialize(data) {
 
     // Compound API filter and Comptroller contract
     const { maximumHealth, minimumBorrowInETH } = config.liquidationMonitor.triggerLevels;
-    const { comptrollerAddress, maxTrackedAccounts, oracleAddress } = config.liquidationMonitor;
+    const {
+      comptrollerAddress, maxTrackedAccounts,
+      oracleAddress, feedRegistryAddress, oneInchAddress
+    } = config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     const oracleABI = getAbi(config.liquidationMonitor.oracleABI);
+    const feedRegistryABI = getAbi(config.liquidationMonitor.feedRegistryABI);
+    const oneInchABI = getAbi(config.liquidationMonitor.oneInchABI);
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
       comptrollerABI,
       data.provider,
     );
+    data.oneInchContract = new ethers.Contract(
+      oneInchAddress,
+      oneInchABI,
+      data.provider,
+    );
+    // Unused but available for the future
     data.oracleContract = new ethers.Contract(
       oracleAddress,
       oracleABI,
       data.provider,
     );
+    // Unused, did not work
+    data.feedRegistryContract = new ethers.Contract(
+      feedRegistryAddress,
+      feedRegistryABI,
+      data.provider,
+    );
+    // Chainlink calls don't work expected.
+    // https://docs.chain.link/docs/feed-registry/
+    // const ethDenom = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+    // const cusdcDenom = '0x39aa39c021dfbae8fac545936693ac917d5e7563';
+    // const test = await data.feedRegistryContract.latestRoundData(cusdcDenom, ethDenom);
+    // Errors with:too many arguments: passed to contract
+    // (count = 2, expectedCount = 0, code = UNEXPECTED_ARGUMENT, version = contracts / 5.6.0)
+
     /* eslint-enable no-param-reassign */
     // #endregion
 
@@ -230,7 +261,7 @@ function provideHandleBlock(data) {
     // upon the mining of a new block, check the specified accounts to make sure the balance of
     // each account has not fallen below the specified threshold
     const findings = [];
-    const { comptrollerContract, oracleContract } = data;
+    const { comptrollerContract, oneInchContract } = data;
 
     // To-do: add listener to find new and updated accounts
     //  account health 0 means needs a balance re-scan.
@@ -322,23 +353,22 @@ function provideHandleBlock(data) {
 
     // #endregion
 
-    // #region Update all token prices
+    // #region Update all token prices via 1inch for now.
+    // To-Do: Switch the primary feed back to chainlink
     await Promise.all(Object.keys(data.tokens).map(async (currentToken) => {
-      const price = await oracleContract.getUnderlyingPrice(currentToken);
-      // data.tokens[currentToken].price = BigNumber(ethers.utils.formatEther(price));
-      // ts(data.tokens[currentToken]);
-      // ts(price);
-      ts(BigNumber(price.toString()));
-      ts(price.toString());
-      ts(data.tokens[currentToken].tokenDecimalsMult);
-      data.tokens[currentToken].price = BigNumber(price)
-        .dividedBy(data.tokens[currentToken].tokenDecimalsMult);
+      const price = await oneInchContract.getRateToEth(data.tokens[currentToken].underlying, 0);
+      // Adjust for native decimals
+      const oneInchMult = BigNumber(10).pow(36 - data.tokens[currentToken].tokenDecimals);
+      data.tokens[currentToken].price = BigNumber(price.toString())
+        .dividedBy(oneInchMult);
       ts(
         `Updated price of ${data.tokens[currentToken].symbol
-        } is ${data.tokens[currentToken].price.toString()}`,
+        } is ${data.tokens[currentToken].price.toString()
+        } ETH from ${data.tokens[currentToken].tokenDecimals} decimals `,
       );
     }));
     // #endregion
+
     // Calculate health on all null accounts and low health?
 
     // Accounts with low health can be checked on chain for a final health score.
