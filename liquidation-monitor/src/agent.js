@@ -341,35 +341,61 @@ function provideHandleBlock(data) {
         return null;
       }));
     }));
-    ts('end');
-    // await Promise.all(data.accounts.forEach(async (currentAccount) => {
-    //   ts(currentAccount);
-    //   ts(data.accounts[currentAccount]);
-    // }));
-
-    // ts(data.accounts[currentAccount].health);
-    // ts(comptrollerContract);
-    // ts(String(currentAccount + ' has ' + assetsIn));
-
     // #endregion
 
     // #region Update all token prices via 1inch for now.
-    // To-Do: Switch the primary feed back to chainlink
+    // To-Do: Switch the primary feed back to ChainLink
     await Promise.all(Object.keys(data.tokens).map(async (currentToken) => {
       const price = await oneInchContract.getRateToEth(data.tokens[currentToken].underlying, 0);
       // Adjust for native decimals
       const oneInchMult = BigNumber(10).pow(36 - data.tokens[currentToken].tokenDecimals);
       data.tokens[currentToken].price = BigNumber(price.toString())
         .dividedBy(oneInchMult);
+      // Update the Collateral Factor
+      const market = await comptrollerContract.markets(currentToken);
+      data.tokens[currentToken].collateralMult = BigNumber(market[1].toString())
+        .dividedBy(BigNumber(10).pow(18));
       ts(
         `Updated price of ${data.tokens[currentToken].symbol
         } is ${data.tokens[currentToken].price.toString()
-        } ETH from ${data.tokens[currentToken].tokenDecimals} decimals `,
+        } ETH with a collateral factor of ${data.tokens[currentToken].collateralMult}`,
       );
     }));
     // #endregion
 
-    // Calculate health on all null accounts and low health?
+    // #region Calculate health on all accounts
+    ts('Health recalculation');
+    Object.keys(data.accounts).forEach((account) => {
+      let borrowBalance = BigNumber(0);
+      let supplyBalance = BigNumber(0);
+      Object.keys(data.tokens).forEach((token) => {
+        if (data.supply[token][account]) {
+          // Supply balances are stored in cTokens and need to be multiplied by the
+          //   exchange rate and reduced by the collateral factor
+          supplyBalance = supplyBalance.plus(data.supply[token][account]
+            .multipliedBy(data.tokens[token].exchangeRateMult)
+            .multipliedBy(data.tokens[token].price)
+            .multipliedBy(data.tokens[token].collateralMult));
+        }
+        if (data.borrow[token][account]) {
+          // Only need to multiply by the price.
+          borrowBalance = borrowBalance.plus(data.borrow[token][account]
+            .multipliedBy(data.tokens[token].price));
+        }
+      });
+      ts(`Account ${account} supplies ${supplyBalance} and borrows ${borrowBalance}`);
+      // Remove non-borrowers
+      if (borrowBalance.eq(0)) {
+        delete data.accounts[account];
+      } else {
+        const prevHealth = data.accounts[account].health;
+        data.accounts[account].supplyBalance = supplyBalance;
+        data.accounts[account].borrowBalance = borrowBalance;
+        data.accounts[account].health = supplyBalance.dividedBy(borrowBalance);
+        ts(`Account ${account} updated health from ${prevHealth} to ${data.accounts[account].health}`);
+      }
+    });
+    // #endregion
 
     // Accounts with low health can be checked on chain for a final health score.
     /*
