@@ -1,6 +1,6 @@
-const EthersAdapter = require('@gnosis.pm/safe-ethers-lib')["default"];
+const EthersAdapter = require('@gnosis.pm/safe-ethers-lib').default;
 const { default: Safe } = require('@gnosis.pm/safe-core-sdk');
-const SafeServiceClient = require('@gnosis.pm/safe-service-client')["default"];
+const SafeServiceClient = require('@gnosis.pm/safe-service-client').default;
 
 const ethers = require('ethers');
 
@@ -53,7 +53,7 @@ async function main() {
   // propose the transaction to the service
   await safeSdk.signTransaction(safeTransaction);
   const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
-  const origin = "Canceling a pending transaction";
+  const origin = 'Canceling a pending transaction';
 
   console.log('safeTxHash');
   console.log(JSON.stringify(safeTxHash, null, 2));
