@@ -1,0 +1,37 @@
+{
+  "developerAbbreviation": "AE",
+  "protocolName": "Compound",
+  "protocolAbbreviation": "COMP",
+  "contracts": {
+    "multisig": {
+      "address": "0xbbf3f1421D886E9b2c5D716B5192aC998af2012c",
+      "abiFile": "GnosisSafe.json",
+      "events": [
+        "AddedOwner",
+        "RemovedOwner"
+      ]
+    },
+    "governance": {
+      "address": "0xc0Da02939E1441F497fd74F78cE7Decb17B66529",
+      "abiFile": "GovernorBravo.json",
+      "events": [
+        "ProposalCreated",
+        "ProposalExecuted",
+        "ProposalCanceled",
+        "VoteCast",
+        "ProposalThresholdSet",
+        "NewAdmin"
+      ]
+    },
+    "comptroller": {
+      "address": "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B",
+      "abiFile": "Comptroller.json",
+      "events": [
+        "NewPauseGuardian",
+        "ActionPaused",
+        "NewBorrowCap",
+        "NewBorrowCapGuardian"
+      ]
+    }
+  }
+}

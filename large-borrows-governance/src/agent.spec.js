@@ -1,6 +1,23 @@
+const BigNumber = require('bignumber.js');
+
+// proposalThreshold and quorumVotes will be pulled from Governor Bravo contract
+// Note: the Proposal threshold will be less than the Quorum threshold
+const mockMinProposal = 1100;
+const mockMinQuorum = 4400;
+const mockDecimals = 2;
+
+// Convert to bignumber and 10^x
+const decimals = new BigNumber(10).pow(mockDecimals);
+
+// convert to bignumber.js and divide by COMP decimals
+const minQuorumVotes = new BigNumber(mockMinQuorum).div(decimals);
+const minProposalVotes = new BigNumber(mockMinProposal).div(decimals);
+
 const mockERC20Contract = {
-  decimals: jest.fn().mockResolvedValue(0),
+  decimals: jest.fn().mockResolvedValue(mockDecimals),
   balanceOf: jest.fn(),
+  proposalThreshold: jest.fn().mockResolvedValue(mockMinProposal),
+  quorumVotes: jest.fn().mockResolvedValue(mockMinQuorum),
 };
 
 // combine the mocked provider and contracts into the ethers import mock
@@ -24,7 +41,7 @@ const { provideInitialize, provideHandleTransaction } = require('./agent');
 
 // check the configuration file to verify the values
 describe('check agent configuration file', () => {
-  it('procotolName key required', () => {
+  it('protocolName key required', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');
     expect(protocolName).not.toBe('');
@@ -54,6 +71,12 @@ describe('check agent configuration file', () => {
     expect(cCOMPAddress).not.toBe('');
   });
 
+  it('governorAddress key required', () => {
+    const { governorAddress } = config;
+    expect(typeof (governorAddress)).toBe('string');
+    expect(governorAddress).not.toBe('');
+  });
+
   it('borrowLevels key required', () => {
     const { borrowLevels } = config;
     expect(typeof (borrowLevels)).toBe('object');
@@ -63,11 +86,9 @@ describe('check agent configuration file', () => {
   it('borrowLevels key values must be valid', () => {
     const { borrowLevels } = config;
     Object.keys(borrowLevels).forEach((key) => {
-      const { minAmountCOMP, type, severity } = borrowLevels[key];
+      const { type, severity } = borrowLevels[key];
 
       // check that all the required values in the borrowLevel key are present and defined
-      expect(typeof (minAmountCOMP)).toBe('number');
-      expect(minAmountCOMP).not.toBe(undefined);
       expect(typeof (type)).toBe('string');
       expect(type).not.toBe('');
       expect(typeof (severity)).toBe('string');
@@ -199,8 +220,12 @@ describe('handleTransaction', () => {
   it('returns a finding when a borrow event is emitted from the cCOMP token contract and the address that borrowed COMP exceeds the proposal threshold', async () => {
     // set the balanceOf to a value that is greater than the minimum COMP threshold for the proposal
     // governance action
-    const { minAmountCOMP, type, severity } = borrowLevels.proposal;
-    mockERC20Contract.balanceOf.mockResolvedValue(minAmountCOMP + 1);
+    const { type, severity } = borrowLevels.proposal;
+
+    // Mock: minProposalVotes + 1
+    const currCOMPOwned = BigNumber.sum(minProposalVotes, 1);
+    // add the decimals back on before submitting
+    mockERC20Contract.balanceOf.mockResolvedValue(currCOMPOwned.multipliedBy(decimals));
 
     // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
     // the Borrow event with the cCOMP address
@@ -233,8 +258,8 @@ describe('handleTransaction', () => {
       metadata: {
         borrowerAddress: mockBorrowerAddress,
         governanceLevel: 'proposal',
-        minCOMPNeeded: minAmountCOMP.toString(),
-        currCOMPOwned: (minAmountCOMP + 1).toString(),
+        minCOMPNeeded: minProposalVotes.toString(),
+        currCOMPOwned: currCOMPOwned.toString(),
       },
     })];
 
@@ -244,15 +269,22 @@ describe('handleTransaction', () => {
 
   it('returns two findings when a borrow event is emitted from the cCOMP token contract and the address that borrowed COMP exceeds the proposal and vote quorum thresholds', async () => {
     const {
-      minAmountCOMP: proposalMinCOMP, type: proposalType, severity: proposalSeverity,
-    } = borrowLevels.proposal;
-    const {
-      minAmountCOMP: votingMinCOMP, type: votingQuorumType, severity: votingQuorumSeverity,
-    } = borrowLevels.votingQuorum;
-
+      proposal: {
+        type: proposalType,
+        severity: proposalSeverity,
+      },
+      votingQuorum: {
+        type: votingQuorumType,
+        severity: votingQuorumSeverity,
+      },
+    } = borrowLevels;
     // set the balanceOf to a value that is greater than the minimum COMP threshold for the proposal
     // and vote quorum governance interactions
-    mockERC20Contract.balanceOf.mockResolvedValue(votingMinCOMP + 1);
+
+    // Mock: minProposalVotes + 1
+    const currCOMPOwned = BigNumber.sum(minQuorumVotes, 1);
+    // add the decimals back on before submitting
+    mockERC20Contract.balanceOf.mockResolvedValue(currCOMPOwned.multipliedBy(decimals));
 
     // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
     // the Borrow event with the cCOMP address
@@ -288,8 +320,8 @@ describe('handleTransaction', () => {
       metadata: {
         borrowerAddress: mockBorrowerAddress,
         governanceLevel: 'proposal',
-        minCOMPNeeded: proposalMinCOMP.toString(),
-        currCOMPOwned: (votingMinCOMP + 1).toString(),
+        minCOMPNeeded: minProposalVotes.toString(),
+        currCOMPOwned: currCOMPOwned.toString(),
       },
     });
 
@@ -304,8 +336,8 @@ describe('handleTransaction', () => {
       metadata: {
         borrowerAddress: mockBorrowerAddress,
         governanceLevel: 'votingQuorum',
-        minCOMPNeeded: votingMinCOMP.toString(),
-        currCOMPOwned: (votingMinCOMP + 1).toString(),
+        minCOMPNeeded: minQuorumVotes.toString(),
+        currCOMPOwned: currCOMPOwned.toString(),
       },
     });
 

@@ -2,18 +2,21 @@
 
 ## Description
 
-This agent monitors the Compound Finance Comptroller contract for distribution events
-that exceed a configurable threshold.
+This agent monitors the Compound Finance Comptroller contract for distribution events using a heuristic that
+attempts to find potentially dangerous distributions. First it determines if a distribution exceeds a 
+configurable minimum amount of COMP, next it checks the amount of COMP accrued in the previous block and if that
+amount is non-zero it checks the ratio of that distribution to the amount of COMP actually transferred and if it
+exceeds a configurable ratio an alert is generated.
 
 ## Alerts
 
 <!-- -->
-- AE-COMP-LARGE-DISTRIBUTION-EVENT
-  - Type is always set to `Suspicious`
-  - Severity is always set to `High`
+- AE-COMP-DISTRIBUTION-EVENT
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
   - Metadata field contains:
+    - Amount of COMP distributed
     - Amount of COMP accrued
-    - Distribution threshold
     - Receiver address
 
 ## Testing
