@@ -11,11 +11,11 @@
     "feedRegistryABI": "FeedRegistry.json",
     "oneInchAddress": "0x07D91f5fb9Bf7798734C3f606dB065549F6893bb",
     "oneInchABI": "OneInch.json",
-    "maxTrackedAccounts": 5000,
+    "maxTrackedAccounts": 10000,
     "triggerLevels": {
-      "maximumHealth": 3,
-      "minimumBorrowInETH": 1.0,
-      "minimumShortfallInUSD": 1.0
+      "maximumHealth": 100,
+      "minimumBorrowInETH": 0.1,
+      "minimumLiquidationInUSD": 300
     },
     "alert": {
       "type": "Info",
