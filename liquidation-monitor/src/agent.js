@@ -87,6 +87,9 @@ function provideInitialize(data) {
     data.supply = {}; // qty of cTokens (not Tokens)
     data.borrow = {}; // qty of Tokens (not cTokens)
     data.tokens = {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
+    data.newAccounts = []; // New account from transaction events
+    // Test
+    data.test = 0;
 
     // Compound API filter and Comptroller contract
     const { maximumHealth, minimumBorrowInETH } = config.liquidationMonitor.triggerLevels;
@@ -194,7 +197,6 @@ function provideInitialize(data) {
         tokenSet.add(token.address);
       });
     });
-
     // Async function verifies or builds data.token[token]
     // To-do: Can this be moved to utils and still reference data.tokens?
 
@@ -211,6 +213,8 @@ function provideInitialize(data) {
       if (data.accounts[account.address] === undefined) {
         data.accounts[account.address] = {};
       }
+      // Add found health
+      data.accounts[account.address].health = BigNumber(account.health.value);
       // Loop through tokens and update balances.
       account.tokens.forEach((token) => {
         // Process borrows as 'token'
@@ -256,17 +260,35 @@ function provideInitialize(data) {
   };
 }
 
+function provideHandleTransaction(data) {
+  return async function handleTransaction(txEvent) {
+    // Filter all new transactions and look for new accounts to track.
+    const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
+    const exitMarketString = 'event MarketExited(address cToken, address account)';
+
+    const exitMarketEvents = txEvent.filterLog(exitMarketString);
+    exitMarketEvents.forEach((exitEvent) => {
+      ts(`${exitEvent.args.account} exited from ${exitEvent.args.account} `);
+      data.newAccounts.push(exitEvent.args.account);
+    });
+    const borrowEvents = txEvent.filterLog(borrowString);
+    borrowEvents.forEach((borrowEvent) => {
+      ts(`${borrowEvent.args.borrower} borrowed ${borrowEvent.args.borrowAmount} `);
+      data.newAccounts.push(borrowEvent.args.borrower);
+    });
+
+    // Return zero findings
+    return [];
+  };
+}
+
 function provideHandleBlock(data) {
   return async function handleBlock(blockEvent) {
-    // upon the mining of a new block, check the specified accounts to make sure the balance of
-    // each account has not fallen below the specified threshold
     const findings = [];
     const { comptrollerContract, oneInchContract } = data;
 
     // To-do: add listener to find new and updated accounts
-    //  account health 0 means needs a balance re-scan.
-    //  account health null means balances ok, just needs a new calculation.
-    //  add tokens first
+
 
     // #region Update Balances on zero health accounts
     const filteredAccounts = [];
@@ -344,6 +366,7 @@ function provideHandleBlock(data) {
     // #endregion
 
     // #region Update all token prices via 1inch for now.
+    ts('Updating token prices and collateral factors');
     // To-Do: Switch the primary feed back to ChainLink
     await Promise.all(Object.keys(data.tokens).map(async (currentToken) => {
       const price = await oneInchContract.getRateToEth(data.tokens[currentToken].underlying, 0);
@@ -383,7 +406,9 @@ function provideHandleBlock(data) {
             .multipliedBy(data.tokens[token].price));
         }
       });
-      ts(`Account ${account} supplies ${supplyBalance} and borrows ${borrowBalance}`);
+      ts(
+        `Account ${account} supplies ETH ${supplyBalance.toFixed(3)} and borrows ${borrowBalance.toFixed(3)} ETH`,
+      );
       // Remove non-borrowers
       if (borrowBalance.eq(0)) {
         delete data.accounts[account];
@@ -392,10 +417,14 @@ function provideHandleBlock(data) {
         data.accounts[account].supplyBalance = supplyBalance;
         data.accounts[account].borrowBalance = borrowBalance;
         data.accounts[account].health = supplyBalance.dividedBy(borrowBalance);
-        ts(`Account ${account} updated health from ${prevHealth} to ${data.accounts[account].health}`);
+        ts(
+          `Account ${account} updated health from ${prevHealth.toFixed(3)} to ${data.accounts[account].health.toFixed(3)}`,
+        );
       }
     });
     // #endregion
+
+    ts(data.newAccounts);
 
     // Accounts with low health can be checked on chain for a final health score.
     /*
@@ -443,6 +472,8 @@ function provideHandleBlock(data) {
 module.exports = {
   provideHandleBlock,
   handleBlock: provideHandleBlock(initializeData),
+  provideHandleTransaction,
+  handleTransaction: provideHandleTransaction(initializeData),
   provideInitialize,
   initialize: provideInitialize(initializeData),
 };
