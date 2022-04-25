@@ -17,9 +17,10 @@ const initializeData = {};
 ts('Starting bot');
 
 // #region Global functions
-async function verifyToken(data, tokenAddress) {
+async function verifyToken(data, tokenAddressImport) {
   // To-do: move this region to a function, for cleaner DRY code.
   /* eslint-disable no-param-reassign */
+  const tokenAddress = tokenAddressImport.toLowerCase();
   if (data.tokens[tokenAddress] === undefined) {
     data.tokens[tokenAddress] = {};
     data.tokens[tokenAddress].contract = new ethers.Contract(
