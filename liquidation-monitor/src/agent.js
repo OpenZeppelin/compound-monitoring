@@ -89,6 +89,7 @@ function provideInitialize(data) {
     data.borrow = {}; // qty of Tokens (not cTokens)
     data.tokens = {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
     data.newAccounts = []; // New account from transaction events
+    data.totalNewAccounts = 0;
     // Test
     data.test = 0;
 
@@ -96,7 +97,7 @@ function provideInitialize(data) {
     const { maximumHealth, minimumBorrowInETH } = config.liquidationMonitor.triggerLevels;
     const {
       comptrollerAddress, maxTrackedAccounts,
-      oracleAddress, feedRegistryAddress, oneInchAddress
+      oracleAddress, feedRegistryAddress, oneInchAddress,
     } = config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     const oracleABI = getAbi(config.liquidationMonitor.oracleABI);
@@ -124,11 +125,11 @@ function provideInitialize(data) {
       feedRegistryABI,
       data.provider,
     );
-    // Chainlink calls don't work expected.
+    // ChainLink calls don't work expected.
     // https://docs.chain.link/docs/feed-registry/
     // const ethDenom = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-    // const cusdcDenom = '0x39aa39c021dfbae8fac545936693ac917d5e7563';
-    // const test = await data.feedRegistryContract.latestRoundData(cusdcDenom, ethDenom);
+    // const cUSDDenom = '0x39aa39c021dfbae8fac545936693ac917d5e7563';
+    // const test = await data.feedRegistryContract.latestRoundData(cUSDDenom, ethDenom);
     // Errors with:too many arguments: passed to contract
     // (count = 2, expectedCount = 0, code = UNEXPECTED_ARGUMENT, version = contracts / 5.6.0)
 
@@ -177,7 +178,7 @@ function provideInitialize(data) {
         maximumHealth,
         minimumBorrowInETH,
         page,
-        2, // Testing, so only pulling 2 accounts per page. Later increase to 100.
+        100, // Testing, so only pulling 2 accounts per page. Later increase to 100.
       );
       const apiResults = await callAPI(apiURL, currentRequest);
       apiResults.accounts.forEach((account) => {
@@ -189,7 +190,6 @@ function provideInitialize(data) {
     // #endregion
 
     // #region Parse Compound data into new objects
-
     // Get a unique list of token addresses
     ts('Processing tokens now');
     const tokenSet = new Set();
@@ -263,6 +263,7 @@ function provideInitialize(data) {
 
 function provideHandleTransaction(data) {
   return async function handleTransaction(txEvent) {
+    // #region Filter logs and look for new account activity.
     // Filter all new transactions and look for new accounts to track.
     const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
     const exitMarketString = 'event MarketExited(address cToken, address account)';
@@ -277,6 +278,7 @@ function provideHandleTransaction(data) {
       ts(`${borrowEvent.args.borrower} borrowed ${borrowEvent.args.borrowAmount} `);
       data.newAccounts.push(borrowEvent.args.borrower);
     });
+    // #endregion
 
     // Return zero findings
     return [];
@@ -285,18 +287,31 @@ function provideHandleTransaction(data) {
 
 function provideHandleBlock(data) {
   return async function handleBlock(blockEvent) {
+    ts(`Starting block ${blockEvent.blockNumber}`);
     const findings = [];
     const { comptrollerContract, oneInchContract } = data;
 
-    // To-do: add listener to find new and updated accounts
-
+    // #region Add new Accounts
+    ts(
+      `Currently tracking ${Object.keys(data.accounts).length
+      } accounts and adding ${data.newAccounts.length
+      } account(s) this block. ${data.totalNewAccounts
+      } total accounts added since start.`,
+    );
+    data.newAccounts.forEach((newAccount) => {
+      const account = newAccount.toLowerCase();
+      // Initialize account. New accounts will get updated in the block section
+      /* eslint-disable no-param-reassign */
+      data.accounts[account] = {};
+      /* eslint-enable no-param-reassign */
+    });
+    data.totalNewAccounts += data.newAccounts.length;
+    data.newAccounts = [];
+    // #endregion
 
     // #region Update Balances on zero health accounts
     const filteredAccounts = [];
     Object.keys(data.accounts).forEach((currentAccount) => {
-      // Uncomment this line when done testing
-      // if (data.accounts[currentAccount].health != null
-      // && data.accounts[currentAccount].health === 0) {
       if (data.accounts[currentAccount].health == null
         || data.accounts[currentAccount].health === 0) {
         filteredAccounts.push(currentAccount);
@@ -373,12 +388,14 @@ function provideHandleBlock(data) {
       const price = await oneInchContract.getRateToEth(data.tokens[currentToken].underlying, 0);
       // Adjust for native decimals
       const oneInchMult = BigNumber(10).pow(36 - data.tokens[currentToken].tokenDecimals);
+      /* eslint-disable no-param-reassign */
       data.tokens[currentToken].price = BigNumber(price.toString())
         .dividedBy(oneInchMult);
       // Update the Collateral Factor
       const market = await comptrollerContract.markets(currentToken);
       data.tokens[currentToken].collateralMult = BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
+      /* eslint-enable no-param-reassign */
       ts(
         `Updated price of ${data.tokens[currentToken].symbol
         } is ${data.tokens[currentToken].price.toString()
@@ -407,26 +424,51 @@ function provideHandleBlock(data) {
             .multipliedBy(data.tokens[token].price));
         }
       });
-      ts(
-        `Account ${account} supplies ETH ${supplyBalance.toFixed(3)} and borrows ${borrowBalance.toFixed(3)} ETH`,
-      );
+      // ts(
+      //   `Account ${account} supplies ETH ${supplyBalance.toFixed(3)
+      //   } and borrows ${ borrowBalance.toFixed(3) } ETH`,
+      // );
+
       // Remove non-borrowers
       if (borrowBalance.eq(0)) {
+        /* eslint-disable no-param-reassign */
         delete data.accounts[account];
       } else {
-        const prevHealth = data.accounts[account].health;
         data.accounts[account].supplyBalance = supplyBalance;
         data.accounts[account].borrowBalance = borrowBalance;
         data.accounts[account].health = supplyBalance.dividedBy(borrowBalance);
-        ts(
-          `Account ${account} updated health from ${prevHealth.toFixed(3)} to ${data.accounts[account].health.toFixed(3)}`,
-        );
+        /* eslint-enable no-param-reassign */
       }
     });
     // #endregion
 
-    ts(data.newAccounts);
+    // #region Check for low health accounts
+    const lowHealthAccounts = [];
+    Object.keys(data.accounts).forEach((currentAccount) => {
+      if (data.accounts[currentAccount].health.isLessThan(1.03)) {
+        lowHealthAccounts.push(currentAccount);
+      }
+    });
+    ts(`${lowHealthAccounts.length} low health accounts detected`);
+    await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
+      const liquidity = await data.comptrollerContract.getAccountLiquidity(currentAccount);
+      const positiveUSD = BigNumber(ethers.utils.formatEther(liquidity[1]).toString());
+      const shortfallUSD = BigNumber(ethers.utils.formatEther(liquidity[2]).toString());
 
+      if (positiveUSD.gt(0)) {
+        ts(
+          `Low liquidity on ${currentAccount} with health of ${data.accounts[currentAccount].health.dp(3)
+          } cash reserve of +$${positiveUSD.dp(2)} USD`,
+        );
+      }
+      if (shortfallUSD.gt(0)) {
+        ts(
+          `Negative liquidity on ${currentAccount} with health of ${data.accounts[currentAccount].health.dp(3)
+          } shortfall of +$${shortfallUSD.dp(2)} USD`,
+        );
+      }
+    }));
+    // #endregion
     // Accounts with low health can be checked on chain for a final health score.
     /*
     const promises = accounts.map(async (account) => {
