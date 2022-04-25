@@ -1,7 +1,7 @@
 {
-  "name": "forta-ae-comp-governance-events",
-  "version": "0.0.3",
-  "description": "This agent monitors events emitted from the Compound GovernorBravo contract.",
+  "name": "forta-ae-comp-asset-monitor",
+  "version": "0.0.1",
+  "description": "This agent monitors the underlying asset of a Compound Finance cToken.",
   "scripts": {
     "start": "npm run start:dev",
     "start:dev": "nodemon --watch src --watch forta.config.json -e js,json --exec 'forta-agent run'",
@@ -19,7 +19,10 @@
   },
   "dependencies": {
     "axios": "^0.26.1",
-    "forta-agent": "^0.0.39"
+    "bignumber.js": "^9.0.2",
+    "forta-agent": "^0.0.39",
+    "web3": "^1.7.1",
+    "web3-eth": "^1.7.1"
   },
   "devDependencies": {
     "eslint": "^7.32.0",

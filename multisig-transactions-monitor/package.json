@@ -1,10 +1,13 @@
 {
-  "name": "forta-ae-comp-governance-events",
-  "version": "0.0.3",
-  "description": "This agent monitors events emitted from the Compound GovernorBravo contract.",
+  "name": "forta-compound-finance-multisig-transaction-agent",
+  "version": "0.0.1",
+  "description": "Forta Agent monitoring transactions for the Compound Finance Community Multisig contract",
+  "chainIds": [
+    1
+  ],
   "scripts": {
     "start": "npm run start:dev",
-    "start:dev": "nodemon --watch src --watch forta.config.json -e js,json --exec 'forta-agent run'",
+    "start:dev": "nodemon --watch src --watch forta.config.json -e js,json --exec \"forta-agent run\"",
     "start:prod": "forta-agent run --prod",
     "tx": "forta-agent run --tx",
     "block": "forta-agent run --block",
@@ -18,14 +21,14 @@
     "test": "jest"
   },
   "dependencies": {
-    "axios": "^0.26.1",
-    "forta-agent": "^0.0.39"
+    "forta-agent": "^0.1.1",
+    "bignumber.js": "^9.0.1"
   },
   "devDependencies": {
-    "eslint": "^7.32.0",
-    "eslint-config-airbnb-base": "^14.2.1",
-    "eslint-plugin-import": "^2.25.1",
-    "jest": "^27.2.5",
+    "eslint": "^8.10.0",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-config-airbnb": "^19.0.4",
+    "jest": "^27.0.6",
     "nodemon": "^2.0.8"
   }
 }
