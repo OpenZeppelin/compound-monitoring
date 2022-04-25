@@ -1,7 +1,7 @@
 const {
-  // Finding,
-  // FindingSeverity,
-  // FindingType,
+  Finding,
+  FindingSeverity,
+  FindingType,
   ethers,
   getEthersProvider,
 } = require('forta-agent');
@@ -17,8 +17,33 @@ const initializeData = {};
 ts('Starting bot');
 
 // #region Global functions
+function createAlert(
+  developerAbbreviation,
+  protocolName,
+  protocolAbbreviation,
+  type,
+  severity,
+  borrowerAddress,
+  liquidationAmount,
+  shortfallAmount,
+) {
+  return Finding.fromObject({
+    name: `${protocolName} Compound Liquidation Threshold Alert`,
+    description: `The address ${borrowerAddress} has dropped below the liquidation threshold. `
+      + `The account may be liquidated for: $${liquidationAmount} USD`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+    type: FindingType[type],
+    severity: FindingSeverity[severity],
+    protocol: protocolName,
+    metadata: {
+      borrowerAddress,
+      liquidationAmount,
+      shortfallAmount,
+    },
+  });
+}
+
 async function verifyToken(data, tokenAddressImport) {
-  // To-do: move this region to a function, for cleaner DRY code.
   /* eslint-disable no-param-reassign */
   const tokenAddress = tokenAddressImport.toLowerCase();
   if (data.tokens[tokenAddress] === undefined) {
@@ -30,7 +55,7 @@ async function verifyToken(data, tokenAddressImport) {
     );
     const cContract = data.tokens[tokenAddress].contract;
     data.tokens[tokenAddress].symbol = await cContract.symbol();
-    // cETH does not have an underlying contract, so we peg it to wETH instead
+    // cETH does not have an underlying contract, so peg it to wETH instead
     if (tokenAddress === '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5') {
       data.tokens[tokenAddress].underlying = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
     } else {
@@ -61,11 +86,9 @@ async function verifyToken(data, tokenAddressImport) {
     /* eslint-enable no-param-reassign */
 
     ts(
-      String(
-        `Now tracking ${data.tokens[tokenAddress].symbol
-        } with ${data.tokens[tokenAddress].tokenDecimals
-        } decimals at address ${tokenAddress}`,
-      ),
+      `Now tracking ${data.tokens[tokenAddress].symbol
+      } with ${data.tokens[tokenAddress].tokenDecimals
+      } decimals at address ${tokenAddress}`,
     );
   }
 }
@@ -81,7 +104,7 @@ function provideInitialize(data) {
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
     data.alert = config.liquidationMonitor.alert;
-    data.minimumShortfallInUSD = config.liquidationMonitor.triggerLevels.minimumShortfallInUSD;
+    data.minimumLiquidationInUSD = config.liquidationMonitor.triggerLevels.minimumLiquidationInUSD;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersProvider();
     data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assetsIn addresses]?
@@ -90,8 +113,6 @@ function provideInitialize(data) {
     data.tokens = {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
     data.newAccounts = []; // New account from transaction events
     data.totalNewAccounts = 0;
-    // Test
-    data.test = 0;
 
     // Compound API filter and Comptroller contract
     const { maximumHealth, minimumBorrowInETH } = config.liquidationMonitor.triggerLevels;
@@ -137,6 +158,11 @@ function provideInitialize(data) {
     // #endregion
 
     // #region Get initial accounts from Compound API
+    // To-do: Can be bootstrapped with ~30 eth_getLogs calls,  500k blocks per call, using filter:
+    // Borrow (address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)
+    // topic0: 0x13ed6866d4e1ee6da46f845c46d7e54120883d75c5ea9a2dacc1c4ca8984ab80
+
+    // Simple bootstrap with Compound for now
     const apiURL = 'https://api.compound.finance/api/v2/account';
 
     // Helper for Compound API
@@ -161,32 +187,30 @@ function provideInitialize(data) {
     );
     const initialResults = await callAPI(apiURL, initialRequest);
     const totalEntries = initialResults.pagination_summary.total_entries;
-    ts(String(`Total Entries ${totalEntries}`));
-    ts(String(`maxTrackedAccounts ${maxTrackedAccounts}`));
+    ts(`Total Entries ${totalEntries}`);
+    ts(`maxTrackedAccounts ${maxTrackedAccounts}`);
 
     // Determine number of pages needed to query. Results vs config limit.
     const maxEntries = Math.min(maxTrackedAccounts, totalEntries);
     const maxPages = Math.ceil(maxEntries / 100);
-    ts(String(`maxPages ${maxPages}`));
 
     // Query each page and add accounts. Starting at 1 and including maxPages
     const accounts = [];
     const pages = [...Array(maxPages)].map((_, i) => 1 + i);
     await Promise.all(pages.map(async (page) => {
-      // for (let page = 1; page <= maxPages; page++) {
       const currentRequest = buildJsonRequest(
         maximumHealth,
         minimumBorrowInETH,
         page,
-        100, // Testing, so only pulling 2 accounts per page. Later increase to 100.
+        100, // 100 results per page was optimal
       );
       const apiResults = await callAPI(apiURL, currentRequest);
       apiResults.accounts.forEach((account) => {
         accounts.push(account);
       });
-      ts(String(`Imported ${page}00 accounts`));
+      ts(`Imported batch ${page}00 accounts`);
     }));
-    ts(String(`Tracking ${accounts.length} accounts`));
+    ts(`Tracking ${accounts.length} accounts`);
     // #endregion
 
     // #region Parse Compound data into new objects
@@ -198,10 +222,8 @@ function provideInitialize(data) {
         tokenSet.add(token.address);
       });
     });
-    // Async function verifies or builds data.token[token]
-    // To-do: Can this be moved to utils and still reference data.tokens?
 
-    // Initialize token objects
+    // Initialize token objects first
     await Promise.all(Array.from(tokenSet).map(async (token) => {
       await verifyToken(data, token);
     }));
@@ -229,11 +251,9 @@ function provideInitialize(data) {
           );
 
           ts(
-            String(
-              `User ${[account.address]
-              } borrowed ${Math.round(token.borrow_balance_underlying.value)
-              } ${data.tokens[token.address].symbol}`,
-            ),
+            `User ${[account.address]
+            } borrowed ${Math.round(token.borrow_balance_underlying.value)
+            } ${data.tokens[token.address].symbol}`,
           );
         }
         // Process supplies as 'cTokens'
@@ -305,8 +325,10 @@ function provideHandleBlock(data) {
       data.accounts[account] = {};
       /* eslint-enable no-param-reassign */
     });
+    /* eslint-disable no-param-reassign */
     data.totalNewAccounts += data.newAccounts.length;
     data.newAccounts = [];
+    /* eslint-enable no-param-reassign */
     // #endregion
 
     // #region Update Balances on zero health accounts
@@ -424,10 +446,6 @@ function provideHandleBlock(data) {
             .multipliedBy(data.tokens[token].price));
         }
       });
-      // ts(
-      //   `Account ${account} supplies ETH ${supplyBalance.toFixed(3)
-      //   } and borrows ${ borrowBalance.toFixed(3) } ETH`,
-      // );
 
       // Remove non-borrowers
       if (borrowBalance.eq(0)) {
@@ -442,7 +460,7 @@ function provideHandleBlock(data) {
     });
     // #endregion
 
-    // #region Check for low health accounts
+    // #region Check for low health accounts currently health <1.03
     const lowHealthAccounts = [];
     Object.keys(data.accounts).forEach((currentAccount) => {
       if (data.accounts[currentAccount].health.isLessThan(1.03)) {
@@ -456,56 +474,38 @@ function provideHandleBlock(data) {
       const shortfallUSD = BigNumber(ethers.utils.formatEther(liquidity[2]).toString());
 
       if (positiveUSD.gt(0)) {
-        ts(
-          `Low liquidity on ${currentAccount} with health of ${data.accounts[currentAccount].health.dp(3)
-          } cash reserve of +$${positiveUSD.dp(2)} USD`,
-        );
+        // Uncomment this if you want to see low liquidity as well.
+        // ts(
+        //   `Low liquidity on ${currentAccount
+        //   } with health of ${data.accounts[currentAccount].health.dp(3)
+        //   } and cash reserve of +$${positiveUSD.dp(2)} USD`,
+        // );
       }
       if (shortfallUSD.gt(0)) {
         ts(
           `Negative liquidity on ${currentAccount} with health of ${data.accounts[currentAccount].health.dp(3)
-          } shortfall of +$${shortfallUSD.dp(2)} USD`,
+          } and shortfall of +$${shortfallUSD.dp(2)} USD`,
         );
       }
+      // Lower health means that less money that can be retrieved.
+      const liquidationAmount = shortfallUSD.multipliedBy(data.accounts[currentAccount].health);
+      if (liquidationAmount.isGreaterThan(data.minimumLiquidationInUSD)) {
+        const newFinding = createAlert(
+          data.developerAbbreviation,
+          data.protocolName,
+          data.protocolAbbreviation,
+          data.alert.type,
+          data.alert.severity,
+          currentAccount,
+          liquidationAmount.dp(2),
+          shortfallUSD.dp(2),
+        );
+        findings.push(newFinding);
+      }
+      // Zero out the health on the low accounts so they may be re-scanned. (optional)
+      // data.accounts[currentAccount] = {};
     }));
     // #endregion
-    // Accounts with low health can be checked on chain for a final health score.
-    /*
-    const promises = accounts.map(async (account) => {
-      const {
-        address,
-        health: { value: health },
-        total_borrow_value_in_eth: { value: borrowValue },
-        total_collateral_value_in_eth: { value: collateralValue },
-      } = account;
-
-      // function getAccountLiquidity(address account) view returns (uint, uint, uint)
-      // returns(error, liquidity, shortfall) If shortfall is non-zero, account is underwater.
-      const accLiquidity = await comptrollerContract.getAccountLiquidity(
-        account.address,
-      );
-      const shortfallUSD = ethers.utils.formatEther(accLiquidity[2]);
-
-      if (
-        health <= maximumHealth &&
-        borrowValue >= minimumBorrowInETH &&
-        collateralValue >= minimumShortfallInUSD
-      ) {
-        console.log('---Account ', address);
-        console.log('---Health: ', health);
-        console.log('---Borrowed (in ETH): ', borrowValue);
-        console.log('---Collateral (in ETH): ', collateralValue);
-        console.log('---Liquidatable amount (in USD): ', shortfallUSD);
-
-        // // Extra: Breakdown of which tokens are borrowed and how much
-        // comptroller getMarketsIn(address) to see which tokens are being borrowed from.
-        // go to those cTokens to call borrowBalanceStored() to check for amount borrowed.
-
-        // // Add to findings
-      }
-    });
-    await Promise.all(promises);
-    */
 
     return findings;
   };
