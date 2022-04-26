@@ -19,3 +19,11 @@ This agent detects when an account on Compound is able to be liquidated.
 ## Supported Chains
 
 - Ethereum
+## Alerts
+
+<!-- -->
+- AE-COMP-LIQUIDATION-THRESHOLD
+  - Fired when an account on Compound has a liquidatable position due to price changes or other change in health factor.
+  - Severity is configurable in `agent-config.json`
+  - Type is configurable in `agent-config.json`
+  - Metadata field contains the borrower's address, liquidatable amount and total shortfall amount.
