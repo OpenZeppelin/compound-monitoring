@@ -195,7 +195,6 @@ function provideInitialize(data) {
       });
       ts(`Imported batch ${page}00 accounts`);
     }));
-    ts(`Tracking ${accounts.length} accounts`);
     // #endregion
 
     // #region Parse Compound data into new objects
