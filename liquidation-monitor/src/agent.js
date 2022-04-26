@@ -6,15 +6,11 @@ const {
   getEthersProvider,
 } = require('forta-agent');
 const BigNumber = require('bignumber.js');
-
-// To-do: Replace node-fetch with axios and remove TS
 const config = require('../agent-config.json');
 const { getAbi, ts, callAPI } = require('./utils');
 
 // Stores information about each account
 const initializeData = {};
-
-ts('Starting bot');
 
 // #region Global functions
 function createAlert(
