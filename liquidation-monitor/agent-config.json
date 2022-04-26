@@ -7,8 +7,6 @@
     "comptrollerABI": "Comptroller.json",
     "oracleAddress": "0x65c816077C29b557BEE980ae3cC2dCE80204A0C5",
     "oracleABI": "Oracle.json",
-    "feedRegistryAddress": "0xAa7F6f7f507457a1EE157fE97F6c7DB2BEec5cD0",
-    "feedRegistryABI": "FeedRegistry.json",
     "oneInchAddress": "0x07D91f5fb9Bf7798734C3f606dB065549F6893bb",
     "oneInchABI": "OneInch.json",
     "maxTrackedAccounts": 10000,

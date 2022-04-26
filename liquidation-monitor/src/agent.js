@@ -118,11 +118,10 @@ function provideInitialize(data) {
     const { maximumHealth, minimumBorrowInETH } = config.liquidationMonitor.triggerLevels;
     const {
       comptrollerAddress, maxTrackedAccounts,
-      oracleAddress, feedRegistryAddress, oneInchAddress,
+      oracleAddress, oneInchAddress,
     } = config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     const oracleABI = getAbi(config.liquidationMonitor.oracleABI);
-    const feedRegistryABI = getAbi(config.liquidationMonitor.feedRegistryABI);
     const oneInchABI = getAbi(config.liquidationMonitor.oneInchABI);
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
