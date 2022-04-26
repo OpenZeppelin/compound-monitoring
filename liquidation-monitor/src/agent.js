@@ -140,19 +140,6 @@ function provideInitialize(data) {
       oracleABI,
       data.provider,
     );
-    // Unused, did not work
-    data.feedRegistryContract = new ethers.Contract(
-      feedRegistryAddress,
-      feedRegistryABI,
-      data.provider,
-    );
-    // ChainLink calls don't work expected.
-    // https://docs.chain.link/docs/feed-registry/
-    // const ethDenom = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-    // const cUSDDenom = '0x39aa39c021dfbae8fac545936693ac917d5e7563';
-    // const test = await data.feedRegistryContract.latestRoundData(cUSDDenom, ethDenom);
-    // Errors with:too many arguments: passed to contract
-    // (count = 2, expectedCount = 0, code = UNEXPECTED_ARGUMENT, version = contracts / 5.6.0)
 
     /* eslint-enable no-param-reassign */
     // #endregion
