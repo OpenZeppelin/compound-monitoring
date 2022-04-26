@@ -193,7 +193,6 @@ function provideInitialize(data) {
       apiResults.accounts.forEach((account) => {
         accounts.push(account);
       });
-      ts(`Imported batch ${page}00 accounts`);
     }));
     // #endregion
 
