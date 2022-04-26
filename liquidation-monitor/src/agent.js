@@ -174,8 +174,6 @@ function provideInitialize(data) {
     );
     const initialResults = await callAPI(apiURL, initialRequest);
     const totalEntries = initialResults.pagination_summary.total_entries;
-    ts(`Total Entries ${totalEntries}`);
-    ts(`maxTrackedAccounts ${maxTrackedAccounts}`);
 
     // Determine number of pages needed to query. Results vs config limit.
     const maxEntries = Math.min(maxTrackedAccounts, totalEntries);
