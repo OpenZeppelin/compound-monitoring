@@ -427,7 +427,7 @@ function provideHandleBlock(data) {
     });
     ts(`${lowHealthAccounts.length} low health accounts detected`);
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
-      const liquidity = await data.comptrollerContract.getAccountLiquidity(currentAccount);
+      const liquidity = await comptrollerContract.getAccountLiquidity(currentAccount);
       const positiveUSD = BigNumber(ethers.utils.formatEther(liquidity[1]).toString());
       const shortfallUSD = BigNumber(ethers.utils.formatEther(liquidity[2]).toString());
 
