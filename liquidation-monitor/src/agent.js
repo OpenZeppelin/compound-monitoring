@@ -220,7 +220,7 @@ function provideInitialize(data) {
         /* eslint-disable eqeqeq */
         if (
           token.borrow_balance_underlying !== undefined
-          && token.borrow_balance_underlying.value != 0
+          && token.borrow_balance_underlying.value !== 0
         ) {
           data.borrow[token.address][account.address] = BigNumber(
             token.borrow_balance_underlying.value,
