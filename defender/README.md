@@ -21,8 +21,8 @@ The intent of this code is to provide a mechanism for copying a Defender account
 - Run `npm i` to install the necessary Node packages
 - In the code directory, create a file called `.env`
 - Add two lines to the `.env` file, replacing the portion in the curly braces ({}) with your API key and secret key, as indicated:
-  - DEFENDER_API_KEY=”{API_KEY_GOES_HERE}”
-  - DEFENDER_API_SECRET=”{SECRET_KEY_GOES_HERE}”
+  - DEFENDER_API_KEY={API_KEY_GOES_HERE}
+  - DEFENDER_API_SECRET={SECRET_KEY_GOES_HERE}
 
 
 ## Pushing an Existing Configuration to Defender
