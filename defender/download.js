@@ -14,7 +14,7 @@ const creds = { apiKey, apiSecret };
 function getNotificationObject(notifyConfig, foundNotificationChannels) {
   let alertTimeoutMs;
   let notificationChannels;
-  if ((notifyConfig !== undefined) && (notifyConfig !== {})) {
+  if ((notifyConfig !== undefined) && (Object.keys(notifyConfig).length > 0)) {
     alertTimeoutMs = notifyConfig.timeoutMs;
     notificationChannels = notifyConfig.notifications.map((notification) => {
       // for each notificationId, find the corresponding name to match the format required to
