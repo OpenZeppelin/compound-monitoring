@@ -12,11 +12,11 @@ const creds = { apiKey, apiSecret };
 // load the configuration file
 const config = require('./downloaded/defender-config.json');
 
+/* eslint-disable no-param-reassign */
 async function createNotificationChannels(channels, client) {
   // create a notification channel
   const notificationPromises = channels.map((channel) => {
     const { type: notificationType } = channel;
-    // eslint-disable-next-line no-param-reassign
     delete channel.type;
 
     return client.createNotificationChannel(notificationType, channel);
@@ -58,10 +58,8 @@ async function createAutotasks(autotasks, client) {
 
     // remove the autotaskFilePath from the passed-in autotask object and replace it with the base64
     // encoded and zipped autotask code
-    /* eslint-disable no-param-reassign */
     delete autotask.autotaskFilePath;
     autotask.encodedZippedCode = zippedCode;
-    /* eslint-enable no-param-reassign */
 
     return client.create(autotask);
   });
@@ -98,7 +96,6 @@ async function createSentinels(notificationChannels, autotasks, sentinels, clien
       // parse out just the 'abi' field from the json file
       const contractABI = JSON.parse(fileData);
       // overwrite the ABI file path in the sentinel with the ABI file contents
-      // eslint-disable-next-line no-param-reassign
       sentinel.abi = JSON.stringify(contractABI);
     }
 
@@ -113,12 +110,10 @@ async function createSentinels(notificationChannels, autotasks, sentinels, clien
 
     // overwrite the existing notificationChannels array in the sentinel config with the new array
     // containing the actual channel ids
-    // eslint-disable-next-line no-param-reassign
     sentinel.notificationChannels = newNotificationChannels;
 
     // if autotaskCondition or autotaskTrigger are defined for a sentinel, find and replace the
     // name of the autotask with its respective id (if possible)
-    /* eslint-disable no-param-reassign */
     if (sentinel.autotaskCondition !== undefined
       && autotasks[sentinel.autotaskCondition] !== undefined) {
       sentinel.autotaskCondition = autotasks[sentinel.autotaskCondition];
@@ -128,7 +123,6 @@ async function createSentinels(notificationChannels, autotasks, sentinels, clien
       && autotasks[sentinel.autotaskTrigger] !== undefined) {
       sentinel.autotaskTrigger = autotasks[sentinel.autotaskTrigger];
     }
-    /* eslint-enable no-param-reassign */
 
     // return the promise for creating the Sentinel
     return client.create(sentinel);
