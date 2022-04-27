@@ -295,10 +295,9 @@ function provideHandleBlock(data) {
       } total accounts added since start.`,
     );
     data.newAccounts.forEach((newAccount) => {
-      const account = newAccount.toLowerCase();
       // Initialize account. New accounts will get updated in the block section
       /* eslint-disable no-param-reassign */
-      data.accounts[account] = {};
+      data.accounts[newAccount.toLowerCase()] = {};
       /* eslint-enable no-param-reassign */
     });
     /* eslint-disable no-param-reassign */
