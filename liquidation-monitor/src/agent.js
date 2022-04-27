@@ -194,12 +194,8 @@ function provideInitialize(data) {
     // #region Parse Compound data into new objects
     // Get a unique list of token addresses
     ts('Processing tokens now');
-    const tokenSet = new Set();
-    accounts.forEach((account) => {
-      account.tokens.forEach(async (token) => {
-        tokenSet.add(token.address);
-      });
-    });
+    const tokens = accounts.map((account) => account.tokens.map((token) => token.address)).flat();
+    const tokenSet = new Set(tokens);
 
     // Initialize token objects first
     await Promise.all(Array.from(tokenSet).map(async (token) => {
