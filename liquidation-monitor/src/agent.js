@@ -59,6 +59,7 @@ async function verifyToken(data, tokenAddressImport) {
     }
     const exchangeRate = await cContract.exchangeRateStored();
     data.tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
+
     // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
     // So the trick to get token decimals is exchangeRate.length - 9
     data.tokens[tokenAddress].tokenDecimals = exchangeRate.toString().length - 9;
