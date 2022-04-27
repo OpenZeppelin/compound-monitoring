@@ -236,7 +236,7 @@ function provideInitialize(data) {
         // Process supplies as 'cTokens'
         if (
           token.supply_balance_underlying !== undefined
-          && token.supply_balance_underlying.value != 0
+          && token.supply_balance_underlying.value !== 0
         ) {
           data.supply[token.address][account.address] = BigNumber(
             token.supply_balance_underlying.value,
