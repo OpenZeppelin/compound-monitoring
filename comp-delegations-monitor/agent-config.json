@@ -2,8 +2,22 @@
   "developerAbbreviation": "AE",
   "protocolName": "Compound",
   "protocolAbbreviation": "COMP",
-  "COMPAddress": "0xc00e94Cb662C3520282E6f5717214004A7f26888",
-  "governorAddress": "0xc0Da02939E1441F497fd74F78cE7Decb17B66529",
-  "CompERC20Abi": "CompERC20.json",
-  "GovernorBravoAbi": "GovernorBravo.json"
+  "compERC20": {
+    "address": "0xc00e94Cb662C3520282E6f5717214004A7f26888",
+    "abi": "CompERC20.json"
+  },
+  "governorBravo": {
+    "address": "0xc0Da02939E1441F497fd74F78cE7Decb17B66529",
+    "abi": "GovernorBravo.json"
+  },
+  "delegateLevels": {
+    "proposal": {
+      "type": "Suspicious",
+      "severity": "Medium"
+    },
+    "votingQuorum": {
+      "type": "Suspicious",
+      "severity": "High"
+    }
+  }
 }
