@@ -328,12 +328,12 @@ function provideHandleBlock(data) {
     ts('Getting assetsIn list for new accounts');
     const tokenSet = new Set();
     await Promise.all(filteredAccounts.map(async (currentAccount) => {
-      let assetsIn = await comptrollerContract.getAssetsIn(currentAccount);
-      assetsIn = assetsIn.map((asset) => asset.toLowerCase());
-      assetsIn.forEach((asset) => { tokenSet.add(asset); });
-      /* eslint-disable no-param-reassign */
-      data.accounts[currentAccount].assetsIn = assetsIn;
-      /* eslint-enable no-param-reassign */
+      const assetsIn = await comptrollerContract.getAssetsIn(currentAccount);
+      data.accounts[currentAccount].assetsIn = assetsIn.map((asset) => {
+        const address = asset.toLowerCase();
+        tokenSet.add(address);
+        return address;
+      });
     }));
 
     // // Initialize token objects
