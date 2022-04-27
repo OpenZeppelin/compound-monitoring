@@ -349,31 +349,14 @@ function provideHandleBlock(data) {
         const snapshot = await data.tokens[currentToken].contract
           .getAccountSnapshot(currentAccount);
 
-        /* eslint-disable no-param-reassign */
-        if (snapshot && snapshot[1].toString() !== '0') {
-          data.supply[currentToken][currentAccount] = BigNumber(snapshot[1].toString())
-            .dividedBy(data.tokens[currentToken].cTokenDecimalsMult);
-          const tokenQty = data.supply[currentToken][currentAccount]
-            .multipliedBy(data.tokens[currentToken].exchangeRateMult);
-          ts(
-            `User ${currentAccount
-            } supplied ${Math.round(tokenQty)
-            } ${data.tokens[currentToken].symbol
-            } ( ${Math.round(data.supply[currentToken][currentAccount])
-            } cTokens ) `,
-          );
-        }
-        if (snapshot && snapshot[2].toString() !== '0') {
-          data.borrow[currentToken][currentAccount] = BigNumber(snapshot[2].toString())
-            .dividedBy(data.tokens[currentToken].tokenDecimalsMult);
-          ts(
-            `User ${currentAccount
-            } borrowed ${Math.round(data.borrow[currentToken][currentAccount])
-            } ${data.tokens[currentToken].symbol}`,
-          );
-        }
-        /* eslint-enable no-param-reassign */
-        return null;
+        // update the supply balance and token quantity
+        data.supply[currentToken][currentAccount] = BigNumber(snapshot[1].toString())
+          .dividedBy(data.tokens[currentToken].cTokenDecimalsMult);
+        const tokenQty = data.supply[currentToken][currentAccount]
+          .multipliedBy(data.tokens[currentToken].exchangeRateMult);
+
+        // update the borrow balance
+        data.borrow[currentToken][currentAccount] = BigNumber(snapshot[2].toString())
       }));
     }));
     // #endregion
