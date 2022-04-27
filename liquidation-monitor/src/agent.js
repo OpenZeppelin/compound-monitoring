@@ -51,6 +51,7 @@ async function verifyToken(data, tokenAddressImport) {
     );
     const cContract = data.tokens[tokenAddress].contract;
     data.tokens[tokenAddress].symbol = await cContract.symbol();
+
     // cETH does not have an underlying contract, so peg it to wETH instead
     if (tokenAddress === '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5') {
       data.tokens[tokenAddress].underlying = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
