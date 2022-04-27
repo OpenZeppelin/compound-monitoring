@@ -1,4 +1,4 @@
-### Defender Configuration Helper
+# Defender Configuration Helper
 
 This repository contains code for pulling down/pushing up configurations for Sentinels and Autotasks from an OpenZeppelin Defender account.
 
