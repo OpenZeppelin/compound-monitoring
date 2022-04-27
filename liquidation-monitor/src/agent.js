@@ -363,23 +363,17 @@ function provideHandleBlock(data) {
     // #region Update all token prices via 1inch for now.
     ts('Updating token prices and collateral factors');
     // To-Do: Switch the primary feed back to ChainLink
-    await Promise.all(Object.keys(data.tokens).map(async (currentToken) => {
-      const price = await oneInchContract.getRateToEth(data.tokens[currentToken].underlying, 0);
+    await Promise.all(Object.entries(data.tokens).map(async (currentToken, tokenData) => {
+      const price = await oneInchContract.getRateToEth(tokenData.underlying, 0);
+      
       // Adjust for native decimals
-      const oneInchMult = BigNumber(10).pow(36 - data.tokens[currentToken].tokenDecimals);
-      /* eslint-disable no-param-reassign */
-      data.tokens[currentToken].price = BigNumber(price.toString())
-        .dividedBy(oneInchMult);
+      const oneInchMult = BigNumber(10).pow(36 - tokenData.tokenDecimals);
+      tokenData.price = BigNumber(price.toString()).dividedBy(oneInchMult);
+      
       // Update the Collateral Factor
       const market = await comptrollerContract.markets(currentToken);
-      data.tokens[currentToken].collateralMult = BigNumber(market[1].toString())
+      tokenData.collateralMult = BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
-      /* eslint-enable no-param-reassign */
-      ts(
-        `Updated price of ${data.tokens[currentToken].symbol
-        } is ${data.tokens[currentToken].price.toString()
-        } ETH with a collateral factor of ${data.tokens[currentToken].collateralMult}`,
-      );
     }));
     // #endregion
 
