@@ -299,9 +299,7 @@ function provideHandleBlock(data) {
       // Initialize account. New accounts will get updated in the block section
       /* eslint-disable no-param-reassign */
       data.accounts[newAccount.toLowerCase()] = {};
-      /* eslint-enable no-param-reassign */
     });
-    /* eslint-disable no-param-reassign */
     data.totalNewAccounts += data.newAccounts.length;
     data.newAccounts = [];
     /* eslint-enable no-param-reassign */
