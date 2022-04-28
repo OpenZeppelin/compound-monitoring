@@ -24,6 +24,7 @@ function createAlert(
   borrowerAddress,
   liquidationAmount,
   shortfallAmount,
+  healthFactor,
 ) {
   return Finding.fromObject({
     name: `${protocolName} Compound Liquidation Threshold Alert`,
@@ -37,6 +38,7 @@ function createAlert(
       borrowerAddress,
       liquidationAmount,
       shortfallAmount,
+      healthFactor,
     },
   });
 }
@@ -376,7 +378,9 @@ function provideHandleBlock(data) {
       // Health factor affects the liquidatable amount. Ex: Shortfall of $50 with a Health factor
       // of 0.50 means that only $25 can be successfully liquidated. ( $25 supplied / $50 borrowed )
       const liquidationAmount = shortfallUSD.multipliedBy(data.accounts[currentAccount].health);
+
       // Create a finding if the liquidatable amount is below the threshold
+      // Shorten metadata to 2 decimal places
       if (liquidationAmount.isGreaterThan(data.minimumLiquidationInUSD)) {
         const newFinding = createAlert(
           data.developerAbbreviation,
@@ -387,6 +391,7 @@ function provideHandleBlock(data) {
           currentAccount,
           liquidationAmount.dp(2),
           shortfallUSD.dp(2),
+          data.accounts[currentAccount].health.dp(2),
         );
         findings.push(newFinding);
       }
