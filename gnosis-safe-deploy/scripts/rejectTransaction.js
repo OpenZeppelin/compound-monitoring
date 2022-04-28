@@ -8,13 +8,13 @@ require('dotenv').config();
 
 const polygonSafeAddress = process.env.POLYGON_SAFE_ADDRESS;
 const polygonEndpoint = process.env.POLYGON_ENDPOINT;
-const safeOwnerOnePrivateKey = process.env.OWNER_ONE_PRIVATE_KEY;
-const nonceToReject = parseInt(process.env.NONCE_TO_REJECT);
+const ownerPrivateKey = process.env.REJECTION_PRIVATE_KEY;
+const nonceToReject = parseInt(process.env.NONCE_TO_REJECT, 10);
 
 const provider = new ethers.providers.JsonRpcProvider(polygonEndpoint);
 
 // create a wallet (signer) and connect it to the provider
-const safeWallet = new ethers.Wallet(safeOwnerOnePrivateKey, provider);
+const safeWallet = new ethers.Wallet(ownerPrivateKey, provider);
 const signer = safeWallet.connect(provider);
 
 const ethAdapter = new EthersAdapter({
