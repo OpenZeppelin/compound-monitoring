@@ -46,4 +46,17 @@ Then run:
 
 ## Approve Proposed Forta Bot Deployment 
 
+Approving the proposed transaction can be performed through the Gnosis Safe Web UI (recommended), or through the command line.
+
+In the `.env` file, you will need to have the following entries:
+```bash
+POLYGON_ENDPOINT="https://your.polygon.endpoint/with/api/key"
+POLYGON_SAFE_ADDRESS="0xADDRESSOFDEPLOYEDGNOSISSAFE"
+APPROVER_PRIVATE_KEY="0xPRIVATEKEYFORGNOSISSAFEOWNER"
+SAFE_TX_HASH="0xPROPOSEDTRANSACTIONHASH"
+```
+
+Then run:
+`npm run approve`
+
 

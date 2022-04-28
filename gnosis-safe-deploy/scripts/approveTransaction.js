@@ -15,7 +15,7 @@ const polygonSafeAddress = process.env.POLYGON_SAFE_ADDRESS;
 const polygonEndpoint = process.env.POLYGON_ENDPOINT;
 
 // load the private key for the account that will be signing the transaction
-const ownerPrivateKey = process.env.OWNER_TWO_PRIVATE_KEY;
+const ownerPrivateKey = process.env.APPROVER_PRIVATE_KEY;
 
 // load the transaction hash to approve
 const safeTxHash = process.env.SAFE_TX_HASH;
