@@ -96,6 +96,7 @@ function provideInitialize(data) {
     data.developerAbbreviation = config.developerAbbreviation;
     data.alert = config.liquidationMonitor.alert;
     data.minimumLiquidationInUSD = config.liquidationMonitor.triggerLevels.minimumLiquidationInUSD;
+    data.lowHealthThreshold = config.liquidationMonitor.triggerLevels.lowHealthThreshold;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersProvider();
     data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assetsIn addresses]?
@@ -351,10 +352,11 @@ function provideHandleBlock(data) {
     });
     // #endregion
 
-    // #region Check for low health accounts currently health <1.03
+    // #region Check low health accounts on-chain
+    // Check the Comptroller contract for actual liquidity if the health is below x
     const lowHealthAccounts = [];
     Object.keys(accounts).forEach((currentAccount) => {
-      if (accounts[currentAccount].health.isLessThan(1.03)) {
+      if (accounts[currentAccount].health.isLessThan(data.lowHealthThreshold)) {
         lowHealthAccounts.push(currentAccount);
       }
     });
