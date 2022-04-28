@@ -44,48 +44,42 @@ function createAlert(
 }
 
 async function verifyToken(data, tokenAddressImport) {
-  /* eslint-disable no-param-reassign */
+  const { tokens } = data;
   const tokenAddress = tokenAddressImport.toLowerCase();
-  if (data.tokens[tokenAddress] === undefined) {
-    data.tokens[tokenAddress] = {};
-    data.tokens[tokenAddress].contract = new ethers.Contract(
-      tokenAddress,
-      data.cTokenABI,
-      data.provider,
+  if (tokens[tokenAddress] === undefined) {
+    tokens[tokenAddress] = {};
+    tokens[tokenAddress].contract = new ethers.Contract(
+      tokenAddress, data.cTokenABI, data.provider,
     );
-    const cContract = data.tokens[tokenAddress].contract;
-    data.tokens[tokenAddress].symbol = await cContract.symbol();
+    const cContract = tokens[tokenAddress].contract;
+    tokens[tokenAddress].symbol = await cContract.symbol();
 
     // cETH does not have an underlying contract, so peg it to wETH instead
     if (tokenAddress === '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5') {
-      data.tokens[tokenAddress].underlying = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+      tokens[tokenAddress].underlying = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
     } else {
-      data.tokens[tokenAddress].underlying = await cContract.underlying();
+      tokens[tokenAddress].underlying = await cContract.underlying();
     }
     const exchangeRate = await cContract.exchangeRateStored();
-    data.tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
+    tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
 
     // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
     // So the trick to get token decimals is exchangeRate.length - 9
-    data.tokens[tokenAddress].tokenDecimals = exchangeRate.toString().length - 9;
-    data.tokens[tokenAddress].tokenDecimalsMult = BigNumber(10)
-      .pow(data.tokens[tokenAddress].tokenDecimals);
-    data.tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10)
-      .pow(data.tokens[tokenAddress].cTokenDecimals);
-    data.tokens[tokenAddress].exchangeRate = BigNumber(exchangeRate.toString());
+    tokens[tokenAddress].tokenDecimals = exchangeRate.toString().length - 9;
+    tokens[tokenAddress].tokenDecimalsMult = BigNumber(10).pow(tokens[tokenAddress].tokenDecimals);
+    tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10)
+      .pow(tokens[tokenAddress].cTokenDecimals);
+    tokens[tokenAddress].exchangeRate = BigNumber(exchangeRate.toString());
 
     // Adjusting the multiplier for easier use later.
-    data.tokens[tokenAddress].exchangeRateMult = BigNumber(exchangeRate.toString())
-      .dividedBy(data.tokens[tokenAddress].tokenDecimalsMult)
-      .dividedBy(data.tokens[tokenAddress].cTokenDecimalsMult)
+    tokens[tokenAddress].exchangeRateMult = BigNumber(exchangeRate.toString())
+      .dividedBy(tokens[tokenAddress].tokenDecimalsMult)
+      .dividedBy(tokens[tokenAddress].cTokenDecimalsMult)
       .dividedBy(100); // Not sure where this 100 comes from I didn't see it in the docs
 
-    if (data.borrow[tokenAddress] === undefined) {
-      data.borrow[tokenAddress] = {};
-    }
-    if (data.supply[tokenAddress] === undefined) {
-      data.supply[tokenAddress] = {};
-    }
+    /* eslint-disable no-param-reassign */
+    if (data.borrow[tokenAddress] === undefined) data.borrow[tokenAddress] = {};
+    if (data.supply[tokenAddress] === undefined) data.supply[tokenAddress] = {};
     /* eslint-enable no-param-reassign */
   }
 }
@@ -142,7 +136,6 @@ function provideInitialize(data) {
       oracleABI,
       data.provider,
     );
-
     /* eslint-enable no-param-reassign */
     // #endregion
 
@@ -161,12 +154,7 @@ function provideInitialize(data) {
     // Shorthand Range() function. ( Ex: 5 => [1,2,3,4,5] )
     const pages = [...Array(maxPages)].map((_, i) => 1 + i);
     await Promise.all(pages.map(async (page) => {
-      const currentRequest = buildJsonRequest(
-        maximumHealth,
-        minimumBorrowInETH,
-        page,
-        100,
-      );
+      const currentRequest = buildJsonRequest(maximumHealth, minimumBorrowInETH, page, 100);
       const apiResults = await callCompoundAPI(currentRequest);
       apiResults.accounts.forEach((currentAccount) => {
         foundAccounts.push(currentAccount);
@@ -191,16 +179,13 @@ function provideInitialize(data) {
     foundAccounts.forEach((account) => {
       // add to tracked accounts
       /* eslint-disable no-param-reassign */
-      if (data.accounts[account.address] === undefined) {
-        data.accounts[account.address] = {};
-      }
+      if (data.accounts[account.address] === undefined) data.accounts[account.address] = {};
 
       // Add found health
       data.accounts[account.address].health = BigNumber(account.health.value);
       // Loop through tokens and update balances.
       account.tokens.forEach((token) => {
         // Process borrows as 'token'
-        /* eslint-disable eqeqeq */
         if (
           token.borrow_balance_underlying !== undefined
           && token.borrow_balance_underlying.value !== 0
@@ -219,7 +204,6 @@ function provideInitialize(data) {
             token.supply_balance_underlying.value,
           ).dividedBy(data.tokens[token.address].exchangeRateMult);
         }
-        /* eslint-enable eqeqeq */
       }); // end token loop
       /* eslint-enable no-param-reassign */
     }); // end account loop
@@ -261,36 +245,33 @@ function provideHandleBlock(data) {
     // #region Add new Accounts
     // Initialize account. New accounts will get updated in the block section
     /* eslint-disable no-param-reassign */
-
-    data.newAccounts.forEach((newAccount) => { data.accounts[newAccount.toLowerCase()] = {}; });
+    data.newAccounts.forEach((newAccount) => { accounts[newAccount.toLowerCase()] = {}; });
     data.totalNewAccounts += data.newAccounts.length;
     data.newAccounts = [];
-    /* eslint-enable no-param-reassign */
     // #endregion
 
     // #region Update Balances on zero health accounts
     const filteredAccounts = [];
-    Object.keys(data.accounts).forEach((currentAccount) => {
-      if (data.accounts[currentAccount].health == null
-        || data.accounts[currentAccount].health === 0) {
+    Object.keys(accounts).forEach((currentAccount) => {
+      if (accounts[currentAccount].health == null
+        || accounts[currentAccount].health === 0) {
         filteredAccounts.push(currentAccount);
         // Zero account balances
-        /* eslint-disable no-param-reassign */
-        Object.keys(data.supply).forEach((currentToken) => {
-          data.supply[currentToken][currentAccount] = null;
+        Object.keys(supply).forEach((currentToken) => {
+          supply[currentToken][currentAccount] = null;
         });
-        Object.keys(data.borrow).forEach((currentToken) => {
-          data.borrow[currentToken][currentAccount] = null;
-          /* eslint-enable no-param-reassign */
+        Object.keys(borrow).forEach((currentToken) => {
+          borrow[currentToken][currentAccount] = null;
         });
       }
     });
+    /* eslint-enable no-param-reassign */
 
     // Grab the assets in first, and make sure they are initialized
     const foundTokens = [];
     await Promise.all(filteredAccounts.map(async (currentAccount) => {
       const assetsIn = await comptrollerContract.getAssetsIn(currentAccount);
-      data.accounts[currentAccount].assetsIn = assetsIn.map((asset) => {
+      accounts[currentAccount].assetsIn = assetsIn.map((asset) => {
         const address = asset.toLowerCase();
         foundTokens.push(address);
         return address;
@@ -306,16 +287,15 @@ function provideHandleBlock(data) {
 
     // Grab token balances from on-chain
     await Promise.all(filteredAccounts.map(async (currentAccount) => {
-      await Promise.all(data.accounts[currentAccount].assetsIn.map(async (currentToken) => {
-        const snapshot = await data.tokens[currentToken].contract
-          .getAccountSnapshot(currentAccount);
+      await Promise.all(accounts[currentAccount].assetsIn.map(async (currentToken) => {
+        const snapshot = await tokens[currentToken].contract.getAccountSnapshot(currentAccount);
 
         // update the supply balance and token quantity
-        data.supply[currentToken][currentAccount] = BigNumber(snapshot[1].toString())
-          .dividedBy(data.tokens[currentToken].cTokenDecimalsMult);
+        supply[currentToken][currentAccount] = BigNumber(snapshot[1].toString())
+          .dividedBy(tokens[currentToken].cTokenDecimalsMult);
 
         // update the borrow balance
-        data.borrow[currentToken][currentAccount] = BigNumber(snapshot[2].toString());
+        borrow[currentToken][currentAccount] = BigNumber(snapshot[2].toString());
       }));
     }));
     // #endregion
@@ -323,50 +303,49 @@ function provideHandleBlock(data) {
     // #region Update all token prices via 1inch for now.
     // Mapping through all tokens
     // Note: Object.entries does not work here because the nested objects cannot be retrieved.
-    await Promise.all(Object.keys(data.tokens).map(async (currentToken) => {
-      const price = await oneInchContract.getRateToEth(data.tokens[currentToken].underlying, 0);
-      const oneInchMult = BigNumber(10).pow(36 - data.tokens[currentToken].tokenDecimals);
+    await Promise.all(Object.keys(tokens).map(async (currentToken) => {
+      const price = await oneInchContract.getRateToEth(tokens[currentToken].underlying, 0);
+      const oneInchMult = BigNumber(10).pow(36 - tokens[currentToken].tokenDecimals);
 
       // Adjust for native decimals
-      data.tokens[currentToken].price = BigNumber(price.toString())
-        .dividedBy(oneInchMult);
+      tokens[currentToken].price = BigNumber(price.toString()).dividedBy(oneInchMult);
 
       // Update the Collateral Factor
       const market = await comptrollerContract.markets(currentToken);
-      data.tokens[currentToken].collateralMult = BigNumber(market[1].toString())
+      tokens[currentToken].collateralMult = BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
     }));
     // #endregion
 
     // #region Calculate health on all accounts
-    Object.keys(data.accounts).forEach((account) => {
+    Object.keys(accounts).forEach((account) => {
       let borrowBalance = BigNumber(0);
       let supplyBalance = BigNumber(0);
-      Object.keys(data.tokens).forEach((token) => {
-        if (data.supply[token][account]) {
+      Object.keys(tokens).forEach((token) => {
+        if (supply[token][account]) {
           // Supply balances are stored in cTokens and need to be multiplied by the
           //   exchange rate, price and the collateral factor to determine the ETH value
           //   of the collateral.
-          supplyBalance = supplyBalance.plus(data.supply[token][account]
-            .multipliedBy(data.tokens[token].exchangeRateMult)
-            .multipliedBy(data.tokens[token].price)
-            .multipliedBy(data.tokens[token].collateralMult));
+          supplyBalance = supplyBalance.plus(supply[token][account]
+            .multipliedBy(tokens[token].exchangeRateMult)
+            .multipliedBy(tokens[token].price)
+            .multipliedBy(tokens[token].collateralMult));
         }
-        if (data.borrow[token][account]) {
+        if (borrow[token][account]) {
           // Only need to multiply by the price.
-          borrowBalance = borrowBalance.plus(data.borrow[token][account]
-            .multipliedBy(data.tokens[token].price));
+          borrowBalance = borrowBalance.plus(borrow[token][account]
+            .multipliedBy(tokens[token].price));
         }
       });
 
       // Remove non-borrowers
       if (borrowBalance.eq(0)) {
         /* eslint-disable no-param-reassign */
-        delete data.accounts[account];
+        delete accounts[account];
       } else {
-        data.accounts[account].supplyBalance = supplyBalance;
-        data.accounts[account].borrowBalance = borrowBalance;
-        data.accounts[account].health = supplyBalance.dividedBy(borrowBalance);
+        accounts[account].supplyBalance = supplyBalance;
+        accounts[account].borrowBalance = borrowBalance;
+        accounts[account].health = supplyBalance.dividedBy(borrowBalance);
         /* eslint-enable no-param-reassign */
       }
     });
@@ -374,8 +353,8 @@ function provideHandleBlock(data) {
 
     // #region Check for low health accounts currently health <1.03
     const lowHealthAccounts = [];
-    Object.keys(data.accounts).forEach((currentAccount) => {
-      if (data.accounts[currentAccount].health.isLessThan(1.03)) {
+    Object.keys(accounts).forEach((currentAccount) => {
+      if (accounts[currentAccount].health.isLessThan(1.03)) {
         lowHealthAccounts.push(currentAccount);
       }
     });
@@ -385,7 +364,7 @@ function provideHandleBlock(data) {
 
       // Health factor affects the liquidatable amount. Ex: Shortfall of $50 with a Health factor
       // of 0.50 means that only $25 can be successfully liquidated. ( $25 supplied / $50 borrowed )
-      const liquidationAmount = shortfallUSD.multipliedBy(data.accounts[currentAccount].health);
+      const liquidationAmount = shortfallUSD.multipliedBy(accounts[currentAccount].health);
 
       // Create a finding if the liquidatable amount is below the threshold
       // Shorten metadata to 2 decimal places
@@ -399,12 +378,12 @@ function provideHandleBlock(data) {
           currentAccount,
           liquidationAmount.dp(2),
           shortfallUSD.dp(2),
-          data.accounts[currentAccount].health.dp(2),
+          accounts[currentAccount].health.dp(2),
         );
         findings.push(newFinding);
       }
       // Zero out the health on the low accounts so they may be re-scanned. (optional)
-      // data.accounts[currentAccount] = {};
+      // accounts[currentAccount] = {};
     }));
     // #endregion
 
