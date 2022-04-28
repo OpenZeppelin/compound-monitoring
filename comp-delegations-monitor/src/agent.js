@@ -51,18 +51,19 @@ const initializeData = {};
 function provideInitialize(data) {
   return async function initialize() {
     /* eslint-disable no-param-reassign */
-    const { compERC20, governorBravo, delegateLevels } = config
+    const { compERC20, governorBravo, delegateLevels } = config;
     data.developerAbbreviation = config.developerAbbreviation;
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.COMPAddress = compERC20.address;
     data.CompERC20Abi = compERC20.abi;
     data.governorAddress = governorBravo.address;
-    data.GovernorBravoAbi = governorBravo.abi;
+    data.governorBravoAbi = governorBravo.abi;
 
     // get provider
     const provider = getEthersProvider();
 
+    // get COMP token Abi to create contract and interface
     const compERC20Abi = getAbi(data.CompERC20Abi);
     const compContract = new ethers.Contract(data.COMPAddress, compERC20Abi, provider);
     const formatType = ethers.utils.FormatTypes.full;
@@ -73,12 +74,11 @@ function provideInitialize(data) {
 
     // get the number of decimals for the COMP token
     let compDecimals = await compContract.decimals();
-    // convert to bignumber.js
-    compDecimals = new BigNumber(compDecimals.toString());
+    compDecimals = new BigNumber(compDecimals.toString()); // convert to bignumber.js
     compDecimals = new BigNumber(10).pow(compDecimals);
 
-    // get governor bravo abi and create gov bravo contract
-    const govBravoAbi = getAbi(data.GovernorBravoAbi);
+    // get governor bravo Abi and create gov bravo contract
+    const govBravoAbi = getAbi(data.governorBravoAbi);
     const govBravoContract = new ethers.Contract(data.governorAddress, govBravoAbi, provider);
 
     // query for min threshold from gov bravo contract
@@ -107,17 +107,16 @@ function provideHandleTransaction(data) {
       protocolName,
       protocolAbbreviation,
       COMPAddress,
-      delegateVotesChangedEvent,
       compContract,
       compDecimals,
+      delegateVotesChangedEvent,
       voteMinimums,
       delegateLevels,
     } = data;
 
-    // const findings = []
     const parsedLogs = txEvent.filterLog(delegateVotesChangedEvent, COMPAddress);
     const promises = parsedLogs.map(async (log) => {
-      // check to see how much COMP the address that borrowed has now
+      // check to see how much COMP the delegate address has now
       const delegateAddress = log.args.delegate;
       let delegateCOMPBalance = await compContract.balanceOf(delegateAddress);
       // convert to bignumber.js and divide by COMP decimals
@@ -126,10 +125,10 @@ function provideHandleTransaction(data) {
       // iterate over the borrow levels to see if any meaningful thresholds have been crossed
       let findings = Object.keys(delegateLevels).map((levelName) => {
         const { type, severity } = delegateLevels[levelName];
-        // if the borrowLevel name matches "proposal" or "votingQuorum", use that defined minCOMP
+        // check if delegate COMP balance is higher than "proposal" or "votingQuorum" levels
         const minAmountCOMP = voteMinimums[levelName];
         if (minAmountCOMP !== undefined && delegateCOMPBalance.gte(minAmountCOMP)) {
-          // a governance threshold has been crossed, generate an alert
+          // create alert if threshold is crossed
           return createAlert(
             developerAbbreviation,
             protocolName,
