@@ -84,11 +84,6 @@ async function verifyToken(data, tokenAddressImport) {
     }
     /* eslint-enable no-param-reassign */
 
-    ts(
-      `Now tracking ${data.tokens[tokenAddress].symbol
-      } with ${data.tokens[tokenAddress].tokenDecimals
-      } decimals at address ${tokenAddress}`,
-    );
   }
 }
 // #endregion
