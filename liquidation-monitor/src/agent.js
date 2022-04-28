@@ -125,6 +125,7 @@ function provideInitialize(data) {
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     const oracleABI = getAbi(config.liquidationMonitor.oracleABI);
     const oneInchABI = getAbi(config.liquidationMonitor.oneInchABI);
+    data.comptrollerAddress = comptrollerAddress;
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
       comptrollerABI,
@@ -233,7 +234,7 @@ function provideHandleTransaction(data) {
     const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
     const exitMarketString = 'event MarketExited(address cToken, address account)';
 
-    const exitMarketEvents = txEvent.filterLog(exitMarketString);
+    const exitMarketEvents = txEvent.filterLog(exitMarketString, data.comptrollerAddress);
     exitMarketEvents.forEach((exitEvent) => { data.newAccounts.push(exitEvent.args.account); });
     const borrowEvents = txEvent.filterLog(borrowString);
     borrowEvents.forEach((borrowEvent) => { data.newAccounts.push(borrowEvent.args.borrower); });
