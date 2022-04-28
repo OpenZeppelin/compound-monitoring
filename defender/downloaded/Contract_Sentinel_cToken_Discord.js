@@ -16,10 +16,10 @@ const MAKER_TOKEN_ABI = [
 ];
 const CTOKEN_ABI = ['function underlying() view returns (address)'];
 
-const makerTokenAddress = '0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'.toLowerCase();
-const saiTokenAddress = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'.toLowerCase();
+const makerTokenAddress = '0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2';
+const saiTokenAddress = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359';
 const oddTokens = [makerTokenAddress, saiTokenAddress];
-const cEtherAddress = '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'.toLowerCase();
+const cEtherAddress = '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5';
 
 const eventMapping = {
   Borrow: {
@@ -123,7 +123,7 @@ async function getTokenPrice(tokenAddress) {
 
 async function getTokenInfo(cTokenAddress, provider) {
   let underlyingTokenAddress;
-  if (cTokenAddress.toLowerCase() === cEtherAddress) {
+  if (cTokenAddress === cEtherAddress) {
     underlyingTokenAddress = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
   } else {
     const cTokenContract = new ethers.Contract(
@@ -136,7 +136,7 @@ async function getTokenInfo(cTokenAddress, provider) {
 
   let decimals;
   let symbol;
-  if (oddTokens.indexOf(underlyingTokenAddress.toLowerCase()) !== -1) {
+  if (oddTokens.indexOf(underlyingTokenAddress) !== -1) {
     const underlyingTokenContract = new ethers.Contract(
       underlyingTokenAddress,
       MAKER_TOKEN_ABI,
@@ -299,7 +299,7 @@ exports.handler = async function (autotaskEvent) {
   // use the relayer provider for JSON-RPC requests
   const provider = new DefenderRelayProvider(autotaskEvent);
 
-  const contractAddress = matchedAddresses[0];
+  const contractAddress = ethers.utils.getAddress(matchedAddresses[0]);
 
   // create messages for Discord
   const promises = matchReasons.map(async (reason) => {
