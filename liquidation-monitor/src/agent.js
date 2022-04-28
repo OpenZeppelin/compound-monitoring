@@ -169,12 +169,7 @@ function provideInitialize(data) {
     }
 
     // Find total number of results with the first request
-    const initialRequest = buildJsonRequest(
-      maximumHealth,
-      minimumBorrowInETH,
-      1,
-      1,
-    );
+    const initialRequest = buildJsonRequest(maximumHealth, minimumBorrowInETH, 1, 1);
     const initialResults = await callAPI(apiURL, initialRequest);
     const totalEntries = initialResults.pagination_summary.total_entries;
 
