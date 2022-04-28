@@ -30,24 +30,21 @@ function buildJsonRequest(maxHealth, minBorrow, pageNumber, pageSize) {
 }
 
 async function callCompoundAPI(url, jsonRequest) {
-  const callPromise = fetch(url, {
+  const response = await fetch(url, {
     method: 'POST',
     body: JSON.stringify(jsonRequest),
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Got non-2XX response from API server.');
-      }
-      return response.json();
-    })
-    .then((responseData) => responseData);
+  });
 
-  const responseData = await callPromise.then(
-    (data) => data,
-    (error) => {
-      console.error('Failed to fetch accounts due to error: ', error);
-    },
-  );
+  if (!response.ok) {
+    console.error('Got non-2XX response from API server.');
+  }
+  
+  let responseData;
+  try {
+    responseData = await response.json();
+  } catch (error) {
+    console.error('Failed to fetch accounts due to error: ', error);
+  }
   return responseData;
 }
 
