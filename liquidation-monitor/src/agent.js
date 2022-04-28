@@ -178,7 +178,7 @@ function provideInitialize(data) {
     const maxPages = Math.ceil(maxEntries / 100);
 
     // Query each page and add accounts. Starting at 1 and including maxPages
-    const accounts = [];
+    const foundAccounts = [];
     const pages = [...Array(maxPages)].map((_, i) => 1 + i);
     await Promise.all(pages.map(async (page) => {
       const currentRequest = buildJsonRequest(
@@ -188,8 +188,8 @@ function provideInitialize(data) {
         100, // 100 results per page was optimal
       );
       const apiResults = await callAPI(apiURL, currentRequest);
-      apiResults.accounts.forEach((account) => {
-        accounts.push(account);
+      apiResults.accounts.forEach((currentAccount) => {
+        foundAccounts.push(currentAccount);
       });
     }));
     // #endregion
@@ -197,7 +197,7 @@ function provideInitialize(data) {
     // #region Parse Compound data into new objects
     // Get a unique list of token addresses
     ts('Processing tokens now');
-    const tokens = accounts.map((account) => account.tokens.map((token) => token.address)).flat();
+    const tokens = foundAccounts.map((account) => account.tokens.map((token) => token.address)).flat();
     const tokenSet = new Set(tokens);
 
     // Initialize token objects first
@@ -207,7 +207,7 @@ function provideInitialize(data) {
 
     // Loop through found accounts
     ts('Updating user balances');
-    accounts.forEach((account) => {
+    foundAccounts.forEach((account) => {
       // add to tracked accounts
       /* eslint-disable no-param-reassign */
       if (data.accounts[account.address] === undefined) {
@@ -351,30 +351,32 @@ function provideHandleBlock(data) {
         // update the supply balance and token quantity
         data.supply[currentToken][currentAccount] = BigNumber(snapshot[1].toString())
           .dividedBy(data.tokens[currentToken].cTokenDecimalsMult);
-        const tokenQty = data.supply[currentToken][currentAccount]
-          .multipliedBy(data.tokens[currentToken].exchangeRateMult);
 
         // update the borrow balance
-        data.borrow[currentToken][currentAccount] = BigNumber(snapshot[2].toString())
+        data.borrow[currentToken][currentAccount] = BigNumber(snapshot[2].toString());
       }));
     }));
     // #endregion
 
     // #region Update all token prices via 1inch for now.
     ts('Updating token prices and collateral factors');
-    // To-Do: Switch the primary feed back to ChainLink
-    await Promise.all(Object.entries(data.tokens).map(async (currentToken, tokenData) => {
-      const price = await oneInchContract.getRateToEth(tokenData.underlying, 0);
-      
+
+    // Mapping through all tokens
+    // Note: Object.entries does not work here because the nested objects cannot be retrieved.
+    await Promise.all(Object.keys(data.tokens).map(async (currentToken) => {
+      const price = await oneInchContract.getRateToEth(data.tokens[currentToken].underlying, 0);
+      const oneInchMult = BigNumber(10).pow(36 - data.tokens[currentToken].tokenDecimals);
+
       // Adjust for native decimals
-      const oneInchMult = BigNumber(10).pow(36 - tokenData.tokenDecimals);
-      tokenData.price = BigNumber(price.toString()).dividedBy(oneInchMult);
-      
+      data.tokens[currentToken].price = BigNumber(price.toString())
+        .dividedBy(oneInchMult);
+
       // Update the Collateral Factor
       const market = await comptrollerContract.markets(currentToken);
-      tokenData.collateralMult = BigNumber(market[1].toString())
+      data.tokens[currentToken].collateralMult = BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
     }));
+
     // #endregion
 
     // #region Calculate health on all accounts
@@ -385,7 +387,8 @@ function provideHandleBlock(data) {
       Object.keys(data.tokens).forEach((token) => {
         if (data.supply[token][account]) {
           // Supply balances are stored in cTokens and need to be multiplied by the
-          //   exchange rate and reduced by the collateral factor
+          //   exchange rate, price and the collateral factor to determine the ETH value
+          //   of the collateral.
           supplyBalance = supplyBalance.plus(data.supply[token][account]
             .multipliedBy(data.tokens[token].exchangeRateMult)
             .multipliedBy(data.tokens[token].price)
