@@ -249,7 +249,14 @@ function provideHandleBlock(data) {
   // eslint-disable-next-line no-unused-vars
   return async function handleBlock(blockEvent) {
     const findings = [];
-    const { comptrollerContract, oneInchContract } = data;
+    const {
+      comptrollerContract,
+      oneInchContract,
+      accounts,
+      tokens,
+      borrow,
+      supply,
+    } = data;
 
     // #region Add new Accounts
     // Initialize account. New accounts will get updated in the block section
