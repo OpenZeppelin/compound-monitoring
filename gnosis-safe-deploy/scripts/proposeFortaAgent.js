@@ -27,14 +27,14 @@ const polygonSafeAddress = process.env.POLYGON_SAFE_ADDRESS;
 // load our JSON-RPC endpoint URL
 const polygonEndpoint = process.env.POLYGON_ENDPOINT;
 // load the private key for one of the owners of the Gnosis Safe
-const safeOwnerOnePrivateKey = process.env.OWNER_ONE_PRIVATE_KEY;
+const ownerPrivateKey = process.env.PROPOSE_PRIVATE_KEY;
 
 async function main() {
   // set up an ethers.js provider
   const provider = new ethers.providers.JsonRpcProvider(polygonEndpoint);
 
   // create an ethers.js Wallet (signer) and connect it to the provider
-  const safeWallet = new ethers.Wallet(safeOwnerOnePrivateKey);
+  const safeWallet = new ethers.Wallet(ownerPrivateKey);
   const signer = safeWallet.connect(provider);
 
   // create an ethAdapter to use with the Safe Service Client and Safe Objects
