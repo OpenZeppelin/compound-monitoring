@@ -2,7 +2,7 @@
 
 ## Description
 
-This agent detects when an account on Compound is able to be liquidated.
+This bot detects when an account on Compound is able to be liquidated.
 
 ## Optimizations
 
