@@ -7,7 +7,9 @@ const {
 } = require('forta-agent');
 const BigNumber = require('bignumber.js');
 const config = require('../agent-config.json');
-const { getAbi, ts, callCompoundAPI, buildJsonRequest } = require('./utils');
+const {
+  getAbi, callCompoundAPI, buildJsonRequest,
+} = require('./utils');
 
 // Stores information about each account
 const initializeData = {};
@@ -83,7 +85,6 @@ async function verifyToken(data, tokenAddressImport) {
       data.supply[tokenAddress] = {};
     }
     /* eslint-enable no-param-reassign */
-
   }
 }
 // #endregion
@@ -143,16 +144,9 @@ function provideInitialize(data) {
     // #endregion
 
     // #region Get initial accounts from Compound API
-    // To-do: Can be bootstrapped with ~30 eth_getLogs calls,  500k blocks per call, using filter:
-    // Borrow (address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)
-    // topic0: 0x13ed6866d4e1ee6da46f845c46d7e54120883d75c5ea9a2dacc1c4ca8984ab80
-
-    // Simple bootstrap with Compound for now
-    const apiURL = 'https://api.compound.finance/api/v2/account';
-
     // Find total number of results with the first request
     const initialRequest = buildJsonRequest(maximumHealth, minimumBorrowInETH, 1, 1);
-    const initialResults = await callCompoundAPI(apiURL, initialRequest);
+    const initialResults = await callCompoundAPI(initialRequest);
     const totalEntries = initialResults.pagination_summary.total_entries;
 
     // Determine number of pages needed to query. Results vs config limit.
@@ -170,7 +164,7 @@ function provideInitialize(data) {
         page,
         100,
       );
-      const apiResults = await callCompoundAPI(apiURL, currentRequest);
+      const apiResults = await callCompoundAPI(currentRequest);
       apiResults.accounts.forEach((currentAccount) => {
         foundAccounts.push(currentAccount);
       });
@@ -238,15 +232,9 @@ function provideHandleTransaction(data) {
     const exitMarketString = 'event MarketExited(address cToken, address account)';
 
     const exitMarketEvents = txEvent.filterLog(exitMarketString);
-    exitMarketEvents.forEach((exitEvent) => {
-      ts(`${exitEvent.args.account} exited from ${exitEvent.args.account} `);
-      data.newAccounts.push(exitEvent.args.account);
-    });
+    exitMarketEvents.forEach((exitEvent) => { data.newAccounts.push(exitEvent.args.account); });
     const borrowEvents = txEvent.filterLog(borrowString);
-    borrowEvents.forEach((borrowEvent) => {
-      ts(`${borrowEvent.args.borrower} borrowed ${borrowEvent.args.borrowAmount} `);
-      data.newAccounts.push(borrowEvent.args.borrower);
-    });
+    borrowEvents.forEach((borrowEvent) => { data.newAccounts.push(borrowEvent.args.borrower); });
     // #endregion
 
     // Return zero findings
@@ -255,23 +243,16 @@ function provideHandleTransaction(data) {
 }
 
 function provideHandleBlock(data) {
+  // eslint-disable-next-line no-unused-vars
   return async function handleBlock(blockEvent) {
-    ts(`Starting block ${blockEvent.blockNumber}`);
     const findings = [];
     const { comptrollerContract, oneInchContract } = data;
 
     // #region Add new Accounts
-    ts(
-      `Currently tracking ${Object.keys(data.accounts).length
-      } accounts and adding ${data.newAccounts.length
-      } account(s) this block. ${data.totalNewAccounts
-      } total accounts added since start.`,
-    );
-    data.newAccounts.forEach((newAccount) => {
-      // Initialize account. New accounts will get updated in the block section
-      /* eslint-disable no-param-reassign */
-      data.accounts[newAccount.toLowerCase()] = {};
-    });
+    // Initialize account. New accounts will get updated in the block section
+    /* eslint-disable no-param-reassign */
+
+    data.newAccounts.forEach((newAccount) => { data.accounts[newAccount.toLowerCase()] = {}; });
     data.totalNewAccounts += data.newAccounts.length;
     data.newAccounts = [];
     /* eslint-enable no-param-reassign */
@@ -296,7 +277,6 @@ function provideHandleBlock(data) {
     });
 
     // Grab the assets in first, and make sure they are initialized
-    ts('Getting assetsIn list for new accounts');
     const foundTokens = [];
     await Promise.all(filteredAccounts.map(async (currentAccount) => {
       const assetsIn = await comptrollerContract.getAssetsIn(currentAccount);
@@ -310,13 +290,11 @@ function provideHandleBlock(data) {
     const filteredTokens = Array.from(new Set(foundTokens));
 
     // Initialize token objects
-    ts('Checking for new tokens');
     await Promise.all(filteredTokens.map(async (token) => {
       await verifyToken(data, token);
     }));
 
     // Grab token balances from on-chain
-    ts('Updating balances');
     await Promise.all(filteredAccounts.map(async (currentAccount) => {
       await Promise.all(data.accounts[currentAccount].assetsIn.map(async (currentToken) => {
         const snapshot = await data.tokens[currentToken].contract
@@ -333,8 +311,6 @@ function provideHandleBlock(data) {
     // #endregion
 
     // #region Update all token prices via 1inch for now.
-    ts('Updating token prices and collateral factors');
-
     // Mapping through all tokens
     // Note: Object.entries does not work here because the nested objects cannot be retrieved.
     await Promise.all(Object.keys(data.tokens).map(async (currentToken) => {
@@ -353,7 +329,6 @@ function provideHandleBlock(data) {
     // #endregion
 
     // #region Calculate health on all accounts
-    ts('Health recalculation');
     Object.keys(data.accounts).forEach((account) => {
       let borrowBalance = BigNumber(0);
       let supplyBalance = BigNumber(0);
@@ -394,21 +369,14 @@ function provideHandleBlock(data) {
         lowHealthAccounts.push(currentAccount);
       }
     });
-    ts(`${lowHealthAccounts.length} low health accounts detected`);
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
       const liquidity = await comptrollerContract.getAccountLiquidity(currentAccount);
-      const positiveUSD = BigNumber(ethers.utils.formatEther(liquidity[1]).toString());
       const shortfallUSD = BigNumber(ethers.utils.formatEther(liquidity[2]).toString());
 
-      if (shortfallUSD.gt(0)) {
-        ts(
-          `Negative liquidity on ${currentAccount} with health of ${data.accounts[currentAccount].health.dp(3)
-          } and shortfall of +$${shortfallUSD.dp(2)} USD`,
-        );
-      }
       // Health factor affects the liquidatable amount. Ex: Shortfall of $50 with a Health factor
       // of 0.50 means that only $25 can be successfully liquidated. ( $25 supplied / $50 borrowed )
       const liquidationAmount = shortfallUSD.multipliedBy(data.accounts[currentAccount].health);
+      // Create a finding if the liquidatable amount is below the threshold
       if (liquidationAmount.isGreaterThan(data.minimumLiquidationInUSD)) {
         const newFinding = createAlert(
           data.developerAbbreviation,
