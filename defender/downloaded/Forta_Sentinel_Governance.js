@@ -225,8 +225,6 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
     case 'AE-COMP-GOVERNANCE-PROPOSAL-QUEUED':
       ({ eta, id } = metadata);
       proposalName = await getProposalTitle(id);
-      // message = `Queued Proposal ${proposalName} ${checkMarkEmoji}
-      // available to execute after ${eta} days`;
       message = `**Queued Proposal** ${proposalName} ${checkMarkEmoji} available to execute at timestamp ${eta}`;
       break;
     default:
