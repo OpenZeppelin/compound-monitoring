@@ -1,26 +1,19 @@
-# Large Tether Transfer Agent
+# Compound Delegate Votes Governance Agent
 
 ## Description
 
-This agent detects transactions with large Tether transfers
-
-## Supported Chains
-
-- Ethereum
-- List any other chains this agent can support e.g. BSC
+This agent monitors all Delegate Votes Changes events of COMP to see if an address has been delegated enough COMP to pass signification governance thresholds.
 
 ## Alerts
 
 Describe each of the type of alerts fired by this agent
 
-- FORTA-1
-  - Fired when a transaction contains a Tether transfer over 10,000 USDT
-  - Severity is always set to "low" (mention any conditions where it could be something else)
-  - Type is always set to "info" (mention any conditions where it could be something else)
-  - Mention any other type of metadata fields included with this alert
-
-## Test Data
-
-The agent behaviour can be verified with the following transactions:
-
-- 0x3a0f757030beec55c22cbc545dd8a844cbbb2e6019461769e1bc3f3a95d10826 (15,000 USDT)
+- AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD
+  - Fired when a delegate's balance is the minimum governance threshold level for `proposal` or `votingQuorum`
+  - Type is always set to `Suspicious`
+  - Severity is set to `Medium` for the proposal threshold alert and `High` for the voting quorum threshold alert
+  - Metadata field contains:
+    - Delegate Address
+    - Governance threshold level that has been surpassed, which can be either `proposal` or `votingQuorum`
+    - The minimum amount of COMP needed to pass the respective governance threshold
+    - The amount of COMP owned by the delegate address
