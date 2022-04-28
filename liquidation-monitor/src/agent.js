@@ -179,6 +179,7 @@ function provideInitialize(data) {
 
     // Query each page and add accounts. Starting at 1 and including maxPages
     const foundAccounts = [];
+    // Shorthand Range() function. ( Ex: 5 => [1,2,3,4,5] )
     const pages = [...Array(maxPages)].map((_, i) => 1 + i);
     await Promise.all(pages.map(async (page) => {
       const currentRequest = buildJsonRequest(
