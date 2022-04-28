@@ -7,7 +7,7 @@ const {
 } = require('forta-agent');
 const BigNumber = require('bignumber.js');
 const config = require('../agent-config.json');
-const { getAbi, ts, callAPI } = require('./utils');
+const { getAbi, ts, callCompoundAPI, buildJsonRequest } = require('./utils');
 
 // Stores information about each account
 const initializeData = {};
@@ -155,22 +155,9 @@ function provideInitialize(data) {
     // Simple bootstrap with Compound for now
     const apiURL = 'https://api.compound.finance/api/v2/account';
 
-    // Helper for Compound API
-    function buildJsonRequest(maxHealth, minBorrow, pageNumber, pageSize) {
-      const jsonRequest = {
-        addresses: [], // returns all accounts if empty or not included
-        block_number: 0, // returns latest if given 0
-        max_health: { value: maxHealth },
-        min_borrow_value_in_eth: { value: minBorrow },
-        page_number: pageNumber,
-        page_size: pageSize,
-      };
-      return jsonRequest;
-    }
-
     // Find total number of results with the first request
     const initialRequest = buildJsonRequest(maximumHealth, minimumBorrowInETH, 1, 1);
-    const initialResults = await callAPI(apiURL, initialRequest);
+    const initialResults = await callCompoundAPI(apiURL, initialRequest);
     const totalEntries = initialResults.pagination_summary.total_entries;
 
     // Determine number of pages needed to query. Results vs config limit.
@@ -188,7 +175,7 @@ function provideInitialize(data) {
         page,
         100,
       );
-      const apiResults = await callAPI(apiURL, currentRequest);
+      const apiResults = await callCompoundAPI(apiURL, currentRequest);
       apiResults.accounts.forEach((currentAccount) => {
         foundAccounts.push(currentAccount);
       });
