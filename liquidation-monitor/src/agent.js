@@ -114,10 +114,15 @@ function provideInitialize(data) {
     data.totalNewAccounts = 0;
 
     // Compound API filter and Comptroller contract
-    const { maximumHealth, minimumBorrowInETH } = config.liquidationMonitor.triggerLevels;
     const {
-      comptrollerAddress, maxTrackedAccounts,
-      oracleAddress, oneInchAddress,
+      comptrollerAddress,
+      maxTrackedAccounts,
+      oracleAddress,
+      oneInchAddress,
+      triggerLevels: {
+        maximumHealth,
+        minimumBorrowInETH,
+      },
     } = config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     const oracleABI = getAbi(config.liquidationMonitor.oracleABI);
