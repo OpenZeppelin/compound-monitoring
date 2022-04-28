@@ -185,7 +185,7 @@ function provideInitialize(data) {
         maximumHealth,
         minimumBorrowInETH,
         page,
-        100, // 100 results per page was optimal
+        100,
       );
       const apiResults = await callAPI(apiURL, currentRequest);
       apiResults.accounts.forEach((currentAccount) => {
@@ -195,13 +195,16 @@ function provideInitialize(data) {
     // #endregion
 
     // #region Parse Compound data into new objects
-    // Get a unique list of token addresses
+    // Get a full list of token addresses
     ts('Processing tokens now');
-    const tokens = foundAccounts.map((account) => account.tokens.map((token) => token.address)).flat();
-    const tokenSet = new Set(tokens);
+    const foundTokens = foundAccounts
+      .map((currentAccount) => currentAccount.tokens.map((token) => token.address)).flat();
+
+    // Use Array to Set to Array to remove duplicates
+    const filteredTokens = Array.from(new Set(foundTokens));
 
     // Initialize token objects first
-    await Promise.all(Array.from(tokenSet).map(async (token) => {
+    await Promise.all(filteredTokens.map(async (token) => {
       await verifyToken(data, token);
     }));
 
@@ -213,6 +216,7 @@ function provideInitialize(data) {
       if (data.accounts[account.address] === undefined) {
         data.accounts[account.address] = {};
       }
+
       // Add found health
       data.accounts[account.address].health = BigNumber(account.health.value);
       // Loop through tokens and update balances.
@@ -226,13 +230,8 @@ function provideInitialize(data) {
           data.borrow[token.address][account.address] = BigNumber(
             token.borrow_balance_underlying.value,
           );
-
-          ts(
-            `User ${[account.address]
-            } borrowed ${Math.round(token.borrow_balance_underlying.value)
-            } ${data.tokens[token.address].symbol}`,
-          );
         }
+
         // Process supplies as 'cTokens'
         if (
           token.supply_balance_underlying !== undefined
@@ -241,14 +240,6 @@ function provideInitialize(data) {
           data.supply[token.address][account.address] = BigNumber(
             token.supply_balance_underlying.value,
           ).dividedBy(data.tokens[token.address].exchangeRateMult);
-
-          ts(
-            `User ${[account.address]
-            } supplied ${Math.round(token.supply_balance_underlying.value)
-            } ${data.tokens[token.address].symbol
-            } ( ${Math.round(data.supply[token.address][account.address])
-            } cTokens ) `,
-          );
         }
         /* eslint-enable eqeqeq */
       }); // end token loop
@@ -325,19 +316,21 @@ function provideHandleBlock(data) {
 
     // Grab the assets in first, and make sure they are initialized
     ts('Getting assetsIn list for new accounts');
-    const tokenSet = new Set();
+    const foundTokens = [];
     await Promise.all(filteredAccounts.map(async (currentAccount) => {
       const assetsIn = await comptrollerContract.getAssetsIn(currentAccount);
       data.accounts[currentAccount].assetsIn = assetsIn.map((asset) => {
         const address = asset.toLowerCase();
-        tokenSet.add(address);
+        foundTokens.push(address);
         return address;
       });
     }));
+    // Use Array to Set to Array to remove duplicates
+    const filteredTokens = Array.from(new Set(foundTokens));
 
-    // // Initialize token objects
+    // Initialize token objects
     ts('Checking for new tokens');
-    await Promise.all(Array.from(tokenSet).map(async (token) => {
+    await Promise.all(filteredTokens.map(async (token) => {
       await verifyToken(data, token);
     }));
 
@@ -376,7 +369,6 @@ function provideHandleBlock(data) {
       data.tokens[currentToken].collateralMult = BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
     }));
-
     // #endregion
 
     // #region Calculate health on all accounts
@@ -427,21 +419,14 @@ function provideHandleBlock(data) {
       const positiveUSD = BigNumber(ethers.utils.formatEther(liquidity[1]).toString());
       const shortfallUSD = BigNumber(ethers.utils.formatEther(liquidity[2]).toString());
 
-      if (positiveUSD.gt(0)) {
-        // Uncomment this if you want to see low liquidity as well.
-        // ts(
-        //   `Low liquidity on ${currentAccount
-        //   } with health of ${data.accounts[currentAccount].health.dp(3)
-        //   } and cash reserve of +$${positiveUSD.dp(2)} USD`,
-        // );
-      }
       if (shortfallUSD.gt(0)) {
         ts(
           `Negative liquidity on ${currentAccount} with health of ${data.accounts[currentAccount].health.dp(3)
           } and shortfall of +$${shortfallUSD.dp(2)} USD`,
         );
       }
-      // Lower health means that less money that can be retrieved.
+      // Health factor affects the liquidatable amount. Ex: Shortfall of $50 with a Health factor
+      // of 0.50 means that only $25 can be successfully liquidated. ( $25 supplied / $50 borrowed )
       const liquidationAmount = shortfallUSD.multipliedBy(data.accounts[currentAccount].health);
       if (liquidationAmount.isGreaterThan(data.minimumLiquidationInUSD)) {
         const newFinding = createAlert(
