@@ -207,12 +207,13 @@ exports.handler = async function (autotaskEvent) {
   // wait for the promises to settle
   const messages = await Promise.all(promises);
 
-  for (let i = 0; i < messages.length; i++) {
+  const promises = messages.map((message) => {
     console.log('Posting to Discord');
-    console.log(messages[i]);
-    // eslint-disable-next-line no-await-in-loop
-    await postToDiscord(discordUrl, messages[i]);
-  }
+    console.log(message);
+    return postToDiscord(discordUrl, message)
+  });
+
+  await Promise.all(promises);
 
   console.log('Posted!');
 
