@@ -10,8 +10,8 @@ require('dotenv').config();
 const polygonSafeAddress = process.env.POLYGON_SAFE_ADDRESS;
 const polygonEndpoint = process.env.POLYGON_ENDPOINT;
 
-// load the private key for the account that will be signing the transaction
-const ownerPrivateKey = process.env.OWNER_ONE_PRIVATE_KEY;
+// load the private key for the account that will execute the transaction
+const ownerPrivateKey = process.env.EXECUTION_PRIVATE_KEY;
 
 // load the transaction hash to approve
 const safeTxHash = process.env.SAFE_TX_HASH;
@@ -61,8 +61,8 @@ async function main() {
 
   console.log(`safeTransactionData: ${JSON.stringify(safeTransactionData, null, 2)}`);
 
-  // const options = { gasPrice: (ethers.utils.parseUnits('60', 'gwei')).toString() };
-  const safeTransaction = await safeSdk.createTransaction(safeTransactionData); // , options);
+  const options = { gasPrice: (ethers.utils.parseUnits('60', 'gwei')).toString() };
+  const safeTransaction = await safeSdk.createTransaction(safeTransactionData, options);
   transaction.confirmations.forEach((confirmation) => {
     const signature = new EthSignSignature(confirmation.owner, confirmation.signature);
     safeTransaction.addSignature(signature);

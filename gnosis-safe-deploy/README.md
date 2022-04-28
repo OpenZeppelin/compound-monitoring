@@ -1,5 +1,6 @@
 # Forta Deployment from a Gnosis Safe
 
+
 ## Deploy a Gnosis Safe to Polygon
 
 Create a `config.json` file (see the `config.json.example` file for reference), specifying the addresses of the owners, the number of signatures necessary for a proposal to be approved, and the
@@ -33,7 +34,15 @@ Then run:
 This should deploy a Gnosis Safe Proxy contract to Polygon, display the address of the contract, and save the address to a JSON
 format file called `deployments.json` in the main directory of the repository.
 
+
 ## Create a Forta Bot
+
+The steps for creating a Forta Bot can be found in the Forta Docs: `https://docs.forta.network/en/latest/quickstart/`
+
+The Forta Bot files should be placed directly in this directory in order for the included scripts to operate correctly.
+
+Ensure that you create a `forta.config.json` file for local testing, as well as that you have created a keyfile that will reside
+in your `~/.forta` directory.
 
 
 ## Propose Forta Bot Deployment
@@ -60,3 +69,17 @@ Then run:
 `npm run approve`
 
 
+## Execute Approved Forta Bot Deployment Transaction
+
+Executing the approved transaction can be performed through the Gnosis Safe Web UI (recommended), or through the command line.
+
+In the `.env` file, you will need to have the following entries:
+```bash
+POLYGON_ENDPOINT="https://your.polygon.endpoint/with/api/key"
+POLYGON_SAFE_ADDRESS="0xADDRESSOFDEPLOYEDGNOSISSAFE"
+EXECUTION_PRIVATE_KEY="0xPRIVATEKEYFORGNOSISSAFEOWNER"
+SAFE_TX_HASH="0xPROPOSEDTRANSACTIONHASH"
+```
+
+Then run:
+`npm run execute`
