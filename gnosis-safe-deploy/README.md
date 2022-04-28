@@ -53,7 +53,7 @@ In the `.env` file, you will need to have the following entries:
 ```bash
 POLYGON_ENDPOINT="https://your.polygon.endpoint/with/api/key"
 POLYGON_SAFE_ADDRESS="0xADDRESSOFDEPLOYEDGNOSISSAFE"
-OWNER_ONE_PRIVATE_KEY="0xPRIVATEKEYFORGNOSISSAFEOWNER"
+PROPOSE_PRIVATE_KEY="0xPRIVATEKEYFORGNOSISSAFEOWNER"
 ```
 
 Then run:
@@ -103,7 +103,7 @@ In the `.env` file, you will need to have the following entries:
 ```bash
 POLYGON_ENDPOINT="https://your.polygon.endpoint/with/api/key"
 POLYGON_SAFE_ADDRESS="0xADDRESSOFDEPLOYEDGNOSISSAFE"
-OWNER_ONE_PRIVATE_KEY="0xPRIVATEKEYFORGNOSISSAFEOWNER"
+PROPOSE_PRIVATE_KEY="0xPRIVATEKEYFORGNOSISSAFEOWNER"
 NONCE_TO_REJECT={integerValue}
 ```
 
