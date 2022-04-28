@@ -38,11 +38,12 @@ async function main() {
   });
 
   // create the transaction Object that we will pass to the Gnosis Safe contract
+  const gasPrice = await provider.getGasPrice();
   const transaction = {
     to: polygonSafeAddress,
     data: '0x',
     value: '0',
-    gasPrice: (ethers.utils.parseUnits('40', 'gwei')).toString(), // specify for Polygon to ensure that we won't hit any 'transaction underpriced' errors
+    gasPrice,
     nonce: nonceToReject,
     safeTxGas: 0,
   };

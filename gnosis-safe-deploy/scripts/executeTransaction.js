@@ -61,7 +61,8 @@ async function main() {
 
   console.log(`safeTransactionData: ${JSON.stringify(safeTransactionData, null, 2)}`);
 
-  const options = { gasPrice: (ethers.utils.parseUnits('60', 'gwei')).toString() };
+  const gasPrice = await provider.getGasPrice();
+  const options = { gasPrice };
   const safeTransaction = await safeSdk.createTransaction(safeTransactionData, options);
   transaction.confirmations.forEach((confirmation) => {
     const signature = new EthSignSignature(confirmation.owner, confirmation.signature);

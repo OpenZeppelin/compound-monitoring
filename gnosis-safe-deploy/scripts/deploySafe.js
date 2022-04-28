@@ -59,7 +59,11 @@ async function main() {
 
   // setting the gas is necessary because Polygon increased the minimum gas amount to 30 gwei
   // ref: https://forum.matic.network/t/recommended-min-gas-price-setting/2531
-  const options = { gasPrice: ethers.utils.parseUnits('40', 'gwei') };
+  // const options = { gasPrice: ethers.utils.parseUnits('40', 'gwei') };
+
+  // to avoid issues during periods of high network activity, attempt to get the current gas price
+  const gasPrice = await provider.getGasPrice();
+  const options = { gasPrice };
 
   console.log('Deploying Safe');
   const safeSdk = await safeFactory.deploySafe({ safeAccountConfig, options });
