@@ -2,7 +2,7 @@
 
 ## Deploy a Gnosis Safe to Polygon
 
-Set up the `config.json` file, specifying the addresses of the owners, the number of signatures necessary for a proposal to be approved, and the
+Create a `config.json` file (see the `config.json.example` file for reference), specifying the addresses of the owners, the number of signatures necessary for a proposal to be approved, and the
 version of the Gnosis Safe to deploy (valid versions are 1.0.0, 1.1.0, 1.1.1, 1.2.0, and 1.3.0).
 ```json
 {
