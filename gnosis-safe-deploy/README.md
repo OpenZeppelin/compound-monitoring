@@ -49,6 +49,13 @@ in your `~/.forta` directory.
 
 Ensure that you have updated the Dockerfile to appropriately pull in all dependencies needed by the Forta Bot code.
 
+In the `.env` file, you will need to have the following entries:
+```bash
+POLYGON_ENDPOINT="https://your.polygon.endpoint/with/api/key"
+POLYGON_SAFE_ADDRESS="0xADDRESSOFDEPLOYEDGNOSISSAFE"
+OWNER_ONE_PRIVATE_KEY="0xPRIVATEKEYFORGNOSISSAFEOWNER"
+```
+
 Then run:
 `npm run propose`
 
@@ -83,3 +90,22 @@ SAFE_TX_HASH="0xPROPOSEDTRANSACTIONHASH"
 
 Then run:
 `npm run execute`
+
+
+## Reject Proposed Forta Bot Deployment
+
+Rejecting a transaction can be performed through the Gnosis Safe Web UI (recommended), or through the command line.
+
+From the command line, rejecting a proposed transaction actually involves proposing another transaction with the same nonce as the transaction that one wishes to reject.
+That new transaction will then need to be approved and executed before another transaction with the next nonce can be executed.
+
+In the `.env` file, you will need to have the following entries:
+```bash
+POLYGON_ENDPOINT="https://your.polygon.endpoint/with/api/key"
+POLYGON_SAFE_ADDRESS="0xADDRESSOFDEPLOYEDGNOSISSAFE"
+OWNER_ONE_PRIVATE_KEY="0xPRIVATEKEYFORGNOSISSAFEOWNER"
+NONCE_TO_REJECT={integerValue}
+```
+
+Then run:
+`npm run reject`

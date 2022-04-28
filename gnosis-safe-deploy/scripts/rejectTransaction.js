@@ -9,6 +9,7 @@ require('dotenv').config();
 const polygonSafeAddress = process.env.POLYGON_SAFE_ADDRESS;
 const polygonEndpoint = process.env.POLYGON_ENDPOINT;
 const safeOwnerOnePrivateKey = process.env.OWNER_ONE_PRIVATE_KEY;
+const nonceToReject = parseInt(process.env.NONCE_TO_REJECT);
 
 const provider = new ethers.providers.JsonRpcProvider(polygonEndpoint);
 
@@ -42,7 +43,7 @@ async function main() {
     data: '0x',
     value: '0',
     gasPrice: (ethers.utils.parseUnits('40', 'gwei')).toString(), // specify for Polygon to ensure that we won't hit any 'transaction underpriced' errors
-    nonce: 0,
+    nonce: nonceToReject,
     safeTxGas: 0,
   };
   const safeTransaction = await safeSdk.createTransaction(transaction);
