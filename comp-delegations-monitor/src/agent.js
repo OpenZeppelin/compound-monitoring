@@ -30,7 +30,7 @@ function createAlert(
 ) {
   return Finding.fromObject({
     name: `${protocolName} Governance Delegate Threshold Alert`,
-    description: `The address ${delegateAddress} has been delegated enough COMP token to pass`
+    description: `The address ${delegateAddress} has been delegated enough COMP token to pass `
       + `the minimum threshold for the governance event: ${levelName}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-DELEGATE-THRESHOLD`,
     type: FindingType[type],
@@ -83,7 +83,9 @@ function provideInitialize(data) {
 
     // query for min threshold from gov bravo contract
     let minProposalVotes = await govBravoContract.proposalThreshold();
+    console.log("unformatted min proposal", minProposalVotes.toString())
     minProposalVotes = new BigNumber(minProposalVotes.toString()).div(compDecimals);
+    console.log("formatted min proposal", minProposalVotes.toString())
     let minQuorumVotes = await govBravoContract.quorumVotes();
     minQuorumVotes = new BigNumber(minQuorumVotes.toString()).div(compDecimals);
 
@@ -114,11 +116,18 @@ function provideHandleTransaction(data) {
       delegateLevels,
     } = data;
 
+    console.log("vote minimums here", voteMinimums)
+    console.log("porposal min here", voteMinimums.proposal)
+    console.log("quorum min here", voteMinimums.votingQuorum)
+
     const parsedLogs = txEvent.filterLog(delegateVotesChangedEvent, COMPAddress);
+    console.log("parsed logs here", parsedLogs)
     const promises = parsedLogs.map(async (log) => {
+      console.log("log args here", log.args.newBalance.toString())
       // check to see how much COMP the delegate address has now
       const delegateAddress = log.args.delegate;
       let delegateCOMPBalance = await compContract.balanceOf(delegateAddress);
+      console.log("delegate comp balance here", delegateCOMPBalance)
       // convert to bignumber.js and divide by COMP decimals
       delegateCOMPBalance = new BigNumber(delegateCOMPBalance.toString()).div(compDecimals);
 
