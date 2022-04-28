@@ -191,7 +191,6 @@ function provideInitialize(data) {
     }));
 
     // Loop through found accounts
-    ts('Updating user balances');
     foundAccounts.forEach((account) => {
       // add to tracked accounts
       /* eslint-disable no-param-reassign */
