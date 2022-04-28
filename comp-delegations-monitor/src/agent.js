@@ -1,9 +1,4 @@
-// monitor for when more than an amount of COMP is delegated that puts the delagatee over an important threshold
-// use handlTransaction() to track delegate events
-// if the delegate event puts someone over an important threshold, then trigger an alert
-/// @notice An event thats emitted when a delegate account's vote balance changes
-// event DelegateVotesChanged(address indexed delegate, uint previousBalance, uint newBalance);
-
+/* eslint-disable global-require */
 const {
   ethers, Finding, FindingSeverity, FindingType, getEthersProvider,
 } = require('forta-agent');
@@ -13,6 +8,7 @@ const BigNumber = require('bignumber.js');
 const config = require('../agent-config.json');
 
 function getAbi(fileName) {
+  // eslint-disable-next-line import/no-dynamic-require
   const abi = require(`../abi/${fileName}`);
   return abi;
 }
@@ -83,9 +79,7 @@ function provideInitialize(data) {
 
     // query for min threshold from gov bravo contract
     let minProposalVotes = await govBravoContract.proposalThreshold();
-    console.log("unformatted min proposal", minProposalVotes.toString())
     minProposalVotes = new BigNumber(minProposalVotes.toString()).div(compDecimals);
-    console.log("formatted min proposal", minProposalVotes.toString())
     let minQuorumVotes = await govBravoContract.quorumVotes();
     minQuorumVotes = new BigNumber(minQuorumVotes.toString()).div(compDecimals);
 
@@ -116,22 +110,14 @@ function provideHandleTransaction(data) {
       delegateLevels,
     } = data;
 
-    console.log("vote minimums here", voteMinimums)
-    console.log("porposal min here", voteMinimums.proposal)
-    console.log("quorum min here", voteMinimums.votingQuorum)
-
     const parsedLogs = txEvent.filterLog(delegateVotesChangedEvent, COMPAddress);
-    console.log("parsed logs here", parsedLogs)
     const promises = parsedLogs.map(async (log) => {
-      console.log("log args here", log.args.newBalance.toString())
       // check to see how much COMP the delegate address has now
       const delegateAddress = log.args.delegate;
       let delegateCOMPBalance = await compContract.balanceOf(delegateAddress);
-      console.log("delegate comp balance here", delegateCOMPBalance)
       // convert to bignumber.js and divide by COMP decimals
       delegateCOMPBalance = new BigNumber(delegateCOMPBalance.toString()).div(compDecimals);
-
-      // iterate over the borrow levels to see if any meaningful thresholds have been crossed
+      // iterate over the delegate levels to see if any meaningful thresholds have been crossed
       let findings = Object.keys(delegateLevels).map((levelName) => {
         const { type, severity } = delegateLevels[levelName];
         // check if delegate COMP balance is higher than "proposal" or "votingQuorum" levels
@@ -171,12 +157,3 @@ module.exports = {
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(initializeData),
 };
-
-/*
-@notice The number of votes required in order for a voter to become a proposer
-uint public proposalThreshold;
-
-@notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-uint public constant quorumVotes = 400000e18; // 400,000 = 4% of Comp
-
-*/

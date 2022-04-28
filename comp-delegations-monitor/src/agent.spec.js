@@ -32,9 +32,9 @@ jest.mock('forta-agent', () => ({
 
 const {
   ethers,
-  FindingType,
-  FindingSeverity,
   Finding,
+  FindingSeverity,
+  FindingType,
   TransactionEvent,
 } = require('forta-agent');
 
@@ -175,7 +175,6 @@ describe('check agent configuration file', () => {
     const delegateEventName = 'DelegateVotesChanged';
     const nonDelegateEventName = 'Transfer';
 
-
     beforeEach(async () => {
       inittializeData = {};
 
@@ -187,7 +186,7 @@ describe('check agent configuration file', () => {
       mockTxEvent = createTransactionEvent({});
     });
 
-    xit('returns no findings if no delegate event was emitted and no interaction with the COMP token occurred', async () => {
+    it('returns no findings if no DelegateVotesChanged event was emitted and no interaction with the COMP token occurred', async () => {
       mockTxEvent.addresses[zeroAddress] = true;
 
       // use 'Transfer' as a non delegate event to test
@@ -203,7 +202,7 @@ describe('check agent configuration file', () => {
       expect(findings).toStrictEqual([]);
     });
 
-    xit('returns no findings if no delegate event was emitted, but transaction involed the COMP token address', async () => {
+    it('returns no findings if no DelegateVotesChanged event was emitted, but transaction involed the COMP token address', async () => {
       mockTxEvent.addresses[zeroAddress] = true;
 
       // use 'Transfer' as a non delegate event to test
@@ -219,7 +218,7 @@ describe('check agent configuration file', () => {
       expect(findings).toStrictEqual([]);
     });
 
-    it('returns no findings if a delegate event occured with the COMP token, but threshold level was not crossed', async () => {
+    it('returns no findings if a DelegateVotesChanged event occured with the COMP token, but threshold level was not crossed', async () => {
       // use minProposalVotes - 1 (because proposal min is lower than quorum)
       const currCOMPOwned = BigNumber.sum(minProposalVotes, -1);
       // add the decimals back on before submitting
@@ -241,11 +240,48 @@ describe('check agent configuration file', () => {
       expect(finding).toStrictEqual([]);
     });
 
-    it('returns a finding if delegate crosses proposal threshold, but not quorum thresdhol', async() => {
-      
-    })
+    it('returns a proposal threshold finding if delegate balance crosses proposal threshold, but not quorum thresdhold', async () => {
+      // enough to cross threshold for proposal, but not quorum
+      const currCOMPOwned = BigNumber.sum(minProposalVotes, 1);
+      // add the decimals back on before submitting
+      mockGovContract.balanceOf.mockResolvedValue(currCOMPOwned.multipliedBy(decimals));
 
-    xit('returns findings if a delegate event occured with the COMP token and threshold level was crossed for both proposal and quorum', async () => {
+      const log = createLog(
+        compERC20Interface.getEvent(delegateEventName),
+        {
+          delegate: mockDelegateAddress,
+          previousBalance: 0,
+          newBalance: currCOMPOwned.multipliedBy(decimals).toString(),
+        },
+        { address: compERC20Address }, // input invloved address for .filterLog()
+      );
+
+      mockTxEvent.logs = [log];
+
+      const finding = await handleTransaction(mockTxEvent);
+
+      const expectedProposalFinding = Finding.fromObject(
+        {
+          name: 'Compound Governance Delegate Threshold Alert',
+          description: `The address ${mockDelegateAddress} has been delegated enough COMP token to pass the minimum threshold for the governance event: proposal`,
+          alertId: 'AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD',
+          protocol: 'Compound',
+          severity: FindingSeverity.Medium,
+          type: FindingType.Suspicious,
+          metadata: {
+            delegateAddress: `${mockDelegateAddress}`,
+            levelName: 'proposal',
+            minAmountCOMP: `${minProposalVotes.toString()}`,
+            delegateCOMPBalance: `${currCOMPOwned.toString()}`,
+          },
+        },
+      );
+
+      expect(finding).toStrictEqual([expectedProposalFinding]);
+    });
+
+    it('returns two findings if a delegate balance crosses the threshold level for both proposal and quorum', async () => {
+      // use minQuorumVotes + 1
       const currCOMPOwned = BigNumber.sum(minQuorumVotes, 1);
       // add the decimals back on before submitting
       mockGovContract.balanceOf.mockResolvedValue(currCOMPOwned.multipliedBy(decimals));
@@ -267,13 +303,13 @@ describe('check agent configuration file', () => {
           description: `The address ${mockDelegateAddress} has been delegated enough COMP token to pass the minimum threshold for the governance event: proposal`,
           alertId: 'AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD',
           protocol: 'Compound',
-          severity: 3,
-          type: 2,
+          severity: FindingSeverity.Medium,
+          type: FindingType.Suspicious,
           metadata: {
             delegateAddress: `${mockDelegateAddress}`,
             levelName: 'proposal',
-            minAmountCOMP: '11',
-            delegateCOMPBalance: '45',
+            minAmountCOMP: `${minProposalVotes.toString()}`,
+            delegateCOMPBalance: `${currCOMPOwned.toString()}`,
           },
         },
       );
@@ -284,8 +320,8 @@ describe('check agent configuration file', () => {
           description: `The address ${mockDelegateAddress} has been delegated enough COMP token to pass the minimum threshold for the governance event: votingQuorum`,
           alertId: 'AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD',
           protocol: 'Compound',
-          severity: 4,
-          type: 2,
+          severity: FindingSeverity.High,
+          type: FindingType.Suspicious,
           metadata: {
             delegateAddress: `${mockDelegateAddress}`,
             levelName: 'votingQuorum',
