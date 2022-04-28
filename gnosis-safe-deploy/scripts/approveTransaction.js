@@ -1,9 +1,7 @@
 const EthersAdapter = require('@gnosis.pm/safe-ethers-lib').default;
 const Safe = require('@gnosis.pm/safe-core-sdk').default;
 const SafeServiceClient = require('@gnosis.pm/safe-service-client').default;
-const fortaAgent = require('forta-agent');
-
-const { ethers } = fortaAgent;
+const ethers = require('ethers');
 
 // load values from the .env file
 require('dotenv').config();
