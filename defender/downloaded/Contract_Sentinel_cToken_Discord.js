@@ -103,7 +103,7 @@ async function getTokenPrice(tokenAddress) {
   // get the price from the CoinGecko API
   const { data } = await getCoinGeckoData(url);
 
-  // parse the response and convert the prices to ethers.jd BigNumber type
+  // parse the response and convert the prices to ethers.js BigNumber type
   const usdPerToken = (data[tokenAddress.toLowerCase()].usd).toString();
 
   let usdPerTokenDecimals = 0;
