@@ -179,7 +179,6 @@ function provideInitialize(data) {
 
     // #region Parse Compound data into new objects
     // Get a full list of token addresses
-    ts('Processing tokens now');
     const foundTokens = foundAccounts
       .map((currentAccount) => currentAccount.tokens.map((token) => token.address)).flat();
 
