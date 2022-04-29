@@ -26,7 +26,7 @@ const {
 
 const { getAbi } = require('./utils');
 
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 const BigNumber = require('bignumber.js');
 
 // utility function specific for this test module
@@ -46,7 +46,7 @@ function createTransactionEvent(txObject) {
 }
 
 // check the configuration file to verify the values
-describe('check agent configuration file', () => {
+describe('check bot configuration file', () => {
   describe('procotolName key required', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');

@@ -24,7 +24,7 @@ const {
 
 const { getAbi } = require('./utils');
 
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 const web3 = require('web3-Eth');
 const web3Eth = new web3();
 
@@ -45,7 +45,7 @@ function createTransactionEvent(txObject) {
 }
 
 // check the configuration file to verify the values
-describe('check agent configuration file', () => {
+describe('check bot configuration file', () => {
   it('procotolName key required', () => {
     const { protocolName } = config;
     expect(typeof(protocolName)).toBe('string');

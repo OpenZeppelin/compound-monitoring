@@ -1,7 +1,7 @@
 {
-  "name": "forta-compound-finance-multisig-transaction-agent",
+  "name": "forta-compound-finance-multisig-transaction-bot",
   "version": "0.0.1",
-  "description": "Forta Agent monitoring transactions for the Compound Finance Community Multisig contract",
+  "description": "Forta Bot monitoring transactions for the Compound Finance Community Multisig contract",
   "chainIds": [
     1
   ],

@@ -18,7 +18,7 @@ const {
 const { provideHandleTransaction, provideInitialize, createMarketAttackAlert } = require('./agent');
 const { createMockEventLogs } = require('./test-utils');
 const { getAbi } = require('./utils');
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 
 // utility function specific for this test module
 // we are intentionally not using the Forta SDK function due to issues with
@@ -38,7 +38,7 @@ function createTransactionEvent(txObject) {
 }
 
 // check the configuration file to verify the values
-describe('check agent configuration file', () => {
+describe('check bot configuration file', () => {
   it('protocolName key required', () => {
     const { protocolName } = config;
     expect(typeof protocolName).toBe('string');

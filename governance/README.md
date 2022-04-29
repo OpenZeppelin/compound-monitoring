@@ -2,7 +2,7 @@
 
 ## Description
 
-This agent monitors the Compound Finance GovernorBravo contract for specific emitted events related
+This bot monitors the Compound Finance GovernorBravo contract for specific emitted events related
 to Proposals and Voting.  All alert types and severities are set to Info.
 
 ## Alerts
@@ -77,7 +77,7 @@ to Proposals and Voting.  All alert types and severities are set to Info.
 
 ## Testing
 
-The following transactions can be used to test the operation of this agent.
+The following transactions can be used to test the operation of this bot.
 
 ProposalCanceled - 0x30e5bc0fc04394f505f7edf782bf6a7d5595c2e4c15106358847d24cb9d37a4d
 ProposalCreated - 0xb8128ed644be6448123acd0dcc082c8c54d4c999ed1561b82aa405dbd19c84b1
