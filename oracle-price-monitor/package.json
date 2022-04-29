@@ -2,7 +2,7 @@
   "name": "forta-ae-oracle-price-monitor",
   "version": "0.0.1",
   "chainIds": [1],
-  "description": "This agent monitors the UniswapAnchoredView contract to see if any price updates have been rejected.",
+  "description": "This bot monitors the UniswapAnchoredView contract to see if any price updates have been rejected.",
   "scripts": {
     "start": "npm run start:dev",
     "start:dev": "nodemon --watch src --watch forta.config.json -e js,json --exec 'forta-agent run'",

@@ -28,7 +28,7 @@ const {
 } = require('./agent');
 const abi = require('../abi/UniswapAnchoredView.json');
 
-// agent tests
+// bot tests
 describe('handleTransaction', () => {
   let initializeData;
   let handleTransaction;
@@ -62,7 +62,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     expect(findings).toStrictEqual([]);
   });
@@ -98,7 +98,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     const expectedFinding = Finding.fromObject({
       name: 'Compound Oracle Price Monitor',
@@ -136,7 +136,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     expect(findings).toStrictEqual([]);
   });

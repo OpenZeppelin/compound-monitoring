@@ -1,8 +1,8 @@
-# Compound Oracle Price Monitor Agent
+# Compound Oracle Price Monitor Bot
 
 ## Description
 
-This agent monitors the UniswapAnchoredProxy contract for PriceGuarded events which indicate that
+This bot monitors the UniswapAnchoredProxy contract for PriceGuarded events which indicate that
 a ValidatorProxy reported a cToken price that is outside of the Uniswap V2 TWAP percent threshold.
 
 ## Alerts

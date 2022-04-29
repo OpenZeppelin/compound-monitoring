@@ -2,11 +2,11 @@
 
 ## Description
 
-This agent monitors Compound Finance cToken contracts for common market events like Mint, Borrow,
-etc.  Monitored events are specified in the agent-config.json file, with associated Finding types
+This bot monitors Compound Finance cToken contracts for common market events like Mint, Borrow,
+etc.  Monitored events are specified in the bot-config.json file, with associated Finding types
 and severities for each one.
 
-This agent also checks the Compound Finance Comptroller contract on every block to compare the most
+This bot also checks the Compound Finance Comptroller contract on every block to compare the most
 recent Array of cToken addresses against the previously stored Array.  If any new cTokens were
 added, the new cToken address(es) are placed into the Array for monitoring in that block and all
 subsequent blocks.
@@ -15,9 +15,9 @@ subsequent blocks.
 
 <!-- -->
 - AE-COMP-CTOKEN-EVENT
-  - Emitted for any event specified in `agent-config.json`
-  - Type is set to event specific value in `agent-config.json`
-  - Severity is set to event specific value in `agent-config.json`
+  - Emitted for any event specified in `bot-config.json`
+  - Type is set to event specific value in `bot-config.json`
+  - Severity is set to event specific value in `bot-config.json`
   - Metadata field contains:
     - cToken symbol
     - cToken address

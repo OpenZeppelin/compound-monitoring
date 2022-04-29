@@ -5,8 +5,8 @@ const {
 
 const { getAbi } = require('./utils');
 
-// load any agent configuration parameters
-const config = require('../agent-config.json');
+// load any bot configuration parameters
+const config = require('../bot-config.json');
 
 const ERC20_TRANSFER_EVENT = "event Transfer(address indexed from, address indexed to, uint256 value)";
 
