@@ -1,12 +1,10 @@
-# Compound Delegate Votes Governance Agent
+# Compound Delegate Votes Governance Bot
 
 ## Description
 
-This agent monitors all Delegate Votes Changes events of COMP to see if an address has been delegated enough COMP to pass signification governance thresholds.
+This bot monitors all Delegate Votes Changes events of COMP to see if an address has been delegated enough COMP to pass signification governance thresholds.
 
 ## Alerts
-
-Describe each of the type of alerts fired by this agent
 
 - AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD
   - Fired when a delegate's balance is the minimum governance threshold level for `proposal` or `votingQuorum`
