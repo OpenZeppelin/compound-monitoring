@@ -14,7 +14,7 @@ const {
 // Stores information about each account
 const initializeData = {};
 
-// #region Global functions
+// Global functions
 function createAlert(
   developerAbbreviation,
   protocolName,
@@ -54,7 +54,7 @@ async function verifyToken(data, tokenAddressImport) {
     const cContract = tokens[tokenAddress].contract;
     tokens[tokenAddress].symbol = await cContract.symbol();
 
-    // cETH does not have an underlying contract, so peg it to wETH instead
+    // cETH does not have an underlying contract, so link it to wETH instead
     if (tokenAddress === '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5') {
       tokens[tokenAddress].underlying = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
     } else {
@@ -63,11 +63,14 @@ async function verifyToken(data, tokenAddressImport) {
     const exchangeRate = await cContract.exchangeRateStored();
     tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
 
-    const decimalsABI = 'function decimals() view returns (uint)';
+    // Look up decimals of the underlying tokens as well.
+    const decimalsABI = '["function decimals() view returns (uint)"]';
     const underlyingTokenContract = new ethers.Contract(
-        tokens[tokenAddress].underlying, decimalsABI, data.provider,
+      tokens[tokenAddress].underlying, decimalsABI, data.provider,
     );
-    tokens[tokenAddress].tokenDecimals = await underlyingTokenContract.decimals();
+    const ethersDecimal = await underlyingTokenContract.decimals();
+    tokens[tokenAddress].tokenDecimals = BigNumber(ethersDecimal.toString());
+
     tokens[tokenAddress].tokenDecimalsMult = BigNumber(10).pow(tokens[tokenAddress].tokenDecimals);
     tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10)
       .pow(tokens[tokenAddress].cTokenDecimals);
@@ -85,12 +88,11 @@ async function verifyToken(data, tokenAddressImport) {
     /* eslint-enable no-param-reassign */
   }
 }
-// #endregion
 
 // Initializes data required for handler
 function provideInitialize(data) {
   return async function initialize() {
-    // #region Assign configurable fields
+    // Assign configurable fields
     /* eslint-disable no-param-reassign */
     data.alertMinimumIntervalSeconds = config.alertMinimumIntervalSeconds;
     data.protocolName = config.protocolName;
@@ -140,9 +142,8 @@ function provideInitialize(data) {
       data.provider,
     );
     /* eslint-enable no-param-reassign */
-    // #endregion
 
-    // #region Get initial accounts from Compound API
+    // Get initial accounts from Compound API
     // Find total number of results with the first request
     const initialRequest = buildJsonRequest(maximumHealth, minimumBorrowInETH, 1, 1);
     const initialResults = await callCompoundAPI(initialRequest);
@@ -163,9 +164,8 @@ function provideInitialize(data) {
         foundAccounts.push(currentAccount);
       });
     }));
-    // #endregion
 
-    // #region Parse Compound data into new objects
+    // Parse Compound data into new objects
     // Get a full list of token addresses
     const foundTokens = foundAccounts
       .map((currentAccount) => currentAccount.tokens.map((token) => token.address)).flat();
@@ -210,13 +210,11 @@ function provideInitialize(data) {
       }); // end token loop
       /* eslint-enable no-param-reassign */
     }); // end account loop
-    // #endregion
   };
 }
 
 function provideHandleTransaction(data) {
   return async function handleTransaction(txEvent) {
-    // #region Filter logs and look for new account activity.
     // Filter all new transactions and look for new accounts to track.
     const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
     const exitMarketString = 'event MarketExited(address cToken, address account)';
@@ -225,7 +223,6 @@ function provideHandleTransaction(data) {
     exitMarketEvents.forEach((exitEvent) => { data.newAccounts.push(exitEvent.args.account); });
     const borrowEvents = txEvent.filterLog(borrowString);
     borrowEvents.forEach((borrowEvent) => { data.newAccounts.push(borrowEvent.args.borrower); });
-    // #endregion
 
     // Return zero findings
     return [];
@@ -245,15 +242,13 @@ function provideHandleBlock(data) {
       supply,
     } = data;
 
-    // #region Add new Accounts
-    // Initialize account. New accounts will get updated in the block section
+    // Initialize accounts. New accounts will get updated in the block section
     /* eslint-disable no-param-reassign */
     data.newAccounts.forEach((newAccount) => { accounts[newAccount.toLowerCase()] = {}; });
     data.totalNewAccounts += data.newAccounts.length;
     data.newAccounts = [];
-    // #endregion
 
-    // #region Update Balances on zero health accounts
+    // Update Balances on zero health accounts
     const filteredAccounts = [];
     Object.keys(accounts).forEach((currentAccount) => {
       if (accounts[currentAccount].health == null
@@ -301,9 +296,8 @@ function provideHandleBlock(data) {
         borrow[currentToken][currentAccount] = BigNumber(snapshot[2].toString());
       }));
     }));
-    // #endregion
 
-    // #region Update all token prices via 1inch for now.
+    // Update all token prices via 1inc
     // Mapping through all tokens
     // Note: Object.entries does not work here because the nested objects cannot be retrieved.
     await Promise.all(Object.keys(tokens).map(async (currentToken) => {
@@ -318,9 +312,8 @@ function provideHandleBlock(data) {
       tokens[currentToken].collateralMult = BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
     }));
-    // #endregion
 
-    // #region Calculate health on all accounts
+    // Calculate health on all accounts
     Object.keys(accounts).forEach((account) => {
       let borrowBalance = BigNumber(0);
       let supplyBalance = BigNumber(0);
@@ -352,9 +345,7 @@ function provideHandleBlock(data) {
         /* eslint-enable no-param-reassign */
       }
     });
-    // #endregion
 
-    // #region Check low health accounts on-chain
     // Check the Comptroller contract for actual liquidity if the health is below x
     const lowHealthAccounts = [];
     Object.keys(accounts).forEach((currentAccount) => {
@@ -389,8 +380,6 @@ function provideHandleBlock(data) {
       // Zero out the health on the low accounts so they may be re-scanned. (optional)
       // accounts[currentAccount] = {};
     }));
-    // #endregion
-
     return findings;
   };
 }
