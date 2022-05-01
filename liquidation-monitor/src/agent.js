@@ -63,9 +63,11 @@ async function verifyToken(data, tokenAddressImport) {
     const exchangeRate = await cContract.exchangeRateStored();
     tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
 
-    // Token to cToken is approximately 0.02 * 10**(10 + tokenDecimals)
-    // So the trick to get token decimals is exchangeRate.length - 9
-    tokens[tokenAddress].tokenDecimals = exchangeRate.toString().length - 9;
+    const decimalsABI = 'function decimals() view returns (uint)';
+    const underlyingTokenContract = new ethers.Contract(
+        tokens[tokenAddress].underlying, decimalsABI, data.provider,
+    );
+    tokens[tokenAddress].tokenDecimals = await underlyingTokenContract.decimals();
     tokens[tokenAddress].tokenDecimalsMult = BigNumber(10).pow(tokens[tokenAddress].tokenDecimals);
     tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10)
       .pow(tokens[tokenAddress].cTokenDecimals);
