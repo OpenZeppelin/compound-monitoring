@@ -27,7 +27,7 @@ function createAlert(
   healthFactor,
 ) {
   return Finding.fromObject({
-    name: `${protocolName} Compound Liquidation Threshold Alert`,
+    name: `${protocolName} Liquidation Threshold Alert`,
     description: `The address ${borrowerAddress} has dropped below the liquidation threshold. `
       + `The account may be liquidated for: $${liquidationAmount} USD`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
