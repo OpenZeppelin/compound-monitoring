@@ -303,6 +303,9 @@ function provideHandleBlock(data) {
 
       // Update the Collateral Factor
       const market = await comptrollerContract.markets(currentToken);
+      // Per Compound: https://compound.finance/docs/comptroller#collateral-factor
+      //   "collateralFactorMantissa, scaled by 1e18, is multiplied by a supply balance to determine
+      //    how much value can be borrowed"
       tokens[currentToken].collateralMult = BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
     }));
