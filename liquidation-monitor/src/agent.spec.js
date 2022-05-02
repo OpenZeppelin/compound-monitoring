@@ -170,63 +170,63 @@ describe('check agent configuration file', () => {
 });
 
 // agent tests
-// describe('handleTransaction', () => {
-//   const {
-//     developerAbbreviation,
-//     protocolName,
-//     protocolAbbreviation,
-//     cCOMPAddress,
-//     borrowLevels,
-//   } = config;
-//   const iface = new ethers.utils.Interface(mockERC20Contract);
-//   const mockBorrowerAddress = '0x1212121212121212121212121212121212121212';
-//   let initializeData;
-//   let handleTransaction;
+describe('handleTransaction', () => {
+  const {
+    developerAbbreviation,
+    protocolName,
+    protocolAbbreviation,
+    cCOMPAddress,
+    borrowLevels,
+  } = config;
+  // const iface = new ethers.utils.Interface(mockERC20Contract);
+  const mockBorrowerAddress = '0x1111';
+  let initializeData;
+  let handleTransaction;
 
-//   beforeEach(async () => {
-//     initializeData = {};
-//     // initialize the handler
-//     await (provideInitialize(initializeData))();
-//     handleTransaction = provideHandleTransaction(initializeData);
-//     mockERC20Contract.balanceOf.mockReset();
-//   });
+  beforeEach(async () => {
+    initializeData = {};
+    // initialize the handler
+    await (provideInitialize(initializeData))();
+    handleTransaction = provideHandleTransaction(initializeData);
+    mockERC20Contract.balanceOf.mockReset();
+  });
 
-//   it('returns no findings if no borrow event was emitted and no interaction with the cCOMP token occurred', async () => {
-//     const mockReceipt = {
-//       logs: [],
-//     };
-//     // create the mock txEvent
-//     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
+  it('returns no findings if no borrow event was emitted and no interaction with the cCOMP token occurred', async () => {
+    const mockReceipt = {
+      logs: [],
+    };
+    // create the mock txEvent
+    const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-//     // run the agent
-//     const findings = await handleTransaction(txEvent);
-//     expect(findings).toStrictEqual([]);
-//     expect(mockERC20Contract.balanceOf).toHaveBeenCalledTimes(0);
-//   });
+    // run the agent
+    const findings = await handleTransaction(txEvent);
+    expect(findings).toStrictEqual([]);
+    expect(mockERC20Contract.balanceOf).toHaveBeenCalledTimes(0);
+  });
 
-//   it('returns no findings if an event other than the borrow event is emitted from the cCOMP token contract', async () => {
-//     // build mock receipt for mock txEvent, in this case the log event topics will not correspond to
-//     // the Borrow event so we should not expect to see a finding
-//     const mockTopics = [
-//       ethers.utils.id('mockEvent(indexed address)'),
-//       ethers.utils.defaultAbiCoder.encode(
-//         ['address'], ['0x1111111111111111111111111111111111111111'],
-//       ),
-//     ];
-//     const mockReceipt = {
-//       logs: [{
-//         address: cCOMPAddress,
-//         topics: mockTopics,
-//         data: '0x',
-//       }],
-//     };
+  it('returns no findings if an event other than the borrow event is emitted from the cCOMP token contract', async () => {
+    // build mock receipt for mock txEvent, in this case the log event topics will not correspond to
+    // the Borrow event so we should not expect to see a finding
+    const mockTopics = [
+      ethers.utils.id('mockEvent(indexed address)'),
+      ethers.utils.defaultAbiCoder.encode(
+        ['address'], ['0x1111111111111111111111111111111111111111'],
+      ),
+    ];
+    const mockReceipt = {
+      logs: [{
+        address: cCOMPAddress,
+        topics: mockTopics,
+        data: '0x',
+      }],
+    };
 
-//     // create the mock txEvent
-//     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
+    // create the mock txEvent
+    const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-//     // run the agent
-//     const findings = await handleTransaction(txEvent);
-//     expect(findings).toStrictEqual([]);
-//     expect(mockERC20Contract.balanceOf).toHaveBeenCalledTimes(0);
-//   });
-// });
+    // run the agent
+    const findings = await handleTransaction(txEvent);
+    expect(findings).toStrictEqual([]);
+    expect(mockERC20Contract.balanceOf).toHaveBeenCalledTimes(0);
+  });
+});
