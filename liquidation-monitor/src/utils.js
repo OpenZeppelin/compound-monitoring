@@ -1,4 +1,4 @@
-const fetch = require('node-fetch-commonjs');
+const axios = require('axios');
 
 function getAbi(abiName) {
   // eslint-disable-next-line global-require,import/no-dynamic-require
@@ -20,23 +20,15 @@ function buildJsonRequest(maxHealth, minBorrow, pageNumber, pageSize) {
 }
 
 async function callCompoundAPI(jsonRequest) {
-  const apiURL = 'https://api.compound.finance/api/v2/account';
-  const response = await fetch(apiURL, {
-    method: 'POST',
-    body: JSON.stringify(jsonRequest),
-  });
-
-  if (!response.ok) {
-    console.error('Got non-2XX response from API server.');
-  }
-
-  let responseData;
   try {
-    responseData = await response.json();
-  } catch (error) {
-    console.error('Failed to fetch accounts due to error: ', error);
+    const apiURL = 'https://api.compound.finance/api/v2/account';
+    const resp = await axios.post(apiURL, jsonRequest);
+    return resp.data;
+  } catch (err) {
+    // Handle Error Here
+    console.error(err);
+    return null;
   }
-  return responseData;
 }
 
 module.exports = {
