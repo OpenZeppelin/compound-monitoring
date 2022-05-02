@@ -61,15 +61,18 @@ async function verifyToken(data, tokenAddressImport) {
       tokens[tokenAddress].underlying = await cContract.underlying();
     }
     const exchangeRate = await cContract.exchangeRateStored();
-    tokens[tokenAddress].cTokenDecimals = await cContract.decimals();
+    tokens[tokenAddress].cTokenDecimals = BigNumber(
+      (await cContract.decimals()).toString(),
+    );
 
     // Look up decimals of the underlying tokens as well.
     const decimalsABI = '["function decimals() view returns (uint)"]';
     const underlyingTokenContract = new ethers.Contract(
       tokens[tokenAddress].underlying, decimalsABI, data.provider,
     );
-    const ethersDecimal = await underlyingTokenContract.decimals();
-    tokens[tokenAddress].tokenDecimals = BigNumber(ethersDecimal.toString());
+    tokens[tokenAddress].tokenDecimals = BigNumber(
+      (await underlyingTokenContract.decimals()).toString(),
+    );
 
     tokens[tokenAddress].tokenDecimalsMult = BigNumber(10).pow(tokens[tokenAddress].tokenDecimals);
     tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10)

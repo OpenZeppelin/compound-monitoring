@@ -1,8 +1,8 @@
 // Configurable properties
 // All prices are in ETH
-const mockBTCprice = 11;
-const mockETHprice = 1;
-const mockUSDCprice = 0.00033;
+const mockBtcPrice = 11;
+const mockEthPrice = 1;
+const mockUsdcPrice = 0.00033;
 // Same decimals for all tokens
 const mockDecimals = 18;
 
