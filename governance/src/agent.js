@@ -2,7 +2,7 @@ const { ethers } = require('forta-agent');
 
 const { createGovernanceFindings } = require('./governance');
 
-// load any agent configuration parameters
+// load any bot configuration parameters
 const config = require('../bot-config.json');
 
 function getAbi(abiName) {

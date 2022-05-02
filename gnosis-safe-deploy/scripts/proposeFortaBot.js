@@ -8,7 +8,7 @@ const { ethers } = fortaAgent;
 // get the Awilix container with its registered modules
 const container = fortaAgent.configureContainer();
 
-// get the module corresponding to the agent registry Object
+// get the module corresponding to the bot registry Object
 // and the uploadImage function
 const {
   agentRegistry,
@@ -78,18 +78,18 @@ async function main() {
   // Forta SDK function
   // uploadManifest() will:
   //   - upload documentation to IPFS
-  //   - create an agent manifest
-  //   - sign the agent manifest with a privateKey
+  //   - create a bot manifest
+  //   - sign the bot manifest with a privateKey
   //   - upload the manifest and signature to IPFS
   //   - return the content ID for that content
   const manifestReference = await uploadManifest(imageReference, privateKey);
   console.log(manifestReference);
 
-  // create the transaction that will add the information to the Agent Registry contract
+  // create the transaction that will add the information to the Bot Registry contract
   // normally the 'from' address would be the same as the address used for signing the manifest
   // in this case, we want the Bot to "belong" to the Gnosis safe.
   // therefore, we will pass the Gnosis Safe contract address as the 'from' address
-  // this will result in an ERC721 Forta Agent token being minted to the Gnosis Safe address
+  // this will result in an ERC721 Forta Bot token being minted to the Gnosis Safe address
   const from = polygonSafeAddress;
   console.log(`from: ${from}`);
 

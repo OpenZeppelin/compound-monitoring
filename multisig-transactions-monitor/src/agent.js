@@ -1,6 +1,6 @@
 const { ethers } = require('forta-agent');
 
-// load abotgent configuration parameters
+// load bot configuration parameters
 const config = require('../bot-config.json');
 
 // require utilities
