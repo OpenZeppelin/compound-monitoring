@@ -94,7 +94,6 @@ async function verifyToken(data, tokenAddressImport) {
 function provideInitialize(data) {
   return async function initialize() {
     // Assign configurable fields
-    data.alertMinimumIntervalSeconds = config.alertMinimumIntervalSeconds;
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
@@ -113,7 +112,6 @@ function provideInitialize(data) {
     // Compound API filter and Comptroller contract
     const {
       comptrollerAddress,
-      oracleAddress,
       oneInchAddress,
       triggerLevels: {
         maximumHealth,
@@ -121,7 +119,6 @@ function provideInitialize(data) {
       },
     } = config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
-    const oracleABI = getAbi(config.liquidationMonitor.oracleABI);
     const oneInchABI = getAbi(config.liquidationMonitor.oneInchABI);
     data.comptrollerAddress = comptrollerAddress;
     data.comptrollerContract = new ethers.Contract(
@@ -132,12 +129,6 @@ function provideInitialize(data) {
     data.oneInchContract = new ethers.Contract(
       oneInchAddress,
       oneInchABI,
-      data.provider,
-    );
-    // Unused but available for the future
-    data.oracleContract = new ethers.Contract(
-      oracleAddress,
-      oracleABI,
       data.provider,
     );
 
