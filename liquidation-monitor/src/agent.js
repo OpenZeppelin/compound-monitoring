@@ -85,10 +85,8 @@ async function verifyToken(data, tokenAddressImport) {
       .dividedBy(tokens[tokenAddress].cTokenDecimalsMult)
       .dividedBy(100); // Not sure where this 100 comes from I didn't see it in the docs
 
-    /* eslint-disable no-param-reassign */
     if (data.borrow[tokenAddress] === undefined) data.borrow[tokenAddress] = {};
     if (data.supply[tokenAddress] === undefined) data.supply[tokenAddress] = {};
-    /* eslint-enable no-param-reassign */
   }
 }
 
@@ -96,7 +94,6 @@ async function verifyToken(data, tokenAddressImport) {
 function provideInitialize(data) {
   return async function initialize() {
     // Assign configurable fields
-    /* eslint-disable no-param-reassign */
     data.alertMinimumIntervalSeconds = config.alertMinimumIntervalSeconds;
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
@@ -116,7 +113,6 @@ function provideInitialize(data) {
     // Compound API filter and Comptroller contract
     const {
       comptrollerAddress,
-      maxTrackedAccounts,
       oracleAddress,
       oneInchAddress,
       triggerLevels: {
@@ -144,7 +140,6 @@ function provideInitialize(data) {
       oracleABI,
       data.provider,
     );
-    /* eslint-enable no-param-reassign */
 
     // Get initial accounts from Compound API
     // Find total number of results with the first request
@@ -152,9 +147,8 @@ function provideInitialize(data) {
     const initialResults = await callCompoundAPI(initialRequest);
     const totalEntries = initialResults.pagination_summary.total_entries;
 
-    // Determine number of pages needed to query. Results vs config limit.
-    const maxEntries = Math.min(maxTrackedAccounts, totalEntries);
-    const maxPages = Math.ceil(maxEntries / 100);
+    // Determine number of pages needed to query.
+    const maxPages = Math.ceil(totalEntries / 100);
 
     // Query each page and add accounts. Starting at 1 and including maxPages
     const foundAccounts = [];
@@ -184,7 +178,6 @@ function provideInitialize(data) {
     // Loop through found accounts
     foundAccounts.forEach((account) => {
       // add to tracked accounts
-      /* eslint-disable no-param-reassign */
       if (data.accounts[account.address] === undefined) data.accounts[account.address] = {};
 
       // Add found health
@@ -211,7 +204,6 @@ function provideInitialize(data) {
           ).dividedBy(data.tokens[token.address].exchangeRateMult);
         }
       }); // end token loop
-      /* eslint-enable no-param-reassign */
     }); // end account loop
   };
 }
@@ -233,8 +225,7 @@ function provideHandleTransaction(data) {
 }
 
 function provideHandleBlock(data) {
-  // eslint-disable-next-line no-unused-vars
-  return async function handleBlock(blockEvent) {
+  return async function handleBlock() {
     const findings = [];
     const {
       comptrollerContract,
@@ -246,7 +237,6 @@ function provideHandleBlock(data) {
     } = data;
 
     // Initialize accounts. New accounts will get updated in the block section
-    /* eslint-disable no-param-reassign */
     data.newAccounts.forEach((newAccount) => { accounts[newAccount.toLowerCase()] = {}; });
     data.totalNewAccounts += data.newAccounts.length;
     data.newAccounts = [];
@@ -266,7 +256,6 @@ function provideHandleBlock(data) {
         });
       }
     });
-    /* eslint-enable no-param-reassign */
 
     // Grab the assets in first, and make sure they are initialized
     const foundTokens = [];
@@ -300,11 +289,13 @@ function provideHandleBlock(data) {
       }));
     }));
 
-    // Update all token prices via 1inc
-    // Mapping through all tokens
+    // Update all token prices via 1inch
     // Note: Object.entries does not work here because the nested objects cannot be retrieved.
     await Promise.all(Object.keys(tokens).map(async (currentToken) => {
       const price = await oneInchContract.getRateToEth(tokens[currentToken].underlying, 0);
+
+      // 1inch's getRateToEth uses 36 decimal places. The space is shared with the token's decimal.
+      //   So (36 - tokenDecimal) will yield the actual decimal for the rate.
       const oneInchMult = BigNumber(10).pow(36 - tokens[currentToken].tokenDecimals);
 
       // Adjust for native decimals
@@ -339,13 +330,11 @@ function provideHandleBlock(data) {
 
       // Remove non-borrowers
       if (borrowBalance.eq(0)) {
-        /* eslint-disable no-param-reassign */
         delete accounts[account];
       } else {
         accounts[account].supplyBalance = supplyBalance;
         accounts[account].borrowBalance = borrowBalance;
         accounts[account].health = supplyBalance.dividedBy(borrowBalance);
-        /* eslint-enable no-param-reassign */
       }
     });
 

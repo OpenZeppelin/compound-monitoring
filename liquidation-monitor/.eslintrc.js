@@ -18,6 +18,7 @@ module.exports = {
       files: '*',
       rules: {
         'no-console': 'off',
+        'no-param-reassign': 'off',
       },
     },
   ],
