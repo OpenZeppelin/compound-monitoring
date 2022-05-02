@@ -1,6 +1,6 @@
 {
   "name": "forta-ae-oracle-price-monitor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "chainIds": [1],
   "description": "This bot monitors the UniswapAnchoredView contract to see if any price updates have been rejected.",
   "scripts": {
