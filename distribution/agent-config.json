@@ -13,5 +13,6 @@
     }
   },
   "distributionThresholdPercent": "200",
-  "minimumDistributionAmount": "100"
+  "minimumDistributionAmount": "100",
+  "maximumSaneDistributionAmount": "1000"
 }

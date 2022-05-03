@@ -18,8 +18,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "bignumber.js": "^9.0.1",
-    "forta-agent": "^0.0.39"
+    "bignumber.js": "^9.0.2",
+    "forta-agent": "^0.1.1"
   },
   "devDependencies": {
     "eslint": "^7.32.0",
