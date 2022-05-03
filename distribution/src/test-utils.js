@@ -78,7 +78,7 @@ function createMockEventLogs(eventObject, iface, override = undefined) {
 
     // determine whether to take the default value for the type, or if an override is given, take
     // that value
-    if (override !== undefined && override[entry.name] != undefined) {
+    if (override !== undefined && override[entry.name] !== undefined) {
       value = override[entry.name];
     } else {
       value = defaultTypeMap[entry.type];
