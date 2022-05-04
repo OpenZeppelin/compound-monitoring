@@ -107,7 +107,9 @@ function provideInitialize(data) {
     );
     const compoundTokenDecimals = await compoundTokenContract.decimals();
 
-    data.compoundTokenDecimalsMultiplier = new BigNumber(10).pow(compoundTokenDecimals);
+    data.compoundTokenDecimalsMultiplier = new BigNumber(10).pow(
+      compoundTokenDecimals.toString(),
+    );
     data.compoundTokenAddress = compoundTokenAddress;
   };
 }

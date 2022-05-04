@@ -138,7 +138,7 @@ describe('distribution agent tests', () => {
       const expectedFinding = Finding.fromObject({
         name: `${protocolName} Exceeds Ratio Threshold Distribution Event`,
         description: `Distributed ${accruedToDistributedRatio.toFixed(0)}% more COMP to ${validReceiverAddress} than expected`,
-        alertId: `${developerAbbreviation}-${protocolAbbreviation}-EXCEEDS-RATIO-THRESHOLD-DISTRIBUTION-EVENT`,        
+        alertId: `${developerAbbreviation}-${protocolAbbreviation}-EXCEEDS-RATIO-THRESHOLD-DISTRIBUTION-EVENT`,
         protocol: protocolName,
         type: FindingType.Info,
         severity: FindingSeverity.Info,
@@ -168,7 +168,7 @@ describe('distribution agent tests', () => {
       const expectedFinding = Finding.fromObject({
         name: `${protocolName} Exceeds Sane Distribution Event`,
         description: `Distribution of ${amountCompDistributedBN.toString()} COMP to ${validReceiverAddress} exceeds ${maximumSaneDistributionAmount}`,
-        alertId: `${developerAbbreviation}-${protocolAbbreviation}-EXCEEDS-SANE-DISTRIBUTION-EVENT`,        
+        alertId: `${developerAbbreviation}-${protocolAbbreviation}-EXCEEDS-SANE-DISTRIBUTION-EVENT`,
         protocol: protocolName,
         type: FindingType.Info,
         severity: FindingSeverity.Info,
