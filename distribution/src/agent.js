@@ -5,39 +5,11 @@ const {
 
 const { getAbi } = require('./utils');
 
-// load any agent configuration parameters
-const config = require('../agent-config.json');
-
-const ERC20_TRANSFER_EVENT = 'event Transfer(address indexed from, address indexed to, uint256 value)';
+// load any bot configuration parameters
+const config = require('../bot-config.json');
 
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
-
-// helper function to create distribution alerts
-function createExceedsRatioThresholdDistributionAlert(
-  protocolName,
-  protocolAbbreviation,
-  developerAbbreviation,
-  accruedToDistributedRatio,
-  receiver,
-  compDistributed,
-  compAccrued,
-) {
-  const finding = Finding.fromObject({
-    name: `${protocolName} Exceeds Ratio Threshold Distribution Event`,
-    description: `Distributed ${accruedToDistributedRatio.toFixed(0)}% more COMP to ${receiver} than expected`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-EXCEEDS-RATIO-THRESHOLD-DISTRIBUTION-EVENT`,
-    protocol: protocolName,
-    type: FindingType.Info,
-    severity: FindingSeverity.Info,
-    metadata: {
-      receiver,
-      compDistributed,
-      compAccrued,
-    },
-  });
-  return finding;
-}
 
 // helper function to create distribution alerts
 function createExceedsSaneDistributionAlert(
@@ -45,19 +17,25 @@ function createExceedsSaneDistributionAlert(
   protocolAbbreviation,
   developerAbbreviation,
   maximumSaneDistributionAmount,
-  receiver,
-  compDistributed,
+  compToken,
+  maliciousAddress,
+  compDelta,
+  compIndex,
 ) {
   const finding = Finding.fromObject({
     name: `${protocolName} Exceeds Sane Distribution Event`,
-    description: `Distribution of ${compDistributed} COMP to ${receiver} exceeds ${maximumSaneDistributionAmount}`,
+    description: `Distribution of ${compDelta} COMP to ${maliciousAddress} exceeds ${maximumSaneDistributionAmount}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-EXCEEDS-SANE-DISTRIBUTION-EVENT`,
     protocol: protocolName,
     type: FindingType.Info,
     severity: FindingSeverity.Info,
+    addresses: [
+      compToken,
+      maliciousAddress,
+    ],
     metadata: {
-      receiver,
-      compDistributed,
+      compDelta,
+      compIndex,
     },
   });
   return finding;
@@ -71,8 +49,6 @@ function provideInitialize(data) {
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
 
-    data.distributionThresholdPercent = config.distributionThresholdPercent;
-    data.minimumDistributionAmount = config.minimumDistributionAmount;
     data.maximumSaneDistributionAmount = config.maximumSaneDistributionAmount;
 
     data.provider = getEthersProvider();
@@ -110,22 +86,18 @@ function provideInitialize(data) {
     data.compoundTokenDecimalsMultiplier = new BigNumber(10).pow(
       compoundTokenDecimals.toString(),
     );
-    data.compoundTokenAddress = compoundTokenAddress;
   };
 }
 
 function provideHandleTransaction(data) {
   return async function handleTransaction(txEvent) {
     const {
-      compoundTokenAddress,
       compoundTokenDecimalsMultiplier,
       comptrollerContract,
       comptrollerAddress,
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
-      distributionThresholdPercent,
-      minimumDistributionAmount,
       maximumSaneDistributionAmount,
       distributionSignatures,
     } = data;
@@ -134,64 +106,39 @@ function provideHandleTransaction(data) {
     const findings = [];
 
     // if no events found for distributing COMP, return
-    const compDistributedEvents = txEvent.filterLog(
+    const distributionEvents = txEvent.filterLog(
       distributionSignatures,
       comptrollerAddress,
     );
 
-    if (!compDistributedEvents.length) return findings;
-    // determine how much COMP distributed using Transfer event
-    const transferEvents = txEvent.filterLog(ERC20_TRANSFER_EVENT, compoundTokenAddress).filter(
-      (transferEvent) => transferEvent.args.from.toLowerCase() === comptrollerAddress,
-    );
-    await Promise.all(transferEvents.map(async (transferEvent) => {
-      const amountCompDistributedBN = new BigNumber(transferEvent.args.value.toString()).div(
-        compoundTokenDecimalsMultiplier,
-      );
+    await Promise.all(distributionEvents.map(async (distributionEvent) => {
+      const amountCompDistributedBN = new BigNumber(
+        distributionEvent.args.compDelta.toString(),
+      ).div(compoundTokenDecimalsMultiplier);
 
-      // if we don't reach the minimum threshold for distributed COMP
-      //  do not bother calculating the ratio to the previous accrued amount
-      if (amountCompDistributedBN.gt(minimumDistributionAmount)) {
-        // determine Comptroller.compAccrued() in previous block
-        const { blockNumber } = txEvent;
-        const prevBlockCompAccrued = await comptrollerContract.compAccrued(
-          transferEvent.args.to, { blockTag: blockNumber - 1 },
-        );
-        const prevBlockCompAccruedBN = new BigNumber(prevBlockCompAccrued.toString()).div(
-          compoundTokenDecimalsMultiplier,
-        );
+      let maliciousAddress;
+      let compIndex;
+      if (distributionEvent.name === 'DistributedBorrowerComp') {
+        maliciousAddress = distributionEvent.args.borrower;
+        compIndex = distributionEvent.args.compBorrowIndex;
+      } else if (distributionEvent.name === 'DistributedSupplierComp') {
+        maliciousAddress = distributionEvent.args.supplier;
+        compIndex = distributionEvent.args.compSupplyIndex;
+      }
 
-        // calculate ratio of accrued to distributed COMP
-        const accruedToDistributedRatio = amountCompDistributedBN.div(
-          prevBlockCompAccruedBN,
-        ).times(100);
-
-        // check against a maximum "sane" distribution amount of COMP
-        //  and alert then even if the previous is zero?
-        if (amountCompDistributedBN.gt(maximumSaneDistributionAmount)) {
-          findings.push(createExceedsSaneDistributionAlert(
-            protocolName,
-            protocolAbbreviation,
-            developerAbbreviation,
-            maximumSaneDistributionAmount,
-            transferEvent.args.to,
-            amountCompDistributedBN.toString(),
-          ));
-        } else if (!prevBlockCompAccruedBN.isZero()
-          && accruedToDistributedRatio.gt(distributionThresholdPercent)) {
-          // if the previous accrual is zero our heuristic of using the ratio will not work
-          //  otherwise if the ratio of between the previous accrued amount to the distribution
-          //  amount exceeds the threshold report a finding
-          findings.push(createExceedsRatioThresholdDistributionAlert(
-            protocolName,
-            protocolAbbreviation,
-            developerAbbreviation,
-            accruedToDistributedRatio,
-            transferEvent.args.to,
-            amountCompDistributedBN.toString(),
-            prevBlockCompAccruedBN.toString(),
-          ));
-        }
+      // check against a maximum "sane" distribution amount of COMP
+      //  and alert then even if the previous is zero?
+      if (amountCompDistributedBN.gt(maximumSaneDistributionAmount)) {
+        findings.push(createExceedsSaneDistributionAlert(
+          protocolName,
+          protocolAbbreviation,
+          developerAbbreviation,
+          maximumSaneDistributionAmount,
+          distributionEvent.args.cToken,
+          maliciousAddress,
+          amountCompDistributedBN.toString(),
+          compIndex.toString(),
+        ));
       }
     }));
 
@@ -204,6 +151,5 @@ module.exports = {
   initialize: provideInitialize(initializeData),
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(initializeData),
-  createExceedsRatioThresholdDistributionAlert,
   createExceedsSaneDistributionAlert,
 };
