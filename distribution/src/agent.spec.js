@@ -18,7 +18,6 @@ const BigNumber = require('bignumber.js');
 const {
   provideHandleTransaction,
   provideInitialize,
-  createExceedsRatioThresholdDistributionAlert,
   createExceedsSaneDistributionAlert,
 } = require('./agent');
 
@@ -28,7 +27,7 @@ const {
 
 const { getAbi } = require('./utils');
 
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 
 // utility function specific for this test module
 // we are intentionally not using the Forta SDK function due to issues with
@@ -47,16 +46,14 @@ function createTransactionEvent(txObject) {
   return txEvent;
 }
 
-describe('distribution agent tests', () => {
+describe('distribution bot tests', () => {
   let protocolName;
   let protocolAbbreviation;
   let developerAbbreviation;
   let contracts;
-  let validReceiverAddress;
+  let maliciousAddress;
   let validComptrollerAddress;
-  let validCompoundTokenAddress;
-  let distributionThresholdPercent;
-  let minimumDistributionAmount;
+  let validCTokenAddress;
   let maximumSaneDistributionAmount;
 
   beforeAll(async () => {
@@ -64,17 +61,15 @@ describe('distribution agent tests', () => {
     protocolAbbreviation = config.protocolAbbreviation;
     developerAbbreviation = config.developerAbbreviation;
     contracts = config.contracts;
-    distributionThresholdPercent = config.distributionThresholdPercent;
-    minimumDistributionAmount = config.minimumDistributionAmount;
     maximumSaneDistributionAmount = config.maximumSaneDistributionAmount;
     validComptrollerAddress = config.contracts.Comptroller.address.toLowerCase();
-    validCompoundTokenAddress = config.contracts.CompoundToken.address.toLowerCase();
 
-    validReceiverAddress = `0x1${'0'.repeat(39)}`;
+    maliciousAddress = `0x1${'0'.repeat(39)}`;
+    validCTokenAddress = `0x5${'0'.repeat(39)}`;
   });
 
   // check the configuration file to verify the values
-  describe('check agent configuration file', () => {
+  describe('check bot configuration file', () => {
     it('protocolName key required', () => {
       expect(typeof (protocolName)).toBe('string');
       expect(protocolName).not.toBe('');
@@ -111,16 +106,6 @@ describe('distribution agent tests', () => {
       expect(typeof ComptrollerAbi).toBe('object');
     });
 
-    it('distribution threshold must be valid', () => {
-      expect(typeof (distributionThresholdPercent)).toBe('string');
-      expect(distributionThresholdPercent).not.toBe('');
-    });
-
-    it('minimum distribution amount must be valid', () => {
-      expect(typeof (minimumDistributionAmount)).toBe('string');
-      expect(minimumDistributionAmount).not.toBe('');
-    });
-
     it('maximum sane distribution amount must be valid', () => {
       expect(typeof (maximumSaneDistributionAmount)).toBe('string');
       expect(maximumSaneDistributionAmount).not.toBe('');
@@ -128,53 +113,24 @@ describe('distribution agent tests', () => {
   });
 
   describe('test finding creation', () => {
-    it('returns a proper exceeds ratio threshold finding', () => {
-      const amountCompDistributedBN = new BigNumber('300');
-      const prevBlockCompAccruedBN = new BigNumber('100');
-      const accruedToDistributedRatio = amountCompDistributedBN.div(
-        prevBlockCompAccruedBN,
-      ).times(100);
-
-      const expectedFinding = Finding.fromObject({
-        name: `${protocolName} Exceeds Ratio Threshold Distribution Event`,
-        description: `Distributed ${accruedToDistributedRatio.toFixed(0)}% more COMP to ${validReceiverAddress} than expected`,
-        alertId: `${developerAbbreviation}-${protocolAbbreviation}-EXCEEDS-RATIO-THRESHOLD-DISTRIBUTION-EVENT`,
-        protocol: protocolName,
-        type: FindingType.Info,
-        severity: FindingSeverity.Info,
-        metadata: {
-          receiver: validReceiverAddress,
-          compDistributed: amountCompDistributedBN.toString(),
-          compAccrued: prevBlockCompAccruedBN.toString(),
-        },
-      });
-
-      const finding = createExceedsRatioThresholdDistributionAlert(
-        protocolName,
-        protocolAbbreviation,
-        developerAbbreviation,
-        accruedToDistributedRatio,
-        validReceiverAddress,
-        amountCompDistributedBN.toString(),
-        prevBlockCompAccruedBN.toString(),
-      );
-
-      expect(finding).toStrictEqual(expectedFinding);
-    });
-
     it('returns a proper exceeds sane distribution finding', () => {
       const amountCompDistributedBN = new BigNumber('20000');
+      const compIndex = new BigNumber('1000000000');
 
       const expectedFinding = Finding.fromObject({
         name: `${protocolName} Exceeds Sane Distribution Event`,
-        description: `Distribution of ${amountCompDistributedBN.toString()} COMP to ${validReceiverAddress} exceeds ${maximumSaneDistributionAmount}`,
+        description: `Distribution of ${amountCompDistributedBN.toString()} COMP to ${maliciousAddress} exceeds ${maximumSaneDistributionAmount}`,
         alertId: `${developerAbbreviation}-${protocolAbbreviation}-EXCEEDS-SANE-DISTRIBUTION-EVENT`,
         protocol: protocolName,
         type: FindingType.Info,
         severity: FindingSeverity.Info,
+        addresses: [
+          validCTokenAddress,
+          maliciousAddress,
+        ],
         metadata: {
-          receiver: validReceiverAddress,
-          compDistributed: amountCompDistributedBN.toString(),
+          compDelta: amountCompDistributedBN.toString(),
+          compIndex: compIndex.toString(),
         },
       });
 
@@ -183,8 +139,10 @@ describe('distribution agent tests', () => {
         protocolAbbreviation,
         developerAbbreviation,
         maximumSaneDistributionAmount,
-        validReceiverAddress,
+        validCTokenAddress,
+        maliciousAddress,
         amountCompDistributedBN.toString(),
+        compIndex.toString(),
       );
 
       expect(finding).toStrictEqual(expectedFinding);
@@ -197,8 +155,6 @@ describe('distribution agent tests', () => {
 
     let ComptrollerAbi;
     let ComptrollerIface;
-    let TransferAbi;
-    let TransferIface;
     let compoundTokenDecimalsMultiplier;
 
     let mockCompoundTokenContract;
@@ -212,30 +168,6 @@ describe('distribution agent tests', () => {
 
       ComptrollerAbi = getAbi(config.contracts.Comptroller.abiFile);
       ComptrollerIface = new ethers.utils.Interface(ComptrollerAbi);
-
-      TransferAbi = {
-        anonymous: false,
-        inputs: [
-          {
-            indexed: true,
-            name: 'from',
-            type: 'address',
-          },
-          {
-            indexed: true,
-            name: 'to',
-            type: 'address',
-          },
-          {
-            indexed: false,
-            name: 'value',
-            type: 'uint256',
-          },
-        ],
-        name: 'Transfer',
-        type: 'event',
-      };
-      TransferIface = new ethers.utils.Interface([TransferAbi]);
 
       mockComptrollerContract = {
         compAccrued: jest.fn(),
@@ -286,121 +218,18 @@ describe('distribution agent tests', () => {
       expect(findings).toStrictEqual([]);
     });
 
-    it('returns empty findings if the transfer event is from the wrong address', async () => {
-      const distEventAbi = ComptrollerIface.getEvent('DistributedSupplierComp');
-      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface);
-
-      const distLog = {
-        address: validComptrollerAddress,
-        topics: distEvent.mockTopics,
-        data: distEvent.data,
-      };
-
-      mockTxEvent.logs.push(distLog);
-
-      const distributionAmount = new BigNumber('300').times(compoundTokenDecimalsMultiplier);
-
-      const override = {
-        from: invalidAddress,
-        to: validReceiverAddress,
-        value: distributionAmount.toString(),
-      };
-
-      const transferEventAbi = TransferIface.getEvent('Transfer');
-      const transferEvent = createMockEventLogs(transferEventAbi, TransferIface, override);
-
-      const transferLog = {
-        address: validCompoundTokenAddress,
-        topics: transferEvent.mockTopics,
-        data: transferEvent.data,
-      };
-
-      mockTxEvent.logs.push(transferLog);
-
-      const findings = await handleTransaction(mockTxEvent);
-
-      expect(findings).toStrictEqual([]);
-    });
-
-    it('returns empty findings if distribution was below the minimum amount', async () => {
-      const distEventAbi = ComptrollerIface.getEvent('DistributedSupplierComp');
-      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface);
-
-      const distLog = {
-        address: validComptrollerAddress,
-        topics: distEvent.mockTopics,
-        data: distEvent.data,
-      };
-
-      mockTxEvent.logs.push(distLog);
-
-      const distributionAmount = new BigNumber('10').times(compoundTokenDecimalsMultiplier);
-
-      const override = {
-        from: validComptrollerAddress,
-        to: validReceiverAddress,
-        value: distributionAmount.toString(),
-      };
-
-      const transferEventAbi = TransferIface.getEvent('Transfer');
-      const transferEvent = createMockEventLogs(transferEventAbi, TransferIface, override);
-
-      const transferLog = {
-        address: validCompoundTokenAddress,
-        topics: transferEvent.mockTopics,
-        data: transferEvent.data,
-      };
-
-      mockTxEvent.logs.push(transferLog);
-
-      const findings = await handleTransaction(mockTxEvent);
-
-      expect(findings).toStrictEqual([]);
-    });
-
-    it('returns empty findings if previous accrued amount was zero', async () => {
-      const distEventAbi = ComptrollerIface.getEvent('DistributedSupplierComp');
-      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface);
-
-      const distLog = {
-        address: validComptrollerAddress,
-        topics: distEvent.mockTopics,
-        data: distEvent.data,
-      };
-
-      mockTxEvent.logs.push(distLog);
-
-      const distributionAmount = new BigNumber('100').times(compoundTokenDecimalsMultiplier);
-
-      const override = {
-        from: validComptrollerAddress,
-        to: validReceiverAddress,
-        value: distributionAmount.toString(),
-      };
-
-      const transferEventAbi = TransferIface.getEvent('Transfer');
-      const transferEvent = createMockEventLogs(transferEventAbi, TransferIface, override);
-
-      const transferLog = {
-        address: validCompoundTokenAddress,
-        topics: transferEvent.mockTopics,
-        data: transferEvent.data,
-      };
-
-      mockTxEvent.logs.push(transferLog);
-
-      const prevAmount = new BigNumber(0);
-
-      mockComptrollerContract.compAccrued.mockResolvedValueOnce(prevAmount);
-
-      const findings = await handleTransaction(mockTxEvent);
-
-      expect(findings).toStrictEqual([]);
-    });
-
     it('returns empty findings if distribution was within the threshold', async () => {
       const distEventAbi = ComptrollerIface.getEvent('DistributedSupplierComp');
-      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface);
+
+      const distributionAmount = new BigNumber('100').times(compoundTokenDecimalsMultiplier);
+
+      const override = {
+        cToken: validCTokenAddress,
+        supplier: maliciousAddress,
+        compDelta: distributionAmount.toString(),
+      };
+
+      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface, override);
 
       const distLog = {
         address: validComptrollerAddress,
@@ -409,29 +238,6 @@ describe('distribution agent tests', () => {
       };
 
       mockTxEvent.logs.push(distLog);
-
-      const distributionAmount = new BigNumber('100').times(compoundTokenDecimalsMultiplier);
-
-      const override = {
-        from: validComptrollerAddress,
-        to: validReceiverAddress,
-        value: distributionAmount.toString(),
-      };
-
-      const transferEventAbi = TransferIface.getEvent('Transfer');
-      const transferEvent = createMockEventLogs(transferEventAbi, TransferIface, override);
-
-      const transferLog = {
-        address: validCompoundTokenAddress,
-        topics: transferEvent.mockTopics,
-        data: transferEvent.data,
-      };
-
-      mockTxEvent.logs.push(transferLog);
-
-      const prevAmount = new BigNumber('1').times(compoundTokenDecimalsMultiplier);
-
-      mockComptrollerContract.compAccrued.mockResolvedValueOnce(prevAmount);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -440,7 +246,21 @@ describe('distribution agent tests', () => {
 
     it('returns findings if the distribution exceeds the sane amount', async () => {
       const distEventAbi = ComptrollerIface.getEvent('DistributedSupplierComp');
-      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface);
+
+      const distributionAmount = new BigNumber('2000').times(compoundTokenDecimalsMultiplier);
+      const compIndex = new BigNumber(0);
+
+      const override = {
+        cToken: validCTokenAddress,
+        supplier: maliciousAddress,
+        // We use .toFixed() here because createMockEventLogs uses ethers.BigNumber under the hood
+        // and doesn't support converting numbers defined as string exponents which is what regular
+        // BigNumber.js will output if you use .toString()
+        compDelta: distributionAmount.toFixed(),
+        compSupplyIndex: compIndex.toFixed(),
+      };
+
+      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface, override);
 
       const distLog = {
         address: validComptrollerAddress,
@@ -449,32 +269,6 @@ describe('distribution agent tests', () => {
       };
 
       mockTxEvent.logs.push(distLog);
-
-      const distributionAmount = new BigNumber('2000').times(compoundTokenDecimalsMultiplier);
-
-      const override = {
-        from: validComptrollerAddress,
-        to: validReceiverAddress,
-        // We use .toFixed() here because createMockEventLogs uses ethers.BigNumber under the hood
-        // and doesn't support converting numbers defined as string exponents which is what regular
-        // BigNumber.js will output if you use .toString()
-        value: distributionAmount.toFixed(),
-      };
-
-      const transferEventAbi = TransferIface.getEvent('Transfer');
-      const transferEvent = createMockEventLogs(transferEventAbi, TransferIface, override);
-
-      const transferLog = {
-        address: validCompoundTokenAddress,
-        topics: transferEvent.mockTopics,
-        data: transferEvent.data,
-      };
-
-      mockTxEvent.logs.push(transferLog);
-
-      const prevAmount = new BigNumber('2000').times(compoundTokenDecimalsMultiplier);
-
-      mockComptrollerContract.compAccrued.mockResolvedValueOnce(prevAmount);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -483,58 +277,10 @@ describe('distribution agent tests', () => {
         initializeData.protocolAbbreviation,
         initializeData.developerAbbreviation,
         maximumSaneDistributionAmount,
-        validReceiverAddress,
+        validCTokenAddress,
+        maliciousAddress,
         distributionAmount.div(compoundTokenDecimalsMultiplier).toString(),
-      );
-
-      expect(findings).toStrictEqual([expectedFinding]);
-    });
-
-    it('returns findings if the ratio exceeds the threshold', async () => {
-      const distEventAbi = ComptrollerIface.getEvent('DistributedSupplierComp');
-      const distEvent = createMockEventLogs(distEventAbi, ComptrollerIface);
-
-      const distLog = {
-        address: validComptrollerAddress,
-        topics: distEvent.mockTopics,
-        data: distEvent.data,
-      };
-
-      mockTxEvent.logs.push(distLog);
-
-      const distributionAmount = new BigNumber('300').times(compoundTokenDecimalsMultiplier);
-
-      const override = {
-        from: validComptrollerAddress,
-        to: validReceiverAddress,
-        value: distributionAmount.toString(),
-      };
-
-      const transferEventAbi = TransferIface.getEvent('Transfer');
-      const transferEvent = createMockEventLogs(transferEventAbi, TransferIface, override);
-
-      const transferLog = {
-        address: validCompoundTokenAddress,
-        topics: transferEvent.mockTopics,
-        data: transferEvent.data,
-      };
-
-      mockTxEvent.logs.push(transferLog);
-
-      const prevAmount = new BigNumber('100').times(compoundTokenDecimalsMultiplier);
-
-      mockComptrollerContract.compAccrued.mockResolvedValueOnce(prevAmount);
-
-      const findings = await handleTransaction(mockTxEvent);
-
-      const expectedFinding = createExceedsRatioThresholdDistributionAlert(
-        initializeData.protocolName,
-        initializeData.protocolAbbreviation,
-        initializeData.developerAbbreviation,
-        distributionAmount.div(prevAmount).times(100),
-        validReceiverAddress,
-        distributionAmount.div(compoundTokenDecimalsMultiplier).toString(),
-        prevAmount.div(compoundTokenDecimalsMultiplier).toString(),
+        compIndex.toString(),
       );
 
       expect(findings).toStrictEqual([expectedFinding]);
