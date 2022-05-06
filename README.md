@@ -12,7 +12,7 @@ to Proposals and Voting.  All alert types and severities are set to Info.
 
 ### Compound Distribution Monitor
 
-This agent monitors the Compound Finance Comptroller contract for distribution events that exceed a 
+This bot monitors the Compound Finance Comptroller contract for distribution events that exceed a 
 set of configurable parameters. All alert types and severities are set to Info.
 
 ### cToken Transaction Monitor
