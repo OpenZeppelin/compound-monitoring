@@ -2,7 +2,7 @@
 
 ## Description
 
-This bot monitors all Delegate Votes Changes events of COMP to see if an address has been delegated enough COMP to pass signification governance thresholds.
+This bot monitors all DelegateVotesChanged events emitted by the COMP token contract to see if an address has been delegated enough COMP to pass significant governance thresholds.
 
 ## Alerts
 

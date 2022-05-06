@@ -1,7 +1,7 @@
 {
-  "name": "forta-agent-starter",
+  "name": "forta-ae-comp-delegations-monitor",
   "version": "0.0.1",
-  "description": "Forta Agent Javascript starter project",
+  "description": "Forta Bot to monitor delegate voting power",
   "chainIds": [
     1
   ],
