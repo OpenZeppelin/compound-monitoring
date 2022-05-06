@@ -227,15 +227,43 @@ describe('handleBlock', () => {
   });
 
   it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {
-    // Borrowed BTC increases +1% in value
+    // Borrowed BTC increases 1% in value
     data.tokens['0xBTC'] = { price: mockBtcPrice * 1.01 };
     const findings = handleMockBlockEvent();
     expect(findings).toStrictEqual([]);
   });
 
-  it('returns findings if borrowed asset increases and exceeds the minimumLiquidation threshold', async () => {
-    // Borrowed BTC increases +2% in value
+  it('returns findings if borrowed asset increases and account exceeds the minimumLiquidation threshold', async () => {
+    // Borrowed BTC increases 2% in value
     data.tokens['0xBTC'] = { price: mockBtcPrice * 1.02 };
+    const findings = handleMockBlockEvent();
+    expect(findings).toStrictEqual([1]);
+  });
+
+  it('returns no findings if borrowed asset decreases and remains below minimumLiquidation threshold', async () => {
+    // Borrowed BTC decreases 1% in value
+    data.tokens['0xBTC'] = { price: mockBtcPrice * 0.99 };
+    const findings = handleMockBlockEvent();
+    expect(findings).toStrictEqual([]);
+  });
+
+  it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
+    // Supplied ETH decreases 1% in value
+    data.tokens['0xETH'] = { price: mockEthPrice * 0.99 };
+    const findings = handleMockBlockEvent();
+    expect(findings).toStrictEqual([]);
+  });
+
+  it('returns findings if supplied asset decreases and account exceeds the minimumLiquidation threshold', async () => {
+    // Supplied ETH decreases 3% in value
+    data.tokens['0xETH'] = { price: mockEthPrice * 0.98 };
+    const findings = handleMockBlockEvent();
+    expect(findings).toStrictEqual([1]);
+  });
+
+  it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
+    // Supplied ETH decreases 1% in value
+    data.tokens['0xBTC'] = { price: mockEthPrice * 1.01 };
     const findings = handleMockBlockEvent();
     expect(findings).toStrictEqual([]);
   });
