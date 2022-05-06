@@ -31,3 +31,37 @@ Liquidate (DAI) - 0x4316c6cb73296b6b5b603a80a267b203d394e049216d71d8e3ff4822e8d7
 Mint (USDC) - 0xfd200d6d3136ce4f4b91270f8ed7579bf9932e1ce2388b324ee4a281f58047b1
 Redeem (ETH) - 0x4b11cee2963cbb2c01cf2c9858a684117ef24ce62a4ffac5738557e14f0276b6
 Repay (USDC) - 0x3c59e9ba77e3864f2efdc49df1c9aba83fb202c59ffbbe116c133dbeb327b010
+
+## Autotask
+
+This autotask sends alerts from Openzepplin's Defender Forta Sentinel's to Compound's Disord channel. 
+
+### Testing
+
+The Autotask files contain code to facilitate development and testing of OpenZeppelin Defender Autotasks.
+
+Rather than creating Autotask scripts in the Defender Web App and then waiting for appropriate blockchain events
+to trigger a Forta Sentinel, this code allows a developer to specify a range of blocks to use for retrieving alerts
+from the Forta Public API.  Those alerts are then fed directly into the Autotask in the same format that they would
+have if they were occurring live.
+
+### Use of Jest
+
+This code uses Jest to override the `defender-relay-client` module.  That module can be used to create a JSON-RPC provider
+in the Defender environment, but because we are not running in that environment, we can simplify the approach by using a
+standard ethers JSONRPCProvider instead.
+
+The use of `describe` and `it` is currently only necessary because we are using Jest for the module override.
+
+### Autotask Setup
+- Create an `autotask-config.json` file with the following format:
+```
+{
+  "jsonRpcUrl": "https://your.preferred.json.rpc.endpoint/with/api-key",
+  "agentId": "0xFORTAAGENTIDHERE",
+  "startBlockNumber": <integer_for_starting_block_number>,
+  "endBlockNumber": <integer_for_ending_block_number>
+}
+```
+- Create a .env file that contains the name of your discord webook and the url for it:
+  - ex.) `FortaSentinelTestingDiscord = "discord_webhook_url"`
