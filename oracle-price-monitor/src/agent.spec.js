@@ -28,7 +28,7 @@ const {
 } = require('./agent');
 const abi = require('../abi/UniswapAnchoredView.json');
 
-// agent tests
+// bot tests
 describe('handleTransaction', () => {
   let initializeData;
   let handleTransaction;
@@ -62,7 +62,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     expect(findings).toStrictEqual([]);
   });
@@ -83,7 +83,7 @@ describe('handleTransaction', () => {
     );
 
     // build mock receipt for mock txEvent, this time the event logs will contain a PriceGuarded
-    // event and the agent should return a finding as a reult
+    // event and the bot should return a finding as a reult
     const iface = new ethers.utils.Interface(abi);
     const mockTopics = iface.encodeFilterTopics('PriceGuarded', [0x1]);
     const mockData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [100, 10]);
@@ -98,7 +98,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     const expectedFinding = Finding.fromObject({
       name: 'Compound Oracle Price Monitor',
@@ -136,7 +136,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     expect(findings).toStrictEqual([]);
   });

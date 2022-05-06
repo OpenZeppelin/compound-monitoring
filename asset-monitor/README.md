@@ -2,7 +2,7 @@
 
 ## Description
 
-This agent monitors the underlying asset of Compound Finance cToken contracts.  First
+This bot monitors the underlying asset of Compound Finance cToken contracts.  First
 it determines which assets are deployed using upgradable proxy contracts and then it
 monitors those contracts for any upgrade events to detect when the implementation for
 a cToken's underlying asset may have changed.
@@ -11,9 +11,9 @@ a cToken's underlying asset may have changed.
 
 <!-- -->
 - AE-COMP-CTOKEN-ASSET-UPGRADED
-  - Emitted for any proxy pattern specified in `agent-config.json`
-  - Type is set to the pattern specific value in `agent-config.json`
-  - Severity is set to the pattern specific value in `agent-config.json`
+  - Emitted for any proxy pattern specified in `bot-config.json`
+  - Type is set to the pattern specific value in `bot-config.json`
+  - Severity is set to the pattern specific value in `bot-config.json`
   - Metadata field contains:
     - cToken symbol
     - cToken address
