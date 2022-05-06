@@ -53,7 +53,7 @@ function createTransactionEvent(txObject) {
   return txEvent;
 }
 
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 
 const compERC20Abi = require('../abi/CompERC20.json');
 
@@ -166,7 +166,7 @@ describe('check agent configuration file', () => {
   });
 
   describe('monitor COMP token delegation thresholds', () => {
-    let inittializeData;
+    let initializeData;
     let handleTransaction;
     let mockTxEvent;
 
@@ -176,11 +176,11 @@ describe('check agent configuration file', () => {
     const nonDelegateEventName = 'Transfer';
 
     beforeEach(async () => {
-      inittializeData = {};
+      initializeData = {};
 
       // initialize handler
-      await (provideInitialize(inittializeData))();
-      handleTransaction = provideHandleTransaction(inittializeData);
+      await (provideInitialize(initializeData))();
+      handleTransaction = provideHandleTransaction(initializeData);
 
       // create empty transaction event to populate
       mockTxEvent = createTransactionEvent({});
@@ -202,7 +202,7 @@ describe('check agent configuration file', () => {
       expect(findings).toStrictEqual([]);
     });
 
-    it('returns no findings if no DelegateVotesChanged event was emitted, but transaction involed the COMP token address', async () => {
+    it('returns no findings if no DelegateVotesChanged event was emitted, but transaction involved the COMP token address', async () => {
       mockTxEvent.addresses[zeroAddress] = true;
 
       // use 'Transfer' as a non delegate event to test
@@ -218,7 +218,7 @@ describe('check agent configuration file', () => {
       expect(findings).toStrictEqual([]);
     });
 
-    it('returns no findings if a DelegateVotesChanged event occured with the COMP token, but threshold level was not crossed', async () => {
+    it('returns no findings if a DelegateVotesChanged event occurred with the COMP token, but threshold level was not crossed', async () => {
       // use minProposalVotes - 1 (because proposal min is lower than quorum)
       const currCOMPOwned = BigNumber.sum(minProposalVotes, -1);
       // add the decimals back on before submitting
@@ -231,7 +231,7 @@ describe('check agent configuration file', () => {
           previousBalance: 0,
           newBalance: currCOMPOwned.multipliedBy(decimals).toString(),
         },
-        { address: compERC20Address }, // input invloved address for .filterLog()
+        { address: compERC20Address }, // input involved address for .filterLog()
       );
 
       mockTxEvent.logs = [log];
@@ -240,7 +240,7 @@ describe('check agent configuration file', () => {
       expect(finding).toStrictEqual([]);
     });
 
-    it('returns a proposal threshold finding if delegate balance crosses proposal threshold, but not quorum thresdhold', async () => {
+    it('returns a proposal threshold finding if delegate balance crosses proposal threshold, but not quorum threshold', async () => {
       // enough to cross threshold for proposal, but not quorum
       const currCOMPOwned = BigNumber.sum(minProposalVotes, 1);
       // add the decimals back on before submitting
@@ -253,7 +253,7 @@ describe('check agent configuration file', () => {
           previousBalance: 0,
           newBalance: currCOMPOwned.multipliedBy(decimals).toString(),
         },
-        { address: compERC20Address }, // input invloved address for .filterLog()
+        { address: compERC20Address }, // input involved address for .filterLog()
       );
 
       mockTxEvent.logs = [log];
@@ -293,7 +293,7 @@ describe('check agent configuration file', () => {
           previousBalance: 0,
           newBalance: currCOMPOwned.multipliedBy(decimals).toString(),
         },
-        { address: compERC20Address }, // input invloved address for .filterLog()
+        { address: compERC20Address }, // input involved address for .filterLog()
       );
 
       mockTxEvent.logs = [log];

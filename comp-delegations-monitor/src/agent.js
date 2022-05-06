@@ -5,7 +5,7 @@ const {
 
 const BigNumber = require('bignumber.js');
 
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 
 function getAbi(fileName) {
   // eslint-disable-next-line import/no-dynamic-require
@@ -51,17 +51,14 @@ function provideInitialize(data) {
     data.developerAbbreviation = config.developerAbbreviation;
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
-    data.COMPAddress = compERC20.address;
-    data.CompERC20Abi = compERC20.abi;
-    data.governorAddress = governorBravo.address;
-    data.governorBravoAbi = governorBravo.abi;
+    data.compAddress = compERC20.address;
 
     // get provider
     const provider = getEthersProvider();
 
     // get COMP token Abi to create contract and interface
-    const compERC20Abi = getAbi(data.CompERC20Abi);
-    const compContract = new ethers.Contract(data.COMPAddress, compERC20Abi, provider);
+    const compERC20Abi = getAbi(compERC20.abi);
+    const compContract = new ethers.Contract(data.compAddress, compERC20Abi, provider);
     const formatType = ethers.utils.FormatTypes.full;
 
     // use CErc20 abi to get signature for DelegateVotesChanged event
@@ -70,12 +67,11 @@ function provideInitialize(data) {
 
     // get the number of decimals for the COMP token
     let compDecimals = await compContract.decimals();
-    compDecimals = new BigNumber(compDecimals.toString()); // convert to bignumber.js
-    compDecimals = new BigNumber(10).pow(compDecimals);
+    compDecimals = new BigNumber(10).pow(compDecimals.toString()); // convert to bignumber.js
 
     // get governor bravo Abi and create gov bravo contract
-    const govBravoAbi = getAbi(data.governorBravoAbi);
-    const govBravoContract = new ethers.Contract(data.governorAddress, govBravoAbi, provider);
+    const govBravoAbi = getAbi(governorBravo.abi);
+    const govBravoContract = new ethers.Contract(governorBravo.address, govBravoAbi, provider);
 
     // query for min threshold from gov bravo contract
     let minProposalVotes = await govBravoContract.proposalThreshold();
@@ -102,7 +98,7 @@ function provideHandleTransaction(data) {
       developerAbbreviation,
       protocolName,
       protocolAbbreviation,
-      COMPAddress,
+      compAddress,
       compContract,
       compDecimals,
       delegateVotesChangedEvent,
@@ -110,7 +106,7 @@ function provideHandleTransaction(data) {
       delegateLevels,
     } = data;
 
-    const parsedLogs = txEvent.filterLog(delegateVotesChangedEvent, COMPAddress);
+    const parsedLogs = txEvent.filterLog(delegateVotesChangedEvent, compAddress);
     const promises = parsedLogs.map(async (log) => {
       // check to see how much COMP the delegate address has now
       const delegateAddress = log.args.delegate;
