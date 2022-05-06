@@ -372,6 +372,7 @@ function provideHandleBlock(data) {
 
 // exports
 module.exports = {
+  verifyToken,
   provideHandleBlock,
   handleBlock: provideHandleBlock(initializeData),
   provideHandleTransaction,

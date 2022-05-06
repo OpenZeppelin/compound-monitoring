@@ -26,7 +26,6 @@ async function callCompoundAPI(jsonRequest) {
     return resp.data;
   } catch (err) {
     // Handle Error Here
-    console.error(err);
     return null;
   }
 }
