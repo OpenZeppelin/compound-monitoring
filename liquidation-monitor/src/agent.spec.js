@@ -8,6 +8,7 @@ const mockUsdcPrice = 0.00033;
 // Same decimals for all tokens
 const mockDecimals = 18;
 const minLiquidationInUSD = 500;
+const mockBorrower = '0x1111';
 
 const mockContract = {
   // Comptroller
@@ -188,9 +189,9 @@ describe('handleBlock', () => {
           data.alert.type,
           data.alert.severity,
           currentAccount,
-          liquidationAmount.dp(2),
-          shortfallUSD.dp(2),
-          health.dp(2),
+          liquidationAmount.dp(2).toString(),
+          shortfallUSD.dp(2).toString(),
+          health.dp(2).toString(),
         );
         findings.push(newFinding);
       }
@@ -202,17 +203,17 @@ describe('handleBlock', () => {
     data = {};
 
     // initialize the handler
-    // axois mocking wasn't working as anticipated, so I'll set most of the settings here.
+    // axois mocking wasn't working as anticipated, so manually configure the settings here.
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
     data.alert = config.liquidationMonitor.alert;
     data.minimumLiquidationInUSD = config.liquidationMonitor.triggerLevels.minimumLiquidationInUSD;
-    data.accounts = { '0x1111': {} };
+    data.accounts = { [mockBorrower]: {} };
     // Borrow inverse to the price so that the health factor is 1.0 for the tests
     // Ex prices: ETH = 1 and BTC = 11, so 11 ETH = 1 BTC
-    data.supply = { '0xETH': { '0x1111': mockBtcPrice } }; // qty of tokens supplied
-    data.borrow = { '0xBTC': { '0x1111': mockEthPrice } }; // qty of tokens borrowed
+    data.supply = { '0xETH': { [mockBorrower]: mockBtcPrice } }; // qty of tokens supplied
+    data.borrow = { '0xBTC': { [mockBorrower]: mockEthPrice } }; // qty of tokens borrowed
     // Prices are in ETH
     data.tokens = {
       '0xETH': { price: mockEthPrice },
@@ -236,8 +237,30 @@ describe('handleBlock', () => {
   it('returns findings if borrowed asset increases and account exceeds the minimumLiquidation threshold', async () => {
     // Borrowed BTC increases 2% in value
     data.tokens['0xBTC'] = { price: mockBtcPrice * 1.02 };
+    const borrowerAddress = mockBorrower;
+    const liquidationAmount = '713.01';
+    const shortfallAmount = '727.27';
+    const healthFactor = '0.98';
+
+    const expectedFinding = Finding.fromObject({
+      name: `${data.protocolName} Liquidation Threshold Alert`,
+      description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
+        + `The account may be liquidated for: $${liquidationAmount} USD`,
+      alertId: `${data.developerAbbreviation}-${data.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+      type: FindingType[data.alert.type],
+      severity: FindingSeverity[data.alert.severity],
+      protocol: data.protocolName,
+      metadata: {
+        borrowerAddress,
+        liquidationAmount,
+        shortfallAmount,
+        healthFactor,
+      },
+    });
+
+    // Process Block
     const findings = handleMockBlockEvent();
-    expect(findings).toStrictEqual([1]);
+    expect(findings).toStrictEqual([expectedFinding]);
   });
 
   it('returns no findings if borrowed asset decreases and remains below minimumLiquidation threshold', async () => {
@@ -257,8 +280,30 @@ describe('handleBlock', () => {
   it('returns findings if supplied asset decreases and account exceeds the minimumLiquidation threshold', async () => {
     // Supplied ETH decreases 3% in value
     data.tokens['0xETH'] = { price: mockEthPrice * 0.98 };
+    const borrowerAddress = mockBorrower;
+
+    const liquidationAmount = '712.73';
+    const shortfallAmount = '727.27';
+    const healthFactor = '0.98';
+
+    const expectedFinding = Finding.fromObject({
+      name: `${data.protocolName} Liquidation Threshold Alert`,
+      description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
+        + `The account may be liquidated for: $${liquidationAmount} USD`,
+      alertId: `${data.developerAbbreviation}-${data.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+      type: FindingType[data.alert.type],
+      severity: FindingSeverity[data.alert.severity],
+      protocol: data.protocolName,
+      metadata: {
+        borrowerAddress,
+        liquidationAmount,
+        shortfallAmount,
+        healthFactor,
+      },
+    });
+
     const findings = handleMockBlockEvent();
-    expect(findings).toStrictEqual([1]);
+    expect(findings).toStrictEqual([expectedFinding]);
   });
 
   it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
