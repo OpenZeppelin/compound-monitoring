@@ -77,7 +77,6 @@ async function verifyToken(data, tokenAddressImport) {
     tokens[tokenAddress].tokenDecimalsMult = BigNumber(10).pow(tokens[tokenAddress].tokenDecimals);
     tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10)
       .pow(tokens[tokenAddress].cTokenDecimals);
-    tokens[tokenAddress].exchangeRate = BigNumber(exchangeRate.toString());
 
     // Adjusting the multiplier for easier use later.
     tokens[tokenAddress].exchangeRateMult = BigNumber(exchangeRate.toString())
