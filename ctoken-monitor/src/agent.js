@@ -10,8 +10,8 @@ const {
   extractEventArgs,
 } = require('./utils');
 
-// load any agent configuration parameters
-const config = require('../agent-config.json');
+// load any bot configuration parameters
+const config = require('../bot-config.json');
 
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};

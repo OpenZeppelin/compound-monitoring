@@ -2,7 +2,7 @@ const {
   ethers, Finding, FindingSeverity, FindingType, getEthersProvider,
 } = require('forta-agent');
 const BigNumber = require('bignumber.js');
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 const cERC20Abi = require('../abi/CErc20.json');
 const compAbi = require('../abi/CompERC20.json');
 const governorAbi = require('../abi/GovernorBravo.json');

@@ -25,7 +25,7 @@ const { provideHandleTransaction, provideInitialize, getAbi } = require('./agent
 
 const { createMockEventLogs, getObjectsFromAbi } = require('./test-utils');
 
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 
 const MINIMUM_EVENT_LIST = [
   'ProposalCreated',
@@ -35,7 +35,7 @@ const MINIMUM_EVENT_LIST = [
 ];
 
 // check the configuration file to verify the values
-describe('check agent configuration file', () => {
+describe('check bot configuration file', () => {
   it('procotolName key required', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');
