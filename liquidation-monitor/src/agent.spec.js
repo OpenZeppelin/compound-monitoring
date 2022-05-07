@@ -151,12 +151,9 @@ describe('check agent configuration file', () => {
 // agent tests
 describe('handleBlock', () => {
   let data;
-
   function handleMockBlockEvent() {
     // Check all account healths
     const findings = [];
-
-    console.log(data.tokens);
     Object.keys(data.accounts).forEach((currentAccount) => {
       let supplied = BigNumber(0);
       let borrowed = BigNumber(0);
@@ -176,8 +173,6 @@ describe('handleBlock', () => {
       // Calculate actual shortfalls and liquidationAmounts
       const shortfallUSD = borrowed.minus(supplied);
       const liquidationAmount = shortfallUSD.times(health);
-
-      console.log(`SF is ${shortfallUSD.dp(2)} Liq is ${liquidationAmount.dp(2)}`);
 
       // Create a finding if the liquidatable amount is below the threshold
       // Shorten metadata to 2 decimal places
@@ -278,10 +273,9 @@ describe('handleBlock', () => {
   });
 
   it('returns findings if supplied asset decreases and account exceeds the minimumLiquidation threshold', async () => {
-    // Supplied ETH decreases 3% in value
+    // Supplied ETH decreases 2% in value
     data.tokens['0xETH'] = { price: mockEthPrice * 0.98 };
     const borrowerAddress = mockBorrower;
-
     const liquidationAmount = '712.73';
     const shortfallAmount = '727.27';
     const healthFactor = '0.98';
