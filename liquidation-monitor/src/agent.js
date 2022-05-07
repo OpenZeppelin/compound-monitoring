@@ -137,15 +137,17 @@ function provideInitialize(data) {
     const initialResults = await callCompoundAPI(initialRequest);
     const totalEntries = initialResults.pagination_summary.total_entries;
 
+    const pageIncrement = 100;
+
     // Determine number of pages needed to query.
-    const maxPages = Math.ceil(totalEntries / 100);
+    const maxPages = Math.ceil(totalEntries / pageIncrement);
 
     // Query each page and add accounts. Starting at 1 and including maxPages
     const foundAccounts = [];
     // Shorthand Range() function. ( Ex: 5 => [1,2,3,4,5] )
     const pages = [...Array(maxPages)].map((_, i) => 1 + i);
     await Promise.all(pages.map(async (page) => {
-      const currentRequest = buildJsonRequest(maximumHealth, minimumBorrowInETH, page, 100);
+      const currentRequest = buildJsonRequest(maximumHealth, minimumBorrowInETH, page, pageIncrement);
       const apiResults = await callCompoundAPI(currentRequest);
       apiResults.accounts.forEach((currentAccount) => {
         foundAccounts.push(currentAccount);
