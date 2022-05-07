@@ -60,8 +60,8 @@ async function verifyToken(data, tokenAddressImport) {
     } else {
       tokens[tokenAddress].underlying = await cContract.underlying();
     }
-    const exchangeRate = await cContract.exchangeRateStored();
-    tokens[tokenAddress].cTokenDecimals = BigNumber(
+    const exchangeRate = new BigNumber((await cContract.exchangeRateStored()).toString());
+    tokens[tokenAddress].cTokenDecimals = new BigNumber(
       (await cContract.decimals()).toString(),
     );
 
@@ -70,16 +70,17 @@ async function verifyToken(data, tokenAddressImport) {
     const underlyingTokenContract = new ethers.Contract(
       tokens[tokenAddress].underlying, decimalsABI, data.provider,
     );
-    tokens[tokenAddress].tokenDecimals = BigNumber(
+    tokens[tokenAddress].tokenDecimals = new BigNumber(
       (await underlyingTokenContract.decimals()).toString(),
     );
 
-    tokens[tokenAddress].tokenDecimalsMult = BigNumber(10).pow(tokens[tokenAddress].tokenDecimals);
-    tokens[tokenAddress].cTokenDecimalsMult = BigNumber(10)
+    tokens[tokenAddress].tokenDecimalsMult = new BigNumber(10)
+      .pow(tokens[tokenAddress].tokenDecimals);
+    tokens[tokenAddress].cTokenDecimalsMult = new BigNumber(10)
       .pow(tokens[tokenAddress].cTokenDecimals);
 
     // Adjusting the multiplier for easier use later.
-    tokens[tokenAddress].exchangeRateMult = BigNumber(exchangeRate.toString())
+    tokens[tokenAddress].exchangeRateMult = exchangeRate
       .dividedBy(tokens[tokenAddress].tokenDecimalsMult)
       .dividedBy(tokens[tokenAddress].cTokenDecimalsMult)
       .dividedBy(100); // Not sure where this 100 comes from I didn't see it in the docs
@@ -173,7 +174,7 @@ function provideInitialize(data) {
       if (data.accounts[account.address] === undefined) data.accounts[account.address] = {};
 
       // Add found health
-      data.accounts[account.address].health = BigNumber(account.health.value);
+      data.accounts[account.address].health = new BigNumber(account.health.value);
       // Loop through tokens and update balances.
       account.tokens.forEach((token) => {
         // Process borrows as 'token'
@@ -181,7 +182,7 @@ function provideInitialize(data) {
           token.borrow_balance_underlying !== undefined
           && token.borrow_balance_underlying.value !== 0
         ) {
-          data.borrow[token.address][account.address] = BigNumber(
+          data.borrow[token.address][account.address] = new BigNumber(
             token.borrow_balance_underlying.value,
           );
         }
@@ -191,7 +192,7 @@ function provideInitialize(data) {
           token.supply_balance_underlying !== undefined
           && token.supply_balance_underlying.value !== 0
         ) {
-          data.supply[token.address][account.address] = BigNumber(
+          data.supply[token.address][account.address] = new BigNumber(
             token.supply_balance_underlying.value,
           ).dividedBy(data.tokens[token.address].exchangeRateMult);
         }
@@ -273,11 +274,11 @@ function provideHandleBlock(data) {
         const snapshot = await tokens[currentToken].contract.getAccountSnapshot(currentAccount);
 
         // update the supply balance and token quantity
-        supply[currentToken][currentAccount] = BigNumber(snapshot[1].toString())
+        supply[currentToken][currentAccount] = new BigNumber(snapshot[1].toString())
           .dividedBy(tokens[currentToken].cTokenDecimalsMult);
 
         // update the borrow balance
-        borrow[currentToken][currentAccount] = BigNumber(snapshot[2].toString());
+        borrow[currentToken][currentAccount] = new BigNumber(snapshot[2].toString());
       }));
     }));
 
@@ -288,24 +289,24 @@ function provideHandleBlock(data) {
 
       // 1inch's getRateToEth uses 36 decimal places. The space is shared with the token's decimal.
       //   So (36 - tokenDecimal) will yield the actual decimal for the rate.
-      const oneInchMult = BigNumber(10).pow(36 - tokens[currentToken].tokenDecimals);
+      const oneInchMult = new BigNumber(10).pow(36 - tokens[currentToken].tokenDecimals);
 
       // Adjust for native decimals
-      tokens[currentToken].price = BigNumber(price.toString()).dividedBy(oneInchMult);
+      tokens[currentToken].price = new BigNumber(price.toString()).dividedBy(oneInchMult);
 
       // Update the Collateral Factor
       const market = await comptrollerContract.markets(currentToken);
       // Per Compound: https://compound.finance/docs/comptroller#collateral-factor
       //   "collateralFactorMantissa, scaled by 1e18, is multiplied by a supply balance to determine
       //    how much value can be borrowed"
-      tokens[currentToken].collateralMult = BigNumber(market[1].toString())
+      tokens[currentToken].collateralMult = new BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
     }));
 
     // Calculate health on all accounts
     Object.keys(accounts).forEach((account) => {
-      let borrowBalance = BigNumber(0);
-      let supplyBalance = BigNumber(0);
+      let borrowBalance = new BigNumber(0);
+      let supplyBalance = new BigNumber(0);
       Object.keys(tokens).forEach((token) => {
         if (supply[token][account]) {
           // Supply balances are stored in cTokens and need to be multiplied by the
@@ -342,7 +343,7 @@ function provideHandleBlock(data) {
     });
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
       const liquidity = await comptrollerContract.getAccountLiquidity(currentAccount);
-      const shortfallUSD = BigNumber(ethers.utils.formatEther(liquidity[2]).toString());
+      const shortfallUSD = new BigNumber(ethers.utils.formatEther(liquidity[2]).toString());
 
       // Health factor affects the liquidatable amount. Ex: Shortfall of $50 with a Health factor
       // of 0.50 means that only $25 can be successfully liquidated. ( $25 supplied / $50 borrowed )
