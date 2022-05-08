@@ -80,10 +80,12 @@ async function verifyToken(data, tokenAddressImport) {
       .pow(tokens[tokenAddress].cTokenDecimals);
 
     // Adjusting the multiplier for easier use later.
+    // “The current exchange rate as an unsigned integer, scaled by
+    //   1 * 10 ^ (18 - 8 + Underlying Token Decimals)” - https://compound.finance/docs/ctokens#exchange-rate
+    //   Simplified to 10^(10 + Underlying Token Decimals).
+    const exchangeDecimals = new BigNumber(10).pow(10);
     tokens[tokenAddress].exchangeRateMult = exchangeRate
-      .dividedBy(tokens[tokenAddress].tokenDecimalsMult)
-      .dividedBy(tokens[tokenAddress].cTokenDecimalsMult)
-      .dividedBy(100); // Not sure where this 100 comes from I didn't see it in the docs
+      .dividedBy(exchangeDecimals).dividedBy(tokens[tokenAddress].tokenDecimalsMult);
 
     if (data.borrow[tokenAddress] === undefined) data.borrow[tokenAddress] = {};
     if (data.supply[tokenAddress] === undefined) data.supply[tokenAddress] = {};
@@ -138,9 +140,8 @@ function provideInitialize(data) {
     const initialResults = await callCompoundAPI(initialRequest);
     const totalEntries = initialResults.pagination_summary.total_entries;
 
-    const pageIncrement = 100;
-
     // Determine number of pages needed to query.
+    const pageIncrement = 100;
     const maxPages = Math.ceil(totalEntries / pageIncrement);
 
     // Query each page and add accounts. Starting at 1 and including maxPages
@@ -148,7 +149,9 @@ function provideInitialize(data) {
     // Shorthand Range() function. ( Ex: 5 => [1,2,3,4,5] )
     const pages = [...Array(maxPages)].map((_, i) => 1 + i);
     await Promise.all(pages.map(async (page) => {
-      const currentRequest = buildJsonRequest(maximumHealth, minimumBorrowInETH, page, pageIncrement);
+      const currentRequest = buildJsonRequest(
+        maximumHealth, minimumBorrowInETH, page, pageIncrement,
+      );
       const apiResults = await callCompoundAPI(currentRequest);
       apiResults.accounts.forEach((currentAccount) => {
         foundAccounts.push(currentAccount);
