@@ -290,8 +290,9 @@ function provideHandleBlock(data) {
     await Promise.all(Object.keys(tokens).map(async (currentToken) => {
       const price = await oneInchContract.getRateToEth(tokens[currentToken].underlying, 0);
 
-      // 1inch's getRateToEth uses 36 decimal places. The space is shared with the token's decimal.
-      //   So (36 - tokenDecimal) will yield the actual decimal for the rate.
+      // 1inch's getRateToEth is scaled to 1e18 but is also affected by the underlying token decimal
+      //   using the calculation: 10^18 / 10^(tokenDecimal) - https://docs.1inch.io/docs/spot-price-aggregator/examples
+      //   Combining the two scaling factors: 10^(18 + 18 - tokenDecimal) => 10^(36 - tokenDecimal)
       const oneInchMult = new BigNumber(10).pow(36 - tokens[currentToken].tokenDecimals);
 
       // Adjust for native decimals
