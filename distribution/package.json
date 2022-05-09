@@ -1,6 +1,6 @@
 {
   "name": "forta-ae-comp-distribution-bugs",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "This bot monitors Compound distribution bugs.",
   "scripts": {
     "start": "npm run start:dev",
@@ -18,8 +18,8 @@
     "test": "jest"
   },
   "dependencies": {
-    "bignumber.js": "^9.0.1",
-    "forta-agent": "^0.0.39"
+    "bignumber.js": "^9.0.2",
+    "forta-agent": "^0.1.4"
   },
   "devDependencies": {
     "eslint": "^7.32.0",
