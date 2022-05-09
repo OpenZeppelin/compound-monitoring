@@ -27,8 +27,6 @@ const {
 
 const { getAbi } = require('./utils');
 
-const config = require('../bot-config.json');
-
 // utility function specific for this test module
 // we are intentionally not using the Forta SDK function due to issues with
 // jest mocking the module and interfering with default function values
