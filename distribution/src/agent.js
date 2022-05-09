@@ -127,7 +127,7 @@ function provideHandleTransaction(data) {
       }
 
       // check against a maximum "sane" distribution amount of COMP
-      //  and alert then even if the previous is zero?
+      //  and alert then even if the previous is zero
       if (amountCompDistributedBN.gt(maximumSaneDistributionAmount)) {
         findings.push(createExceedsSaneDistributionAlert(
           protocolName,
