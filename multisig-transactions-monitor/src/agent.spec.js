@@ -6,15 +6,15 @@ const {
   ethers,
 } = require('forta-agent');
 
-// require the agent
+// require the bot
 const { provideHandleTransaction, provideInitialize } = require('./agent');
 
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 
 const utils = require('./utils');
 
 // check config file
-describe('check agent configuration file', () => {
+describe('check bot configuration file', () => {
   it('has a protocolName', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');
@@ -214,7 +214,7 @@ describe('monitor multisig contract transactions', () => {
       );
       mockTxEvent.logs = [log];
 
-      // run agent with mock transaction event
+      // run bot with mock transaction event
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([]);
@@ -232,7 +232,7 @@ describe('monitor multisig contract transactions', () => {
       );
       mockTxEvent.logs = [log];
 
-      // run agent with mock transaction event
+      // run bot with mock transaction event
       const findings = await handleTransaction(mockTxEvent);
 
       const expectedFindings = Finding.fromObject({
@@ -262,7 +262,7 @@ describe('monitor multisig contract transactions', () => {
       );
       mockTxEvent.logs = [log];
 
-      // run agent with mock transaction event
+      // run bot with mock transaction event
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([]);

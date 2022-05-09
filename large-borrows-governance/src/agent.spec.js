@@ -33,14 +33,14 @@ jest.mock('forta-agent', () => ({
 const {
   ethers, TransactionEvent, Finding, FindingType, FindingSeverity,
 } = require('forta-agent');
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 const CErc20Abi = require('../abi/CErc20.json');
 
 // local definitions
 const { provideInitialize, provideHandleTransaction } = require('./agent');
 
 // check the configuration file to verify the values
-describe('check agent configuration file', () => {
+describe('check bot configuration file', () => {
   it('protocolName key required', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');
@@ -103,7 +103,7 @@ describe('check agent configuration file', () => {
   });
 });
 
-// agent tests
+// bot tests
 describe('handleTransaction', () => {
   const {
     developerAbbreviation,
@@ -132,7 +132,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     expect(findings).toStrictEqual([]);
     expect(mockERC20Contract.balanceOf).toHaveBeenCalledTimes(0);
@@ -158,7 +158,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     expect(findings).toStrictEqual([]);
     expect(mockERC20Contract.balanceOf).toHaveBeenCalledTimes(0);
@@ -183,7 +183,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     expect(findings).toStrictEqual([]);
     expect(mockERC20Contract.balanceOf).toHaveBeenCalledTimes(0);
@@ -211,7 +211,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     expect(findings).toStrictEqual([]);
     expect(mockERC20Contract.balanceOf).toHaveBeenCalledTimes(1);
@@ -245,7 +245,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
     const expectedFinding = [Finding.fromObject({
       name: `${protocolName} Governance Threshold Alert`,
@@ -304,7 +304,7 @@ describe('handleTransaction', () => {
     // create the mock txEvent
     const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
 
-    // run the agent
+    // run the bot
     const findings = await handleTransaction(txEvent);
 
     // because the total COMP balance of the mockBorrowerAddress has exceeded both the proposal and

@@ -12,8 +12,8 @@ if an amount of COMP is distributed that exceeds a configurable maximum amount a
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
-    - Receiver address
     - Amount of COMP distributed
+    - COMP index
 
 ## Testing
 
