@@ -27,6 +27,8 @@ const {
 
 const { getAbi } = require('./utils');
 
+const config = require('../bot-config.json');
+
 // utility function specific for this test module
 // we are intentionally not using the Forta SDK function due to issues with
 // jest mocking the module and interfering with default function values
@@ -89,14 +91,21 @@ describe('distribution bot tests', () => {
     });
 
     it('contracts key values must be valid', () => {
-      const { Comptroller } = contracts;
+      const { Comptroller, CompoundToken } = contracts;
       expect(typeof (Comptroller)).toBe('object');
       expect(Comptroller).not.toBe({});
 
-      const { abiFile: ComptrollerAbiFile, address: ComptrollerAddress } = Comptroller;
+      expect(typeof (CompoundToken)).toBe('object');
+      expect(CompoundToken).not.toBe({});
 
-      // check that the address is a valid address
+      const { abiFile: ComptrollerAbiFile, address: ComptrollerAddress } = Comptroller;
+      const { address: CompoundTokenAddress } = CompoundToken;
+
+      // check that the Comptroller address is a valid address
       expect(ethers.utils.isHexString(ComptrollerAddress, 20)).toBe(true);
+
+      // check that the CompoundToken address is a valid address
+      expect(ethers.utils.isHexString(CompoundTokenAddress, 20)).toBe(true);
 
       // load the ABI from the specified file
       // the call to getAbi will fail if the file does not exist
