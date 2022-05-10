@@ -1,6 +1,5 @@
 const BigNumber = require('bignumber.js');
 
-// Configurable properties
 // All prices are in ETH
 const mockBtcPrice = 12;
 const mockEthPrice = 1;
@@ -9,17 +8,29 @@ const mockUsdcPrice = 0.00033;
 const mockDecimals = 18;
 const minLiquidationInUSD = 500;
 const mockBorrower = '0x1111';
+const mockCTokenRate = '225999372641152';
+
+const mockCompoundData = {
+  test: 0,
+};
+const mockCompoundResponse = {
+  data: mockCompoundData,
+};
+
+jest.mock('axios', () => ({
+  post: jest.fn(),
+}));
+const axios = require('axios');
 
 const mockContract = {
   // Comptroller
-  getAssetsIn: jest.fn().mockResolvedValue(mockDecimals),
+  getAssetsIn: jest.fn(),
   markets: jest.fn(), // returns collateral factor
   getAccountLiquidity: jest.fn(),
-  quorumVotes: jest.fn(),
   // OneInch
   getRateToEth: jest.fn(),
   // ERC20
-  decimals: jest.fn().mockResolvedValue(mockDecimals),
+  decimals: jest.fn(),
   getAccountSnapshot: jest.fn(),
   symbol: jest.fn(),
   underlying: jest.fn(),
@@ -37,12 +48,12 @@ jest.mock('forta-agent', () => ({
 }));
 
 const {
-  Finding, FindingType, FindingSeverity,
+  ethers, Finding, FindingType, FindingSeverity,
 } = require('forta-agent');
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 
 const {
-  createAlert,
+  provideInitialize, createAlert,
 } = require('./agent');
 
 // check the configuration file to verify the values
@@ -148,9 +159,24 @@ describe('check agent configuration file', () => {
   });
 });
 
+describe('mock axios POST request', () => {
+  it('should call axios.post and return a response', async () => {
+    axios.post.mockResolvedValue('test');
+    const response = await axios.post('https://...');
+    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(response).toEqual('test');
+
+    // reset call count for next test
+    axios.post.mockClear();
+    expect(axios.post).toHaveBeenCalledTimes(0);
+  });
+});
+
 // agent tests
 describe('handleBlock', () => {
   let data;
+  const initializeData = {};
+
   function handleMockBlockEvent() {
     // Check all account healths
     const findings = [];
@@ -195,6 +221,11 @@ describe('handleBlock', () => {
   }
 
   beforeEach(async () => {
+    axios.post.mockResolvedValue(mockCompoundResponse);
+    provideInitialize(initializeData);
+    // console.log(axios.post());
+    // mockContract.exchangeRateStored.mockReturnValue(ethers.BigNumber.from(mockCTokenRate));
+    // console.log('forta-agent'.ethers.Contract.exchangeRateStored());
     data = {};
 
     // initialize the handler
@@ -217,9 +248,13 @@ describe('handleBlock', () => {
     };
   });
 
-  it('returns no findings if all tracked account are below the minimumLiquidation threshold}', async () => {
-    const findings = handleMockBlockEvent();
-    expect(findings).toStrictEqual([]);
+  it('returns should use AXIOS 1 time}', async () => {
+    axios.post.mockReset();
+    axios.post.mockResolvedValue(mockCompoundResponse);
+    // Initialize data and use Axios Post
+    provideInitialize(initializeData);
+    console.log(axios.post.mock);
+    expect(axios.post).toBeCalledTimes(1);
   });
 
   it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {

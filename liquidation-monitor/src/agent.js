@@ -6,7 +6,8 @@ const {
   getEthersProvider,
 } = require('forta-agent');
 const BigNumber = require('bignumber.js');
-const config = require('../agent-config.json');
+const { default: axios } = require('axios');
+const config = require('../bot-config.json');
 const {
   getAbi, callCompoundAPI, buildJsonRequest,
 } = require('./utils');
@@ -249,11 +250,11 @@ function provideHandleBlock(data) {
       if (entry.health == null || entry.health === 0) {
         filteredAccounts.push(currentAccount);
         // Zero account balances
-        Object.keys(supply).forEach((currentToken) => {
-          supply[currentToken][currentAccount] = null;
+        Object.values(supply).forEach((tokenEntry) => {
+          tokenEntry[currentAccount] = null;
         });
-        Object.keys(borrow).forEach((currentToken) => {
-          borrow[currentToken][currentAccount] = null;
+        Object.values(borrow).forEach((tokenEntry) => {
+          tokenEntry[currentAccount] = null;
         });
       }
     });
