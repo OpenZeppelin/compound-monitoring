@@ -286,24 +286,23 @@ function provideHandleBlock(data) {
     }));
 
     // Update all token prices via 1inch
-    // Note: Object.entries does not work here because the nested objects cannot be retrieved.
-    await Promise.all(Object.keys(tokens).map(async (currentToken) => {
-      const price = await oneInchContract.getRateToEth(tokens[currentToken].underlying, 0);
+    await Promise.all(Object.entries(tokens).map(async ([currentToken, entry]) => {
+      const price = await oneInchContract.getRateToEth(entry.underlying, 0);
 
       // 1inch's getRateToEth is scaled to 1e18 but is also affected by the underlying token decimal
       //   using the calculation: 10^18 / 10^(tokenDecimal) - https://docs.1inch.io/docs/spot-price-aggregator/examples
       //   Combining the two scaling factors: 10^(18 + 18 - tokenDecimal) => 10^(36 - tokenDecimal)
-      const oneInchMult = new BigNumber(10).pow(36 - tokens[currentToken].tokenDecimals);
+      const oneInchMult = new BigNumber(10).pow(36 - entry.tokenDecimals);
 
       // Adjust for native decimals
-      tokens[currentToken].price = new BigNumber(price.toString()).dividedBy(oneInchMult);
+      entry.price = new BigNumber(price.toString()).dividedBy(oneInchMult);
 
       // Update the Collateral Factor
       const market = await comptrollerContract.markets(currentToken);
       // Per Compound: https://compound.finance/docs/comptroller#collateral-factor
       //   "collateralFactorMantissa, scaled by 1e18, is multiplied by a supply balance to determine
       //    how much value can be borrowed"
-      tokens[currentToken].collateralMult = new BigNumber(market[1].toString())
+      entry.collateralMult = new BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
     }));
 
