@@ -296,8 +296,16 @@ function provideHandleBlock(data) {
       const price = await oneInchContract.getRateToEth(entry.underlying, 0);
 
       // 1inch's getRateToEth is scaled to 1e18 but is also affected by the underlying token decimal
-      //   using the calculation: 10^18 / 10^(tokenDecimal) - https://docs.1inch.io/docs/spot-price-aggregator/examples
-      //   Combining the two scaling factors: 10^(18 + 18 - tokenDecimal) => 10^(36 - tokenDecimal)
+      //   getRateToEth = (amount of Token / amount of Ether) * 10^18
+      // To account for token decimals, Ether decimals, and the scaling, we need to perform the following
+      //   price = getRateToEth * (10^tokenDecimals) * (1 / 10^etherDecimals) * (1 / 10^18)
+      // Because the number of Ether decimals is fixed at 18, we can simplify the expression
+      //   price = getRateToEth * (10^tokenDecimals / 10^36)
+      //     or
+      //   price = getRateToEth * 10^(tokenDecimals - 36)
+      //     or
+      //   price = getRateToEth / (10^(36 - tokenDecimals))
+      // Ref: https://docs.1inch.io/docs/spot-price-aggregator/examples
       const oneInchMult = new BigNumber(10).pow(36 - entry.tokenDecimals);
 
       // Adjust for native decimals
