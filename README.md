@@ -31,3 +31,29 @@ to pass significant governance thresholds. This can be an early indication of go
 This agent monitors the UniswapAnchoredProxy contract for PriceGuarded events which indicate that
 a ValidatorProxy reported a cToken price that is outside of the Uniswap V2 TWAP percent threshold.
 Alert type is set to Degraded and severity is set to High.
+
+## Autotasks
+
+### Underlying Asset Autotask
+
+This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the COMP Underlying Asset bot.
+
+### cToken Transaction Autotask
+
+This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the cToken Transaction bot.
+
+### Compound Distribution Autotask
+
+This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the Compound Distribution bot.
+
+### Compound Governance Autotask
+
+This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the Compound Governance bot.
+
+### Compound Large Borrows Governance Autotask
+
+This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the Compound Large Borrows bot.
+
+### Oracle Price Autotask
+
+This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the Compound Price Oracle bot.
