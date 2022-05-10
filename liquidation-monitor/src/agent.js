@@ -310,20 +310,28 @@ function provideHandleBlock(data) {
     Object.keys(accounts).forEach((account) => {
       let borrowBalance = new BigNumber(0);
       let supplyBalance = new BigNumber(0);
-      Object.keys(tokens).forEach((token) => {
+      Object.entries(tokens).forEach(([token, entry]) => {
+        const {
+          exchangeRateMult,
+          price,
+          collateralMult,
+        } = entry;
+        
+        // Ref: https://github.com/compound-finance/compound-protocol/blob/3affca87636eecd901eb43f81a4813186393905d/contracts/Comptroller.sol#L751
+        const tokensToDenom = exchangeRateMult.times(price.times(collateralMult));
+        
         if (supply[token][account]) {
           // Supply balances are stored in cTokens and need to be multiplied by the
           //   exchange rate, price and the collateral factor to determine the ETH value
           //   of the collateral.
-          supplyBalance = supplyBalance.plus(supply[token][account]
-            .multipliedBy(tokens[token].exchangeRateMult)
-            .multipliedBy(tokens[token].price)
-            .multipliedBy(tokens[token].collateralMult));
+          // Ref: https://github.com/compound-finance/compound-protocol/blob/3affca87636eecd901eb43f81a4813186393905d/contracts/Comptroller.sol#L754
+          supplyBalance = supplyBalance.plus(supply[token][account].times(tokensToDenom));
         }
+        
+        // Ref: https://github.com/compound-finance/compound-protocol/blob/3affca87636eecd901eb43f81a4813186393905d/contracts/Comptroller.sol#L757
         if (borrow[token][account]) {
           // Only need to multiply by the price.
-          borrowBalance = borrowBalance.plus(borrow[token][account]
-            .multipliedBy(tokens[token].price));
+          borrowBalance = borrowBalance.plus(borrow[token][account].times(price));
         }
       });
 
