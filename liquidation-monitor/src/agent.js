@@ -104,7 +104,7 @@ function provideInitialize(data) {
     data.lowHealthThreshold = config.liquidationMonitor.triggerLevels.lowHealthThreshold;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersProvider();
-    data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assetsIn addresses]?
+    data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assetsIn addresses]
     data.supply = {}; // qty of cTokens (not Tokens)
     data.borrow = {}; // qty of Tokens (not cTokens)
     data.tokens = {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
