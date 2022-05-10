@@ -83,9 +83,9 @@ async function verifyToken(data, tokenAddressImport) {
     // “The current exchange rate as an unsigned integer, scaled by
     //   1 * 10 ^ (18 - 8 + Underlying Token Decimals)” - https://compound.finance/docs/ctokens#exchange-rate
     //   Simplified to 10^(10 + Underlying Token Decimals).
-    const exchangeDecimals = new BigNumber(10).pow(10);
+    const exchangeDecimalsMult = new BigNumber(10).pow(10);
     tokens[tokenAddress].exchangeRateMult = exchangeRate
-      .dividedBy(exchangeDecimals).dividedBy(tokens[tokenAddress].tokenDecimalsMult);
+      .dividedBy(exchangeDecimalsMult).dividedBy(tokens[tokenAddress].tokenDecimalsMult);
 
     if (data.borrow[tokenAddress] === undefined) data.borrow[tokenAddress] = {};
     if (data.supply[tokenAddress] === undefined) data.supply[tokenAddress] = {};
