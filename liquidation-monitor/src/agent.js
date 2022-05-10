@@ -145,18 +145,15 @@ function provideInitialize(data) {
     const maxPages = Math.ceil(totalEntries / pageIncrement);
 
     // Query each page and add accounts. Starting at 1 and including maxPages
-    const foundAccounts = [];
     // Shorthand Range() function. ( Ex: 5 => [1,2,3,4,5] )
     const pages = [...Array(maxPages)].map((_, i) => 1 + i);
-    await Promise.all(pages.map(async (page) => {
+    const foundAccounts = (await Promise.all(pages.map(async (page) => {
       const currentRequest = buildJsonRequest(
         maximumHealth, minimumBorrowInETH, page, pageIncrement,
       );
       const apiResults = await callCompoundAPI(currentRequest);
-      apiResults.accounts.forEach((currentAccount) => {
-        foundAccounts.push(currentAccount);
-      });
-    }));
+      return apiResults.accounts;
+    }))).flat();
 
     // Parse Compound data into new objects
     // Get a full list of token addresses
@@ -175,7 +172,6 @@ function provideInitialize(data) {
     foundAccounts.forEach((account) => {
       // add to tracked accounts
       if (data.accounts[account.address] === undefined) data.accounts[account.address] = {};
-
       // Add found health
       data.accounts[account.address].health = new BigNumber(account.health.value);
       // Loop through tokens and update balances.
