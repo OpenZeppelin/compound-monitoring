@@ -210,14 +210,14 @@ function provideHandleTransaction(data) {
       comptrollerAddress,
       newAccounts,
     } = data;
-    
+
     // Filter all new transactions and look for new accounts to track.
     const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
     const exitMarketString = 'event MarketExited(address cToken, address account)';
 
     const exitMarketEvents = txEvent.filterLog(exitMarketString, comptrollerAddress);
     exitMarketEvents.forEach((exitEvent) => { newAccounts.push(exitEvent.args.account); });
-    
+
     const borrowEvents = txEvent.filterLog(borrowString);
     borrowEvents.forEach((borrowEvent) => { newAccounts.push(borrowEvent.args.borrower); });
 
@@ -321,10 +321,10 @@ function provideHandleBlock(data) {
           price,
           collateralMult,
         } = entry;
-        
+
         // Ref: https://github.com/compound-finance/compound-protocol/blob/3affca87636eecd901eb43f81a4813186393905d/contracts/Comptroller.sol#L751
         const tokensToDenom = exchangeRateMult.times(price.times(collateralMult));
-        
+
         if (supply[token][account]) {
           // Supply balances are stored in cTokens and need to be multiplied by the
           //   exchange rate, price and the collateral factor to determine the ETH value
@@ -332,7 +332,7 @@ function provideHandleBlock(data) {
           // Ref: https://github.com/compound-finance/compound-protocol/blob/3affca87636eecd901eb43f81a4813186393905d/contracts/Comptroller.sol#L754
           supplyBalance = supplyBalance.plus(supply[token][account].times(tokensToDenom));
         }
-        
+
         // Ref: https://github.com/compound-finance/compound-protocol/blob/3affca87636eecd901eb43f81a4813186393905d/contracts/Comptroller.sol#L757
         if (borrow[token][account]) {
           // Only need to multiply by the price.
