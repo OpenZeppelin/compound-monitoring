@@ -206,14 +206,20 @@ function provideInitialize(data) {
 
 function provideHandleTransaction(data) {
   return async function handleTransaction(txEvent) {
+    const {
+      comptrollerAddress,
+      newAccounts,
+    } = data;
+    
     // Filter all new transactions and look for new accounts to track.
     const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
     const exitMarketString = 'event MarketExited(address cToken, address account)';
 
-    const exitMarketEvents = txEvent.filterLog(exitMarketString, data.comptrollerAddress);
-    exitMarketEvents.forEach((exitEvent) => { data.newAccounts.push(exitEvent.args.account); });
+    const exitMarketEvents = txEvent.filterLog(exitMarketString, comptrollerAddress);
+    exitMarketEvents.forEach((exitEvent) => { newAccounts.push(exitEvent.args.account); });
+    
     const borrowEvents = txEvent.filterLog(borrowString);
-    borrowEvents.forEach((borrowEvent) => { data.newAccounts.push(borrowEvent.args.borrower); });
+    borrowEvents.forEach((borrowEvent) => { newAccounts.push(borrowEvent.args.borrower); });
 
     // Return zero findings
     return [];
