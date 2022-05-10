@@ -170,30 +170,34 @@ function provideInitialize(data) {
 
     // Loop through found accounts
     foundAccounts.forEach((account) => {
+      const {
+        address: accountAddress,
+        health: {
+          value,
+        },
+      } = account;
+
       // add to tracked accounts
-      if (data.accounts[account.address] === undefined) data.accounts[account.address] = {};
+      if (data.accounts[accountAddress] === undefined) data.accounts[accountAddress] = {};
       // Add found health
-      data.accounts[account.address].health = new BigNumber(account.health.value);
+      data.accounts[accountAddress].health = new BigNumber(value);
+
       // Loop through tokens and update balances.
       account.tokens.forEach((token) => {
-        // Process borrows as 'token'
-        if (
-          token.borrow_balance_underlying !== undefined
-          && token.borrow_balance_underlying.value !== 0
-        ) {
-          data.borrow[token.address][account.address] = new BigNumber(
-            token.borrow_balance_underlying.value,
-          );
-        }
+        const {
+          borrow_balance_underlying: borrowBalanceUnderlying,
+          supply_balance_underlying: supplyBalanceUnderlying,
+          address: tokenAddress,
+        } = token;
 
+        // Process borrows as 'token'
+        if (borrowBalanceUnderlying !== undefined && borrowBalanceUnderlying.value !== 0) {
+          data.borrow[tokenAddress][accountAddress] = new BigNumber(borrowBalanceUnderlying.value);
+        }
         // Process supplies as 'cTokens'
-        if (
-          token.supply_balance_underlying !== undefined
-          && token.supply_balance_underlying.value !== 0
-        ) {
-          data.supply[token.address][account.address] = new BigNumber(
-            token.supply_balance_underlying.value,
-          ).dividedBy(data.tokens[token.address].exchangeRateMult);
+        if (supplyBalanceUnderlying !== undefined && supplyBalanceUnderlying.value !== 0) {
+          data.supply[tokenAddress][accountAddress] = new BigNumber(supplyBalanceUnderlying.value)
+            .dividedBy(data.tokens[tokenAddress].exchangeRateMult);
         }
       }); // end token loop
     }); // end account loop
