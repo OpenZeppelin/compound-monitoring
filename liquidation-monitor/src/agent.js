@@ -245,9 +245,8 @@ function provideHandleBlock(data) {
 
     // Update Balances on zero health accounts
     const filteredAccounts = [];
-    Object.keys(accounts).forEach((currentAccount) => {
-      if (accounts[currentAccount].health == null
-        || accounts[currentAccount].health === 0) {
+    Object.entries(accounts).forEach(([currentAccount, entry]) => {
+      if (entry.health == null || entry.health === 0) {
         filteredAccounts.push(currentAccount);
         // Zero account balances
         Object.keys(supply).forEach((currentToken) => {
