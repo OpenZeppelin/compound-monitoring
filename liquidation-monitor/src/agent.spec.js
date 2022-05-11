@@ -1,24 +1,58 @@
 const BigNumber = require('bignumber.js');
 
-// All prices are in ETH
-const mockBtcPrice = 12;
-const mockEthPrice = 1;
-const mockUsdcPrice = 0.00033;
+// All prices are in ETH From 1Inch's Oracle in May 2022
+const mockBtcPrice = '136005941124348934300336147564';
+const mockEthPrice = '1000000000000000000';
+const mockUsdcPrice = '441087712559690965819690077';
 // Same decimals for all tokens
-const mockDecimals = 18;
+// WBTC and cWBTC both use 8 decimals
+const mockCDecimals = 8;
+const mockBtcDecimals = 8;
+const mockEthDecimals = 18;
+const mockUsdcDecimals = 18;
 const minLiquidationInUSD = 500;
+
 const mockBorrower = '0x1111';
-const mockCTokenRate = '225999372641152';
+const mockGetAssetsIn = ['0x0cbtc', '0x0ceth'];
+
+const mockCollateralFactor = '700000000000000000'; // from cWBTC
+const mockCTokenRate = '20204487858283233'; // From cWBTC
 
 const mockCompoundData = {
-  test: 0,
+  accounts: [
+    {
+      address: '0x1111',
+      block_updated: null,
+      health: {
+        value: '1.0',
+      },
+      tokens: [
+        {
+          address: '0x0cbtc',
+          borrow_balance_underlying: {
+            value: '1.0',
+          },
+        },
+        {
+          address: '0x0ceth',
+          supply_balance_underlying: {
+            value: '11.0',
+          },
+        },
+      ],
+    },
+  ],
+  pagination_summary: {
+    total_entries: 1,
+  },
 };
+
 const mockCompoundResponse = {
   data: mockCompoundData,
 };
 
 jest.mock('axios', () => ({
-  post: jest.fn(),
+  post: jest.fn().mockResolvedValue(mockCompoundResponse),
 }));
 const axios = require('axios');
 
@@ -161,10 +195,9 @@ describe('check agent configuration file', () => {
 
 describe('mock axios POST request', () => {
   it('should call axios.post and return a response', async () => {
-    axios.post.mockResolvedValue('test');
     const response = await axios.post('https://...');
     expect(axios.post).toHaveBeenCalledTimes(1);
-    expect(response).toEqual('test');
+    expect(response.data.pagination_summary.total_entries).toEqual(1);
 
     // reset call count for next test
     axios.post.mockClear();
@@ -221,11 +254,45 @@ describe('handleBlock', () => {
   }
 
   beforeEach(async () => {
+    // Compound API
     axios.post.mockResolvedValue(mockCompoundResponse);
+
+    const {
+      getAssetsIn,
+      markets,
+      getAccountLiquidity,
+      getRateToEth,
+      decimals,
+      getAccountSnapshot,
+      symbol,
+      underlying,
+      exchangeRateStored,
+    } = mockContract;
+
+    // Comptroller
+    getAssetsIn.mockResolvedValue(mockGetAssetsIn);
+    markets.mockResolvedValue(true, new ethers.BigNumber.from(mockCollateralFactor), true);
+    getAccountLiquidity.mockResolvedValue(0, 0, new ethers.BigNumber.from(0));
+    // OneInch
+    getRateToEth.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals));
+    // ERC20
+    decimals.mockResolvedValue(new ethers.BigNumber.from(mockBtcPrice));
+    getAccountSnapshot.mockResolvedValue(
+      0, new ethers.BigNumber.from(0), new ethers.BigNumber.from(0), 0,
+    );
+    symbol.mockResolvedValue('TOKEN');
+    underlying.mockResolvedValue('0x0');
+    exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockCTokenRate));
+
     provideInitialize(initializeData);
-    // console.log(axios.post());
-    // mockContract.exchangeRateStored.mockReturnValue(ethers.BigNumber.from(mockCTokenRate));
-    // console.log('forta-agent'.ethers.Contract.exchangeRateStored());
+
+    // TS
+    console.log(initializeData.accounts);
+    console.log(initializeData.supply);
+    console.log(initializeData.borrow);
+    console.log(initializeData.tokens);
+    console.log(initializeData.newAccounts);
+
     data = {};
 
     // initialize the handler
@@ -248,13 +315,10 @@ describe('handleBlock', () => {
     };
   });
 
-  it('returns should use AXIOS 1 time}', async () => {
-    axios.post.mockReset();
-    axios.post.mockResolvedValue(mockCompoundResponse);
+  it('returns should use AXIOS 2 times}', async () => {
     // Initialize data and use Axios Post
-    provideInitialize(initializeData);
-    console.log(axios.post.mock);
-    expect(axios.post).toBeCalledTimes(1);
+    await (provideInitialize(initializeData))();
+    expect(axios.post).toBeCalledTimes(2);
   });
 
   it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {

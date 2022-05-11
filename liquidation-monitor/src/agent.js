@@ -6,7 +6,6 @@ const {
   getEthersProvider,
 } = require('forta-agent');
 const BigNumber = require('bignumber.js');
-const { default: axios } = require('axios');
 const config = require('../bot-config.json');
 const {
   getAbi, callCompoundAPI, buildJsonRequest,
@@ -297,7 +296,8 @@ function provideHandleBlock(data) {
 
       // 1inch's getRateToEth is scaled to 1e18 but is also affected by the underlying token decimal
       //   getRateToEth = (amount of Token / amount of Ether) * 10^18
-      // To account for token decimals, Ether decimals, and the scaling, we need to perform the following
+      // To account for token decimals, Ether decimals, and the scaling,
+      //   we need to perform the following:
       //   price = getRateToEth * (10^tokenDecimals) * (1 / 10^etherDecimals) * (1 / 10^18)
       // Because the number of Ether decimals is fixed at 18, we can simplify the expression
       //   price = getRateToEth * (10^tokenDecimals / 10^36)
@@ -313,7 +313,7 @@ function provideHandleBlock(data) {
 
       // Update the Collateral Factor
       const market = await comptrollerContract.markets(currentToken);
-      // Per Compound: https://compound.finance/docs/comptroller#collateral-factor
+      // Ref: https://compound.finance/docs/comptroller#collateral-factor
       //   "collateralFactorMantissa, scaled by 1e18, is multiplied by a supply balance to determine
       //    how much value can be borrowed"
       entry.collateralMult = new BigNumber(market[1].toString())
@@ -367,11 +367,25 @@ function provideHandleBlock(data) {
       }
     });
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
+      // Get Account Liquidity
+
+      // "Account Liquidity represents the USD value borrow-able by a user, before it reaches
+      //   liquidation. Users with a shortfall(negative liquidity) are subject to liquidation,
+      //   and can’t withdraw or borrow assets until Account Liquidity is positive again."
+
+      // "For each market the user has entered into, their supplied balance is multiplied by the
+      //   market’s collateral factor, and summed; borrow balances are then subtracted, to equal
+      //   Account Liquidity.Borrowing an asset reduces Account Liquidity for each USD borrowed;
+      //   withdrawing an asset reduces Account Liquidity by the asset’s collateral factor times
+      //   each USD withdrawn."
+      // Ref: https://compound.finance/docs/comptroller#account-liquidity
       const liquidity = await comptrollerContract.getAccountLiquidity(currentAccount);
       const shortfallUSD = new BigNumber(ethers.utils.formatEther(liquidity[2]).toString());
 
-      // Health factor affects the liquidatable amount. Ex: Shortfall of $50 with a Health factor
-      // of 0.50 means that only $25 can be successfully liquidated. ( $25 supplied / $50 borrowed )
+      // There are situations where the shortfall amount is greater than the supplied amount.
+      //   Therefore, it is not possible to liquidate the entire amount. Example: An account
+      //    has $10 of value supplied and $100 borrowed. Shortfall is $90. Since the supplied value
+      //    is less than the shortfall of $90. Only the supplied amount can be liquidated.
       const liquidationAmount = shortfallUSD.multipliedBy(accounts[currentAccount].health);
 
       // Create a finding if the liquidatable amount is below the threshold
