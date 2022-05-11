@@ -1,22 +1,25 @@
 const BigNumber = require('bignumber.js');
 
+const minLiquidationInUSD = 500;
 // All prices are in ETH From 1Inch's Oracle in May 2022
+//   using getRateToEth.
 const mockBtcPrice = '136005941124348934300336147564';
 const mockEthPrice = '1000000000000000000';
 const mockUsdcPrice = '441087712559690965819690077';
-// Same decimals for all tokens
-// WBTC and cWBTC both use 8 decimals
 const mockCDecimals = 8;
 const mockBtcDecimals = 8;
 const mockEthDecimals = 18;
-const mockUsdcDecimals = 18;
-const minLiquidationInUSD = 500;
+const mockUsdcDecimals = 6;
 
 const mockBorrower = '0x1111';
 const mockGetAssetsIn = ['0x0cbtc', '0x0ceth'];
 
-const mockCollateralFactor = '700000000000000000'; // from cWBTC
-const mockCTokenRate = '20204487858283233'; // From cWBTC
+const mockBtcCollateralFactor = '700000000000000000';
+const mockEthCollateralFactor = '825000000000000000';
+const mockUsdcCollateralFactor = '800000000000000000';
+const mockBtcCTokenRate = '20204487858283233';
+const mockEthCTokenRate = '200628256637255752410642480';
+const mockUsdcCTokenRate = '226005533516859';
 
 const mockCompoundData = {
   accounts: [
@@ -30,13 +33,13 @@ const mockCompoundData = {
         {
           address: '0x0cbtc',
           borrow_balance_underlying: {
-            value: '1.0',
+            value: '2.0',
           },
         },
         {
           address: '0x0ceth',
           supply_balance_underlying: {
-            value: '11.0',
+            value: '22.0',
           },
         },
       ],
@@ -254,6 +257,8 @@ describe('handleBlock', () => {
   }
 
   beforeEach(async () => {
+    // Set all default mocks
+
     // Compound API
     axios.post.mockResolvedValue(mockCompoundResponse);
 
@@ -272,56 +277,50 @@ describe('handleBlock', () => {
     // Comptroller
     /* eslint-disable new-cap */
     getAssetsIn.mockResolvedValue(mockGetAssetsIn);
-    markets.mockResolvedValue(true, new ethers.BigNumber.from(mockCollateralFactor), true);
+    markets.mockResolvedValue(true, new ethers.BigNumber.from(mockBtcCollateralFactor), true);
     getAccountLiquidity.mockResolvedValue(0, 0, new ethers.BigNumber.from(0));
     // OneInch
     getRateToEth.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals));
     // ERC20
-    decimals.mockResolvedValue(new ethers.BigNumber.from(mockBtcPrice));
+    decimals.mockResolvedValue(new ethers.BigNumber.from(mockBtcDecimals));
     getAccountSnapshot.mockResolvedValue(
       0, new ethers.BigNumber.from(0), new ethers.BigNumber.from(0), 0,
     );
     symbol.mockResolvedValue('TOKEN');
     underlying.mockResolvedValue('0x0');
-    exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockCTokenRate));
+    exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockBtcCTokenRate));
+
+    // Verify token Mocks - BTC then ETH
+    symbol.mockResolvedValueOnce('cBTC').mockResolvedValueOnce('cETH');
+    underlying.mockResolvedValueOnce('0x0wbtc').mockResolvedValueOnce('0x0weth');
+    exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockBtcCTokenRate))
+      .mockResolvedValue(new ethers.BigNumber.from(mockEthCTokenRate));
+    decimals.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals))
+      .mockResolvedValue(new ethers.BigNumber.from(mockBtcDecimals))
+      .mockResolvedValue(new ethers.BigNumber.from(mockCDecimals))
+      .mockResolvedValue(new ethers.BigNumber.from(mockEthDecimals));
 
     await (provideInitialize(initializeData))();
 
     // TS
     console.log(initializeData.accounts['0x1111'].health.toString());
     console.log(initializeData.accounts);
+    console.log(initializeData.supply['0x0ceth']['0x1111'].toString());
     console.log(initializeData.supply);
+    console.log(initializeData.borrow['0x0cbtc']['0x1111'].toString());
     console.log(initializeData.borrow);
-    // console.log(initializeData.tokens);
+    console.log(initializeData.tokens);
     console.log(initializeData.newAccounts);
-
-
-    // TS: Old code
-    data = {};
-
-    // initialize the handler
-    // axois mocking wasn't working as anticipated, so manually configure the settings here.
-    data.protocolName = config.protocolName;
-    data.protocolAbbreviation = config.protocolAbbreviation;
-    data.developerAbbreviation = config.developerAbbreviation;
-    data.alert = config.liquidationMonitor.alert;
-    data.minimumLiquidationInUSD = config.liquidationMonitor.triggerLevels.minimumLiquidationInUSD;
-    data.accounts = { [mockBorrower]: {} };
-    // Borrow inverse to the price so that the health factor is 1.0 for the tests
-    // Ex prices: ETH = 1 and BTC = 11, so 11 ETH = 1 BTC
-    data.supply = { '0xETH': { [mockBorrower]: mockBtcPrice } }; // qty of tokens supplied
-    data.borrow = { '0xBTC': { [mockBorrower]: mockEthPrice } }; // qty of tokens borrowed
-    // Prices are in ETH
-    data.tokens = {
-      '0xETH': { price: mockEthPrice },
-      '0xBTC': { price: mockBtcPrice },
-      '0xUSDC': { price: mockUsdcPrice },
-    };
   });
 
   it('returns should use AXIOS 2 times}', async () => {
     // ICheck counter from the initialize step.
     expect(axios.post).toBeCalledTimes(2);
+  });
+
+  it('returns should use contract calls}', async () => {
+    // ICheck counter from the initialize step.
+    expect(mockContract.symbol).toBeCalledTimes(4);
   });
 
   // it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {
