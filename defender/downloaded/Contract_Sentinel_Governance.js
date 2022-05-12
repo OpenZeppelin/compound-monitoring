@@ -218,7 +218,7 @@ exports.handler = async function (autotaskEvent) {
   });
 
   // wait for the promises to settle
-  const messages = await Promise.all(promises);
+  const messages = await Promise.allSettled(promises);
 
   for (let i = 0; i < messages.length; i++) {
     console.log('Posting to Discord');

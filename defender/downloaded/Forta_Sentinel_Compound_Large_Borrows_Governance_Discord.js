@@ -1,6 +1,3 @@
-// LARGE BORROWS GOVERNANCE AGENT ALERT - note there's never been an alert to this agent yet
-// agent id - 0x704a35d97dfae2caf3b409206f1bc4c8a06671170108d07f9b3c7ea5026916fc
-
 /* eslint-disable import/no-extraneous-dependencies */
 const axios = require('axios');
 /* eslint-enable import/no-extraneous-dependencies */
@@ -60,7 +57,7 @@ async function postToDiscord(url, message) {
   return response;
 }
 
-async function getFortaAlerts(agentId, transactionHash) {
+async function getFortaAlerts(botId, transactionHash) {
   const headers = {
     'content-type': 'application/json',
   };
@@ -89,7 +86,7 @@ async function getFortaAlerts(agentId, transactionHash) {
               number
               chainId
             }
-            agent {
+            bot {
               id
             }
           }
@@ -102,7 +99,7 @@ async function getFortaAlerts(agentId, transactionHash) {
     variables: {
       input: {
         first: 100,
-        agents: [agentId],
+        bots: [botId],
         transactionHash,
         createdSince: 0,
         chainId: 1,
@@ -169,19 +166,19 @@ exports.handler = async function (autotaskEvent) {
     return {};
   }
 
-  // extract the transaction hash and agent ID from the alert Object
+  // extract the transaction hash and bot ID from the alert Object
   const {
     hash,
     source: {
       transactionHash,
       agent: {
-        id: agentId,
+        id: botId,
       },
     },
   } = alert;
 
   // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(agentId, transactionHash);
+  let alerts = await getFortaAlerts(botId, transactionHash);
   alerts = alerts.filter((alertObject) => alertObject.hash === hash);
   console.log('Alerts');
   console.log(JSON.stringify(alerts, null, 2));
@@ -198,13 +195,13 @@ exports.handler = async function (autotaskEvent) {
   });
 
   // // wait for the promises to settle
-  const messages = await Promise.all(promises);
+  const messages = await Promise.allSettled(promises);
 
   // // create promises for posting messages to Discord webhook
   const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${message}`));
 
   // // wait for the promises to settle
-  await Promise.all(discordPromises);
+  await Promise.allSettled(discordPromises);
 
   return {};
 };
