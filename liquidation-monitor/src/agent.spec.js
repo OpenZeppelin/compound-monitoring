@@ -291,9 +291,9 @@ function setVerifyTokenMocks(setSymbol, setUnderlying, setExchange, setDecimals)
 
   symbol.mockResolvedValueOnce(setSymbol);
   underlying.mockResolvedValueOnce(setUnderlying);
-  exchangeRateStored.mockResolvedValue(setExchange);
-  decimals.mockResolvedValue(mockCDecimals)
-    .mockResolvedValue(setDecimals);
+  exchangeRateStored.mockResolvedValueOnce(setExchange);
+  decimals.mockResolvedValueOnce(mockCDecimals)
+    .mockResolvedValueOnce(setDecimals);
 }
 
 // agent tests
@@ -306,6 +306,23 @@ describe('initializeData', () => {
     setDefaultMocks();
     setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
     setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
+
+    // When calling the verifyToken function, Contract.decimals gets called twice per
+    // token. One time for the cToken and then one time for the Token.
+    // The token calls seem to be overlapping. Call 1 and 2 don't show up anywhere,
+    // but call 3 is applied twice for cBTC and BTC decimals.  Call 4 is applied twice to
+    // cETH and ETH decimals... Odd behavior.
+
+    // cBTC and BTC have 8 decimals, so this is no issue but cETH (8) and ETH (18) are differently
+    // Changing the 4th call either breaks.
+
+    mockContract.decimals.mockReset();
+    mockContract.decimals.mockResolvedValue(new ethers.BigNumber.from(9));
+    mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(1));
+    mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(2));
+    mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(8)); // cBTC and BTC Decimals?
+    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(18)); // cETH  and ETH Decimals?
+    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(5));
     await (provideInitialize(initializeData))();
   });
 
@@ -335,6 +352,28 @@ describe('initializeData', () => {
     const expectedBorrow = '0.85';
     expect(actualSupply).toBe(expectedSupply);
     expect(actualBorrow).toBe(expectedBorrow);
+  });
+
+  it('should set BTC token data', async () => {
+    // Check BTC stats
+    const actualBtcDecimals = initializeData.tokens['0x0cbtc'].tokenDecimals.toString();
+    const expectedBtcDecimals = mockBtcDecimals.toString();
+    const actualBtcCDecimals = initializeData.tokens['0x0cbtc'].tokenDecimals.toString();
+    const expectedBtcCDecimals = mockCDecimals.toString();
+    expect(actualBtcDecimals).toBe(expectedBtcDecimals);
+    expect(actualBtcCDecimals).toBe(expectedBtcCDecimals);
+  });
+
+  it('should set ETH token data', async () => {
+    // Check ETH stats
+    const actualEthDecimals = initializeData.tokens['0x0ceth'].tokenDecimals.toString();
+    const expectedEthDecimals = mockEthDecimals.toString();
+    const actualEthCDecimals = initializeData.tokens['0x0ceth'].tokenDecimals.toString();
+    const expectedEthCDecimals = mockCDecimals.toString();
+    console.log(mockContract.decimals.mock.results);
+    console.log(JSON.stringify(mockContract.decimals.mock.results));
+    expect(actualEthDecimals).toBe(expectedEthDecimals);
+    expect(actualEthCDecimals).toBe(expectedEthCDecimals);
   });
 });
 
@@ -370,6 +409,7 @@ describe('handleBlock', () => {
 
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+
     await (provideHandleBlock(initializeData))();
 
     /*
@@ -403,8 +443,15 @@ describe('handleBlock', () => {
 
   it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {
     // Borrowed BTC increases 1% in value
-    const newBTCPrice = mockBtcPrice.mul(1.01);
+    // 101% to Decimal since ethers.BigNumber does not like floating point numbers.
+    const multiplier = new ethers.BigNumber.from(101).div(100); // "101 / 100 = 1.01"
+    const newBTCPrice = mockBtcPrice.mul(multiplier);
     // Calculate shortfall amount
+    // JS bigNumber Math, then convert to ethers.BigNumber
+    let supplied = initializeData.accounts['0x1111'].supplyBalance.times(100).toString();
+    supplied = new ethers.BigNumber.from(supplied).div(100);
+    let borrowed = initializeData.accounts['0x1111'].borrowBalance.times(100).toString();
+    borrowed = new ethers.BigNumber.from(borrowed).div(100);
 
     setPriceMocks(newBTCPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
