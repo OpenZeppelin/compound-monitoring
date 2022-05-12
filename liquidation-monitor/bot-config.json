@@ -10,7 +10,7 @@
     "triggerLevels": {
       "maximumHealth": 100,
       "minimumBorrowInETH": 0.1,
-      "minimumLiquidationInUSD": 200,
+      "minimumLiquidationInUSD": 400,
       "lowHealthThreshold": 1.03
     },
     "alert": {

@@ -318,6 +318,15 @@ function provideHandleBlock(data) {
       //    how much value can be borrowed"
       entry.collateralMult = new BigNumber(market[1].toString())
         .dividedBy(BigNumber(10).pow(18));
+
+      // Update the cToken to Token multiplier
+      // “The current exchange rate as an unsigned integer, scaled by
+      //   1 * 10 ^ (18 - 8 + Underlying Token Decimals)” - https://compound.finance/docs/ctokens#exchange-rate
+      //   Simplified to 10^(10 + Underlying Token Decimals).
+      const exchangeRate = new BigNumber((await entry.contract.exchangeRateStored()).toString());
+      const exchangeDecimalsMult = new BigNumber(10).pow(10);
+      entry.exchangeRateMult = exchangeRate
+        .dividedBy(exchangeDecimalsMult).dividedBy(entry.tokenDecimalsMult);
     }));
 
     // Calculate health on all accounts
