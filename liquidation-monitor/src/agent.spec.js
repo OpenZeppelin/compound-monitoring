@@ -7,12 +7,12 @@ const minLiquidationInUSD = 500;
 // Bot prices are tracked in ETH denomination.
 // Ref: https://docs.1inch.io/docs/spot-price-aggregator/examples
 let mockBtcPrice = '100000000000000000000000000000'; // 1 BTC = 10 ETH
-let mockEthPrice = '1000000000000000000'; // 1 ETH = 1 ETH
-let mockUsdcPrice = '330000000000000000000000000'; // 1 USDC = 0.00033 ETH
+let mockEthPrice = '10000000000000000000000000000'; // 1 ETH = 1 ETH
+let mockUsdcPrice = '3300000000000000000000000'; // 1 USDC = 0.00033 ETH
 let mockCDecimals = 8;
 let mockBtcDecimals = 8;
-let mockEthDecimals = 18;
-let mockUsdcDecimals = 6;
+let mockEthDecimals = 8;
+let mockUsdcDecimals = 8;
 const mockBorrower = '0x1111';
 
 // https://compound.finance/docs/comptroller#get-assets-in
@@ -25,8 +25,8 @@ let mockUsdcCollateralFactor = '800000000000000000'; // 80%
 
 // Ref: https://compound.finance/docs/ctokens#exchange-rate
 let mockBtcCTokenRate = '20000000000000000'; // 1 cBTC = 0.02 BTC
-let mockEthCTokenRate = '200000000000000000000000000'; // 1 cETH = 0.02 ETH
-let mockUsdcCTokenRate = '200000000000000'; // 1 cUSDC = 0.02 USDC
+let mockEthCTokenRate = '20000000000000000'; // 1 cETH = 0.02 ETH
+let mockUsdcCTokenRate = '20000000000000000'; // 1 cUSDC = 0.02 USDC
 
 // In this mock, ETH Collateral Factor is 0.85 and 1 BTC = 10 ETH.
 // Starting data with a user that supplied 10 ETH and borrowed 0.85 BTC.
@@ -316,11 +316,11 @@ describe('initializeData', () => {
     // cBTC and BTC have 8 decimals, so this is no issue but cETH (8) and ETH (18) are differently
     // Changing the 4th call either breaks.
 
-    mockContract.decimals.mockReset();
-    mockContract.decimals.mockResolvedValue(new ethers.BigNumber.from(9));
-    mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(1));
-    mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(2));
-    mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(8)); // cBTC and BTC Decimals?
+    // mockContract.decimals.mockReset();
+    // mockContract.decimals.mockResolvedValue(new ethers.BigNumber.from(9));
+    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(1));
+    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(2));
+    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(8)); // cBTC and BTC Decimals?
     // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(18)); // cETH  and ETH Decimals?
     // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(5));
     await (provideInitialize(initializeData))();
@@ -370,8 +370,6 @@ describe('initializeData', () => {
     const expectedEthDecimals = mockEthDecimals.toString();
     const actualEthCDecimals = initializeData.tokens['0x0ceth'].tokenDecimals.toString();
     const expectedEthCDecimals = mockCDecimals.toString();
-    console.log(mockContract.decimals.mock.results);
-    console.log(JSON.stringify(mockContract.decimals.mock.results));
     expect(actualEthDecimals).toBe(expectedEthDecimals);
     expect(actualEthCDecimals).toBe(expectedEthCDecimals);
   });
@@ -442,6 +440,8 @@ describe('handleBlock', () => {
   });
 
   it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {
+    console.log(initializeData.accounts);
+    console.log(initializeData.tokens);
     // Borrowed BTC increases 1% in value
     // 101% to Decimal since ethers.BigNumber does not like floating point numbers.
     const multiplier = new ethers.BigNumber.from(101).div(100); // "101 / 100 = 1.01"
