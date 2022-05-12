@@ -1,26 +1,41 @@
 const BigNumber = require('bignumber.js');
 
 const minLiquidationInUSD = 500;
-// All prices are in ETH From 1Inch's Oracle in May 2022
-//   using getRateToEth.
-const mockBtcPrice = '136005941124348934300336147564';
-const mockEthPrice = '1000000000000000000';
-const mockUsdcPrice = '441087712559690965819690077';
+
+// Simulated prices of:
+//   BTC = $30,000
+//   ETH = $3,000
+//   USDC = $1
+// Bot prices are tracked in ETH denomination.
+// Ref: https://docs.1inch.io/docs/spot-price-aggregator/examples
+const mockBtcPrice = '100000000000000000000000000000'; // 1 BTC = 10 ETH
+const mockEthPrice = '1000000000000000000'; // 1 ETH = 1 ETH
+const mockUsdcPrice = '330000000000000000000000000'; // 1 USDC = 0.00033 ETH
 const mockCDecimals = 8;
 const mockBtcDecimals = 8;
 const mockEthDecimals = 18;
 const mockUsdcDecimals = 6;
-
 const mockBorrower = '0x1111';
+
+// https://compound.finance/docs/comptroller#get-assets-in
 const mockGetAssetsIn = ['0x0cbtc', '0x0ceth'];
 
-const mockBtcCollateralFactor = '700000000000000000';
-const mockEthCollateralFactor = '825000000000000000';
-const mockUsdcCollateralFactor = '800000000000000000';
-const mockBtcCTokenRate = '20204487858283233';
-const mockEthCTokenRate = '200628256637255752410642480';
-const mockUsdcCTokenRate = '226005533516859';
+// Ref https://compound.finance/docs/comptroller#collateral-factor
+const mockBtcCollateralFactor = '700000000000000000'; // 70%
+const mockEthCollateralFactor = '850000000000000000'; // 85%
+const mockUsdcCollateralFactor = '800000000000000000'; // 80%
 
+// Ref: https://compound.finance/docs/ctokens#exchange-rate
+const mockBtcCTokenRate = '20000000000000000'; // 1 cBTC = 0.02 BTC
+const mockEthCTokenRate = '200000000000000000000000000'; // 1 cETH = 0.02 ETH
+const mockUsdcCTokenRate = '200000000000000'; // 1 cUSDC = 0.02 USDC
+
+// In this mock, ETH Collateral Factor is 0.85 and 1 BTC = 10 ETH.
+// Starting data with a user that supplied 10 ETH and borrowed 0.85 BTC.
+// Therefore, 10 ETH * 0.85 Collateral Factor = 8.5 ETH Collateral Value
+// and .85 BTC = 8.5 ETH Borrowed Value.
+// 8.5 ETH Collateral Value / 8.5 ETH Borrowed Value = 1.0 Health Factor
+// Ref: https://compound.finance/docs/api#account-service
 const mockCompoundData = {
   accounts: [
     {
@@ -33,13 +48,13 @@ const mockCompoundData = {
         {
           address: '0x0cbtc',
           borrow_balance_underlying: {
-            value: '2.0',
+            value: '0.85',
           },
         },
         {
           address: '0x0ceth',
           supply_balance_underlying: {
-            value: '22.0',
+            value: '10.0',
           },
         },
       ],
@@ -49,7 +64,6 @@ const mockCompoundData = {
     total_entries: 1,
   },
 };
-
 const mockCompoundResponse = {
   data: mockCompoundData,
 };
@@ -208,203 +222,197 @@ describe('mock axios POST request', () => {
   });
 });
 
+// Mock helper function
+function setInitializeMocks() {
+  // Set all default mocks
+
+  // Compound API
+  axios.post.mockResolvedValue(mockCompoundResponse);
+
+  const {
+    getAssetsIn,
+    markets,
+    getAccountLiquidity,
+    getRateToEth,
+    decimals,
+    getAccountSnapshot,
+    symbol,
+    underlying,
+    exchangeRateStored,
+  } = mockContract;
+
+  // Comptroller
+  /* eslint-disable new-cap */
+  getAssetsIn.mockResolvedValue(mockGetAssetsIn);
+  markets.mockResolvedValue(true, new ethers.BigNumber.from(mockBtcCollateralFactor), true);
+  getAccountLiquidity.mockResolvedValue(0, 0, new ethers.BigNumber.from(0));
+  // OneInch
+  getRateToEth.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals));
+  // ERC20
+  decimals.mockResolvedValue(new ethers.BigNumber.from(mockBtcDecimals));
+  getAccountSnapshot.mockResolvedValue(
+    0, new ethers.BigNumber.from(0), new ethers.BigNumber.from(0), 0,
+  );
+  symbol.mockResolvedValue('TOKEN');
+  underlying.mockResolvedValue('0x0');
+  exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockBtcCTokenRate));
+
+  // Verify token MockOnce - BTC then ETH
+  symbol.mockResolvedValueOnce('cBTC').mockResolvedValueOnce('cETH');
+  underlying.mockResolvedValueOnce('0x0wbtc').mockResolvedValueOnce('0x0weth');
+  exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockBtcCTokenRate))
+    .mockResolvedValue(new ethers.BigNumber.from(mockEthCTokenRate));
+  decimals.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals))
+    .mockResolvedValue(new ethers.BigNumber.from(mockBtcDecimals))
+    .mockResolvedValue(new ethers.BigNumber.from(mockCDecimals))
+    .mockResolvedValue(new ethers.BigNumber.from(mockEthDecimals));
+
+  // Clear Mock counters before calling initialize
+  axios.post.mockClear();
+  symbol.mockClear();
+  underlying.mockClear();
+  exchangeRateStored.mockClear();
+  decimals.mockClear();
+}
+
 // agent tests
-describe('handleBlock', () => {
-  let data;
-  const initializeData = {};
-
-  function handleMockBlockEvent() {
-    // Check all account healths
-    const findings = [];
-    Object.keys(data.accounts).forEach((currentAccount) => {
-      let supplied = BigNumber(0);
-      let borrowed = BigNumber(0);
-      Object.keys(data.tokens).forEach((token) => {
-        try {
-          borrowed = borrowed.plus(data.borrow[token][currentAccount] * data.tokens[token].price);
-        } catch (err) { /* pass */ }
-        try {
-          supplied = supplied.plus(data.supply[token][currentAccount] * data.tokens[token].price);
-        } catch (err) { /* pass */ }
-      });
-
-      const health = supplied.dividedBy(borrowed);
-      // Convert to from ETH price to USD.
-      supplied = supplied.dividedBy(mockUsdcPrice);
-      borrowed = borrowed.dividedBy(mockUsdcPrice);
-      // Calculate actual shortfalls and liquidationAmounts
-      const shortfallUSD = borrowed.minus(supplied);
-      const liquidationAmount = shortfallUSD.times(health);
-
-      // Create a finding if the liquidatable amount is below the threshold
-      // Shorten metadata to 2 decimal places
-      if (liquidationAmount.gte(minLiquidationInUSD)) {
-        const newFinding = createAlert(
-          data.developerAbbreviation,
-          data.protocolName,
-          data.protocolAbbreviation,
-          data.alert.type,
-          data.alert.severity,
-          currentAccount,
-          liquidationAmount.dp(2).toString(),
-          shortfallUSD.dp(2).toString(),
-          health.dp(2).toString(),
-        );
-        findings.push(newFinding);
-      }
-    });
-    return findings;
-  }
+describe('initializeData', () => {
+  let initializeData = {};
 
   beforeEach(async () => {
-    // Set all default mocks
-
-    // Compound API
-    axios.post.mockResolvedValue(mockCompoundResponse);
-
-    const {
-      getAssetsIn,
-      markets,
-      getAccountLiquidity,
-      getRateToEth,
-      decimals,
-      getAccountSnapshot,
-      symbol,
-      underlying,
-      exchangeRateStored,
-    } = mockContract;
-
-    // Comptroller
-    /* eslint-disable new-cap */
-    getAssetsIn.mockResolvedValue(mockGetAssetsIn);
-    markets.mockResolvedValue(true, new ethers.BigNumber.from(mockBtcCollateralFactor), true);
-    getAccountLiquidity.mockResolvedValue(0, 0, new ethers.BigNumber.from(0));
-    // OneInch
-    getRateToEth.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals));
-    // ERC20
-    decimals.mockResolvedValue(new ethers.BigNumber.from(mockBtcDecimals));
-    getAccountSnapshot.mockResolvedValue(
-      0, new ethers.BigNumber.from(0), new ethers.BigNumber.from(0), 0,
-    );
-    symbol.mockResolvedValue('TOKEN');
-    underlying.mockResolvedValue('0x0');
-    exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockBtcCTokenRate));
-
-    // Verify token Mocks - BTC then ETH
-    symbol.mockResolvedValueOnce('cBTC').mockResolvedValueOnce('cETH');
-    underlying.mockResolvedValueOnce('0x0wbtc').mockResolvedValueOnce('0x0weth');
-    exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockBtcCTokenRate))
-      .mockResolvedValue(new ethers.BigNumber.from(mockEthCTokenRate));
-    decimals.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals))
-      .mockResolvedValue(new ethers.BigNumber.from(mockBtcDecimals))
-      .mockResolvedValue(new ethers.BigNumber.from(mockCDecimals))
-      .mockResolvedValue(new ethers.BigNumber.from(mockEthDecimals));
-
+    // Initialize
+    initializeData = {};
+    setInitializeMocks();
     await (provideInitialize(initializeData))();
-
-    // TS
-    console.log(initializeData.accounts['0x1111'].health.toString());
-    console.log(initializeData.accounts);
-    console.log(initializeData.supply['0x0ceth']['0x1111'].toString());
-    console.log(initializeData.supply);
-    console.log(initializeData.borrow['0x0cbtc']['0x1111'].toString());
-    console.log(initializeData.borrow);
-    console.log(initializeData.tokens);
-    console.log(initializeData.newAccounts);
   });
 
-  it('returns should use AXIOS 2 times}', async () => {
-    // ICheck counter from the initialize step.
+  it('should use axios 2 times}', async () => {
+    // Check counter from the initialize step.
     expect(axios.post).toBeCalledTimes(2);
   });
 
-  it('returns should use contract calls}', async () => {
-    // ICheck counter from the initialize step.
-    expect(mockContract.symbol).toBeCalledTimes(4);
+  it('should use contract calls}', async () => {
+    // Check counters from the initialize step.
+    expect(mockContract.symbol).toBeCalledTimes(2);
+    expect(mockContract.underlying).toBeCalledTimes(2);
+    expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
+    expect(mockContract.decimals).toBeCalledTimes(4);
   });
 
-  // it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {
-  //   // Borrowed BTC increases 1% in value
-  //   data.tokens['0xBTC'] = { price: mockBtcPrice * 1.01 };
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([]);
-  // });
-
-  // it('returns findings if borrowed asset increases and account exceeds the minimumLiquidation threshold', async () => {
-  //   // Borrowed BTC increases 2% in value
-  //   data.tokens['0xBTC'] = { price: mockBtcPrice * 1.02 };
-  //   const borrowerAddress = mockBorrower;
-  //   const liquidationAmount = '713.01';
-  //   const shortfallAmount = '727.27';
-  //   const healthFactor = '0.98';
-
-  //   const expectedFinding = Finding.fromObject({
-  //     name: `${data.protocolName} Liquidation Threshold Alert`,
-  //     description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
-  //       + `The account may be liquidated for: $${liquidationAmount} USD`,
-  //     alertId: `${data.developerAbbreviation}-${data.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
-  //     type: FindingType[data.alert.type],
-  //     severity: FindingSeverity[data.alert.severity],
-  //     protocol: data.protocolName,
-  //     metadata: {
-  //       borrowerAddress,
-  //       liquidationAmount,
-  //       shortfallAmount,
-  //       healthFactor,
-  //     },
-  //   });
-
-  //   // Process Block
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([expectedFinding]);
-  // });
-
-  // it('returns no findings if borrowed asset decreases and remains below minimumLiquidation threshold', async () => {
-  //   // Borrowed BTC decreases 1% in value
-  //   data.tokens['0xBTC'] = { price: mockBtcPrice * 0.99 };
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([]);
-  // });
-
-  // it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
-  //   // Supplied ETH decreases 1% in value
-  //   data.tokens['0xETH'] = { price: mockEthPrice * 0.99 };
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([]);
-  // });
-
-  // it('returns findings if supplied asset decreases and account exceeds the minimumLiquidation threshold', async () => {
-  //   // Supplied ETH decreases 2% in value
-  //   data.tokens['0xETH'] = { price: mockEthPrice * 0.98 };
-  //   const borrowerAddress = mockBorrower;
-  //   const liquidationAmount = '712.73';
-  //   const shortfallAmount = '727.27';
-  //   const healthFactor = '0.98';
-
-  //   const expectedFinding = Finding.fromObject({
-  //     name: `${data.protocolName} Liquidation Threshold Alert`,
-  //     description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
-  //       + `The account may be liquidated for: $${liquidationAmount} USD`,
-  //     alertId: `${data.developerAbbreviation}-${data.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
-  //     type: FindingType[data.alert.type],
-  //     severity: FindingSeverity[data.alert.severity],
-  //     protocol: data.protocolName,
-  //     metadata: {
-  //       borrowerAddress,
-  //       liquidationAmount,
-  //       shortfallAmount,
-  //       healthFactor,
-  //     },
-  //   });
-
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([expectedFinding]);
-  // });
-
-  // it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
-  //   // Supplied ETH decreases 1% in value
-  //   data.tokens['0xBTC'] = { price: mockEthPrice * 1.01 };
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([]);
-  // });
+  it('should set user data}', async () => {
+    // In the compound API mock, the user supplied 0.85 BTC, and borrowed 10 ETH.
+    //  to account for interest earned on supplied tokens, this is stored as cTokens.
+    // "When a market is launched, the cToken exchange rate (how much ETH one cETH is worth) begins
+    //  at 0.020000 — and increases at a rate equal to the compounding market interest rate"
+    // Ref: https://compound.finance/docs/ctokens#introduction - Calculate Exchange Rate
+    // In this example 10 ETH * (1 cWETH / 0.02 ETH) = 500 cETH.
+    const actualSupply = initializeData.supply['0x0ceth']['0x1111'].toString();
+    const expectedSupply = '500';
+    const actualBorrow = initializeData.borrow['0x0cbtc']['0x1111'].toString();
+    const expectedBorrow = '0.85';
+    expect(actualSupply).toBe(expectedSupply);
+    expect(actualBorrow).toBe(expectedBorrow);
+  });
 });
+
+// agent tests
+describe('handleBlock', () => {
+  let initializeData = {};
+
+  beforeEach(async () => {
+    // Initialize
+    initializeData = {};
+    setInitializeMocks();
+    await (provideInitialize(initializeData))();
+  });
+  it('should use axios 2 times}', async () => {
+    // Check counter from the initialize step.
+    expect(axios.post).toBeCalledTimes(2);
+  });
+});
+
+
+// it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {
+//   // Borrowed BTC increases 1% in value
+//   data.tokens['0xBTC'] = { price: mockBtcPrice * 1.01 };
+//   const findings = handleMockBlockEvent();
+//   expect(findings).toStrictEqual([]);
+// });
+
+// it('returns findings if borrowed asset increases and account exceeds the minimumLiquidation threshold', async () => {
+//   // Borrowed BTC increases 2% in value
+//   data.tokens['0xBTC'] = { price: mockBtcPrice * 1.02 };
+//   const borrowerAddress = mockBorrower;
+//   const liquidationAmount = '713.01';
+//   const shortfallAmount = '727.27';
+//   const healthFactor = '0.98';
+
+//   const expectedFinding = Finding.fromObject({
+//     name: `${data.protocolName} Liquidation Threshold Alert`,
+//     description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
+//       + `The account may be liquidated for: $${liquidationAmount} USD`,
+//     alertId: `${data.developerAbbreviation}-${data.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+//     type: FindingType[data.alert.type],
+//     severity: FindingSeverity[data.alert.severity],
+//     protocol: data.protocolName,
+//     metadata: {
+//       borrowerAddress,
+//       liquidationAmount,
+//       shortfallAmount,
+//       healthFactor,
+//     },
+//   });
+
+//   // Process Block
+//   const findings = handleMockBlockEvent();
+//   expect(findings).toStrictEqual([expectedFinding]);
+// });
+
+// it('returns no findings if borrowed asset decreases and remains below minimumLiquidation threshold', async () => {
+//   // Borrowed BTC decreases 1% in value
+//   data.tokens['0xBTC'] = { price: mockBtcPrice * 0.99 };
+//   const findings = handleMockBlockEvent();
+//   expect(findings).toStrictEqual([]);
+// });
+
+// it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
+//   // Supplied ETH decreases 1% in value
+//   data.tokens['0xETH'] = { price: mockEthPrice * 0.99 };
+//   const findings = handleMockBlockEvent();
+//   expect(findings).toStrictEqual([]);
+// });
+
+// it('returns findings if supplied asset decreases and account exceeds the minimumLiquidation threshold', async () => {
+//   // Supplied ETH decreases 2% in value
+//   data.tokens['0xETH'] = { price: mockEthPrice * 0.98 };
+//   const borrowerAddress = mockBorrower;
+//   const liquidationAmount = '712.73';
+//   const shortfallAmount = '727.27';
+//   const healthFactor = '0.98';
+
+//   const expectedFinding = Finding.fromObject({
+//     name: `${data.protocolName} Liquidation Threshold Alert`,
+//     description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
+//       + `The account may be liquidated for: $${liquidationAmount} USD`,
+//     alertId: `${data.developerAbbreviation}-${data.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+//     type: FindingType[data.alert.type],
+//     severity: FindingSeverity[data.alert.severity],
+//     protocol: data.protocolName,
+//     metadata: {
+//       borrowerAddress,
+//       liquidationAmount,
+//       shortfallAmount,
+//       healthFactor,
+//     },
+//   });
+
+//   const findings = handleMockBlockEvent();
+//   expect(findings).toStrictEqual([expectedFinding]);
+// });
+
+// it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
+//   // Supplied ETH decreases 1% in value
+//   data.tokens['0xBTC'] = { price: mockEthPrice * 1.01 };
+//   const findings = handleMockBlockEvent();
+//   expect(findings).toStrictEqual([]);
+// });
