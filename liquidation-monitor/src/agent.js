@@ -393,9 +393,15 @@ function provideHandleBlock(data) {
 
       // There are situations where the shortfall amount is greater than the supplied amount.
       //   Therefore, it is not possible to liquidate the entire amount. Example: An account
-      //    has $10 of value supplied and $100 borrowed. Shortfall is $90. Since the supplied value
-      //    is less than the shortfall of $90. Only the supplied amount can be liquidated.
-      const liquidationAmount = shortfallUSD.multipliedBy(accounts[currentAccount].health);
+      //   has $10 of value supplied and $100 borrowed. Shortfall is $90. Since the supplied value
+      //   is less than the shortfall of $90. Only the supplied amount of $10 can be liquidated.
+      // The minimum of shortfall vs supplied will be the liquidationAmount.
+      // Given: "Supply / Borrow = HealthFactor" and "Borrow - Supply = Shortfall", then supply can
+      //   be expressed as: "Supply = Shortfall / ( 1 - HealthFactor) - Shortfall"
+      const supplyUSD = new BigNumber(
+        shortfallUSD.dividedBy(new BigNumber(1).minus(accounts[currentAccount].health)),
+      ).minus(shortfallUSD);
+      const liquidationAmount = BigNumber.minimum(shortfallUSD, supplyUSD);
 
       // Create a finding if the liquidatable amount is below the threshold
       // Shorten metadata to 2 decimal places
