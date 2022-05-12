@@ -74,7 +74,7 @@
       ]
     },
     {
-      "name": "Compound cToken Asset Monitor",
+      "name": "Compound Distribution Monitor",
       "paused": false,
       "type": "FORTA",
       "fortaConditions": {
@@ -231,6 +231,26 @@
       "notificationChannels": [
         "Darian Compound"
       ]
+    },
+    {
+      "name": "Compound cToken Underlying Asset Monitor",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": [
+          "AE-COMP-CTOKEN-ASSET-UPGRADED"
+        ],
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "agentIDs": [
+        "0x3f02bee8b17edc945c5c1438015aede79225ac69c46e9cd6cff679bb71f35576"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": [
+        "Darian Compound cToken"
+      ]
     }
   ],
   "autotasks": [
@@ -242,6 +262,24 @@
       },
       "paused": false,
       "autotaskFilePath": "./downloaded/Forta_Sentinel_cToken_Discord.js"
+    },
+    {
+      "name": "Forta Sentinel Compound Distributions Discord",
+      "trigger": {
+        "frequencyMinutes": 72000000,
+        "type": "schedule"
+      },
+      "paused": true,
+      "autotaskFilePath": "./downloaded/Forta_Sentinel_Compound_Distributions_Discord.js"
+    },
+    {
+      "name": "Forta Sentinel Compound Large Borrows Governance Discord",
+      "trigger": {
+        "frequencyMinutes": 72000000,
+        "type": "schedule"
+      },
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Sentinel_Compound_Large_Borrows_Governance_Discord.js"
     },
     {
       "name": "Forta Sentinel Governance",
@@ -269,6 +307,24 @@
       },
       "paused": false,
       "autotaskFilePath": "./downloaded/Contract_Sentinel_cToken_Discord.js"
+    },
+    {
+      "name": "Forta Sentinel Compound Underlying Asset Monitor Discord",
+      "trigger": {
+        "frequencyMinutes": 72000000,
+        "type": "schedule"
+      },
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Sentinel_Compound_Underlying_Asset_Monitor_Discord.js"
+    },
+    {
+      "name": "Forta Sentinel Compound Oracle Price Discord",
+      "trigger": {
+        "frequencyMinutes": 7200000,
+        "type": "schedule"
+      },
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Sentinel_Compound_Oracle_Price_Discord.js"
     }
   ],
   "notificationChannels": [
