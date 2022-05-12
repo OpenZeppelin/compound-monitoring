@@ -384,8 +384,21 @@ describe('handleBlock', () => {
 
     // Process the first block to establish prices and health
     // Set block mocks
+    // If zero health accounts, getAssets in
+    mockContract.getAssetsIn.mockResolvedValueOnce('');
+    // VerifyToken if new token
+    // setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
+    // Get account snapshots for new accounts / tokens
+    mockContract.getAccountSnapshot.mockResolvedValueOnce('');
+
+    // Price/Health update ALL
+    mockContract.getRateToEth.mockResolvedValueOnce('');
+    // Collateral factor All
+    mockContract.markets.mockResolvedValueOnce('');
+
     
     await (provideHandleBlock(initializeData))();
+
   });
   it('should use axios 2 times}', async () => {
     // Check counter from the initialize step.
