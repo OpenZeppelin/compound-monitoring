@@ -306,23 +306,6 @@ describe('initializeData', () => {
     setDefaultMocks();
     setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
     setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
-
-    // When calling the verifyToken function, Contract.decimals gets called twice per
-    // token. One time for the cToken and then one time for the Token.
-    // The token calls seem to be overlapping. Call 1 and 2 don't show up anywhere,
-    // but call 3 is applied twice for cBTC and BTC decimals.  Call 4 is applied twice to
-    // cETH and ETH decimals... Odd behavior.
-
-    // cBTC and BTC have 8 decimals, so this is no issue but cETH (8) and ETH (18) are differently
-    // Changing the 4th call either breaks.
-
-    // mockContract.decimals.mockReset();
-    // mockContract.decimals.mockResolvedValue(new ethers.BigNumber.from(9));
-    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(1));
-    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(2));
-    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(8)); // cBTC and BTC Decimals?
-    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(18)); // cETH  and ETH Decimals?
-    // mockContract.decimals.mockResolvedValueOnce(new ethers.BigNumber.from(5));
     await (provideInitialize(initializeData))();
   });
 
@@ -407,7 +390,6 @@ describe('handleBlock', () => {
 
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
-
     await (provideHandleBlock(initializeData))();
 
     /*
@@ -440,18 +422,38 @@ describe('handleBlock', () => {
   });
 
   it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {
-    console.log(initializeData.accounts);
+    console.log(initializeData.accounts['0x1111'].supplyBalance.toString());
+    console.log(initializeData.accounts['0x1111'].borrowBalance.toString());
     console.log(initializeData.tokens);
     // Borrowed BTC increases 1% in value
     // 101% to Decimal since ethers.BigNumber does not like floating point numbers.
     const multiplier = new ethers.BigNumber.from(101).div(100); // "101 / 100 = 1.01"
     const newBTCPrice = mockBtcPrice.mul(multiplier);
     // Calculate shortfall amount
-    // JS bigNumber Math, then convert to ethers.BigNumber
-    let supplied = initializeData.accounts['0x1111'].supplyBalance.times(100).toString();
-    supplied = new ethers.BigNumber.from(supplied).div(100);
-    let borrowed = initializeData.accounts['0x1111'].borrowBalance.times(100).toString();
-    borrowed = new ethers.BigNumber.from(borrowed).div(100);
+    // JS bigNumber Math , then convert to ethers.BigNumber
+    // Decimal number is scaled up to make it an integer and shifted back after ethers.BigNumber
+    const scaling = 10000;
+    let supplied = initializeData.accounts['0x1111'].supplyBalance.times(scaling).toString();
+    supplied = new ethers.BigNumber.from(supplied).div(scaling);
+    let borrowed = initializeData.accounts['0x1111'].borrowBalance.times(scaling).toString();
+    borrowed = new ethers.BigNumber.from(borrowed).div(scaling);
+    // ethers.BigNumber math
+    const newSupplied = supplied.mul(multiplier);
+
+    let shortfall = new ethers.BigNumber.from(0);
+    // let liquidationAmount = new ethers.BigNumber.from(0);
+    if (borrowed.gt(newSupplied)) {
+      shortfall = borrowed.sub(newSupplied);
+      // Convert to USDC
+      // Price in USDC to ETH, to convert ETH to USDC, the EthAmount needs to be divided by 
+      //  the price. Also needs to be scaled my the 1inch multiplier.
+      const oneInchMult = new ethers.BigNumber(10).pow(36 - mockUsdcDecimals).toString();
+      shortfall = shortfall.div(mockUsdcPrice).mul(oneInchMult);
+    }
+    console.log(shortfall.toString());
+    console.log(newSupplied.mul(100).toString());
+    console.log(supplied.mul(100).toString());
+    console.log(multiplier.mul(100).toString());
 
     setPriceMocks(newBTCPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
