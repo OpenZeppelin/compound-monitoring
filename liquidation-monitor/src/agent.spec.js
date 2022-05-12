@@ -104,7 +104,7 @@ const {
 const config = require('../bot-config.json');
 
 const {
-  provideInitialize, createAlert,
+  provideInitialize, provideHandleBlock, createAlert,
 } = require('./agent');
 
 // check the configuration file to verify the values
@@ -223,12 +223,108 @@ describe('mock axios POST request', () => {
 });
 
 // Mock helper function
-function setInitializeMocks() {
+function setDefaultMocks() {
   // Set all default mocks
 
   // Compound API
   axios.post.mockResolvedValue(mockCompoundResponse);
 
+  const {
+    getAssetsIn,
+    markets,
+    getAccountLiquidity,
+    getRateToEth,
+    decimals,
+    getAccountSnapshot,
+    symbol,
+    underlying,
+    exchangeRateStored,
+  } = mockContract;
+
+  // Comptroller
+  /* eslint-disable new-cap */
+  getAssetsIn.mockResolvedValue(mockGetAssetsIn);
+  markets.mockResolvedValue(true, new ethers.BigNumber.from(mockBtcCollateralFactor), true);
+  getAccountLiquidity.mockResolvedValue(0, 0, new ethers.BigNumber.from(0));
+  // OneInch
+  getRateToEth.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals));
+  // ERC20
+  decimals.mockResolvedValue(new ethers.BigNumber.from(mockBtcDecimals));
+  getAccountSnapshot.mockResolvedValue(
+    0, new ethers.BigNumber.from(0), new ethers.BigNumber.from(0), 0,
+  );
+  symbol.mockResolvedValue('TOKEN');
+  underlying.mockResolvedValue('0x0');
+  exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockBtcCTokenRate));
+
+  // Clear Mock counters before calling initialize
+  axios.post.mockClear();
+  symbol.mockClear();
+  underlying.mockClear();
+  exchangeRateStored.mockClear();
+  decimals.mockClear();
+}
+
+function setVerifyTokenMocks(setSymbol, setUnderlying, setExchange, setDecimals) {
+  // Verify token MockOnce - BTC then ETH
+  const {
+    decimals,
+    symbol,
+    underlying,
+    exchangeRateStored,
+  } = mockContract;
+
+  symbol.mockResolvedValueOnce(setSymbol);
+  underlying.mockResolvedValueOnce(setUnderlying);
+  exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(setExchange));
+  decimals.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals))
+    .mockResolvedValue(new ethers.BigNumber.from(setDecimals));
+}
+
+// agent tests
+describe('initializeData', () => {
+  let initializeData = {};
+
+  beforeEach(async () => {
+    // Initialize
+    initializeData = {};
+    setDefaultMocks();
+    setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
+    setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
+    await (provideInitialize(initializeData))();
+  });
+
+  it('should use axios 2 times}', async () => {
+    // Check counter from the initialize step.
+    expect(axios.post).toBeCalledTimes(2);
+  });
+
+  it('should use contract calls}', async () => {
+    // Check counters from the initialize step.
+    expect(mockContract.symbol).toBeCalledTimes(2);
+    expect(mockContract.underlying).toBeCalledTimes(2);
+    expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
+    expect(mockContract.decimals).toBeCalledTimes(4);
+  });
+
+  it('should set user data', async () => {
+    // In the compound API mock, the user supplied 0.85 BTC, and borrowed 10 ETH.
+    //  to account for interest earned on supplied tokens, this is stored as cTokens.
+    // "When a market is launched, the cToken exchange rate (how much ETH one cETH is worth) begins
+    //  at 0.020000 — and increases at a rate equal to the compounding market interest rate"
+    // Ref: https://compound.finance/docs/ctokens#introduction - Calculate Exchange Rate
+    // In this example 10 ETH * (1 cWETH / 0.02 ETH) = 500 cETH.
+    const actualSupply = initializeData.supply['0x0ceth']['0x1111'].toString();
+    const expectedSupply = '500';
+    const actualBorrow = initializeData.borrow['0x0cbtc']['0x1111'].toString();
+    const expectedBorrow = '0.85';
+    expect(actualSupply).toBe(expectedSupply);
+    expect(actualBorrow).toBe(expectedBorrow);
+  });
+});
+
+// Mock helper function
+function setBlockMocks() {
   const {
     getAssetsIn,
     markets,
@@ -275,55 +371,21 @@ function setInitializeMocks() {
   decimals.mockClear();
 }
 
-// agent tests
-describe('initializeData', () => {
-  let initializeData = {};
-
-  beforeEach(async () => {
-    // Initialize
-    initializeData = {};
-    setInitializeMocks();
-    await (provideInitialize(initializeData))();
-  });
-
-  it('should use axios 2 times}', async () => {
-    // Check counter from the initialize step.
-    expect(axios.post).toBeCalledTimes(2);
-  });
-
-  it('should use contract calls}', async () => {
-    // Check counters from the initialize step.
-    expect(mockContract.symbol).toBeCalledTimes(2);
-    expect(mockContract.underlying).toBeCalledTimes(2);
-    expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
-    expect(mockContract.decimals).toBeCalledTimes(4);
-  });
-
-  it('should set user data}', async () => {
-    // In the compound API mock, the user supplied 0.85 BTC, and borrowed 10 ETH.
-    //  to account for interest earned on supplied tokens, this is stored as cTokens.
-    // "When a market is launched, the cToken exchange rate (how much ETH one cETH is worth) begins
-    //  at 0.020000 — and increases at a rate equal to the compounding market interest rate"
-    // Ref: https://compound.finance/docs/ctokens#introduction - Calculate Exchange Rate
-    // In this example 10 ETH * (1 cWETH / 0.02 ETH) = 500 cETH.
-    const actualSupply = initializeData.supply['0x0ceth']['0x1111'].toString();
-    const expectedSupply = '500';
-    const actualBorrow = initializeData.borrow['0x0cbtc']['0x1111'].toString();
-    const expectedBorrow = '0.85';
-    expect(actualSupply).toBe(expectedSupply);
-    expect(actualBorrow).toBe(expectedBorrow);
-  });
-});
-
-// agent tests
 describe('handleBlock', () => {
   let initializeData = {};
 
   beforeEach(async () => {
     // Initialize
     initializeData = {};
-    setInitializeMocks();
+    setDefaultMocks();
+    setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
+    setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
     await (provideInitialize(initializeData))();
+
+    // Process the first block to establish prices and health
+    // Set block mocks
+    
+    await (provideHandleBlock(initializeData))();
   });
   it('should use axios 2 times}', async () => {
     // Check counter from the initialize step.
