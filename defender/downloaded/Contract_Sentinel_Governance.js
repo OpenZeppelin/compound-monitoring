@@ -37,17 +37,19 @@ async function getProposalTitle(proposalId) {
   return title;
 }
 
-async function getAccountDisplayName(voter, proposalId) {
+async function getAccountDisplayName(voter) {
   const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voter}&proposal_id=${proposalId}`;
+  const queryUrl = `?account=${voter}`;
   let displayName;
   try {
     const result = await axios.get(baseUrl + queryUrl);
     displayName = result.data.proposal_vote_receipts[0].voter.display_name;
+    console.log(`Display name successfully retrieved: ${displayName}`);
     if (displayName === null) {
       displayName = '';
     }
-  } catch {
+  } catch (err) {
+    console.error(`Display name NOT successfully retrieved: ${err}`);
     displayName = '';
   }
   return displayName;
@@ -58,7 +60,13 @@ function getProposalTitleFromDescription(description) {
   let [proposalName] = lines;
   // remove markdown heading symbol and then leading and trailing spaces
   if (proposalName !== undefined) {
-    proposalName = proposalName.replaceAll('#', '').trim();
+    console.log(proposalName);
+    try {
+      proposalName = proposalName.replaceAll('#', '').trim();
+    } catch (err) {
+      console.error(err);
+      proposalName = undefined;
+    }
   }
   return proposalName;
 }
@@ -92,7 +100,12 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       if (proposalName === undefined) {
         proposalName = await getProposalTitle(id);
       }
-      message = `**New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
+      displayName = await getAccountDisplayName(proposer);
+      if (displayName === '') {
+        message = `**New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
+      } else {
+        message = `**New Proposal** ${proposalName} by ${displayName} ${etherscanLink}`;
+      }
       message += `\nDetails: https://compound.finance/governance/proposals/${id}`;
       break;
     case 'VoteCast':
@@ -104,7 +117,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
         proposalId,
       } = params);
 
-      displayName = await getAccountDisplayName(voter, proposalId);
+      displayName = await getAccountDisplayName(voter);
 
       if (support === 0) {
         supportEmoji = noEntryEmoji;
@@ -135,7 +148,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
     case 'ProposalCanceled':
       ({ id } = params);
       proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposa**l ${proposalName} ${noEntryEmoji}`;
+      message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'ProposalExecuted':
       ({ id } = params);
@@ -168,7 +181,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { DiscordUrl: discordUrl } = secrets;
+  const { GovernanceDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
     return {};
   }
@@ -207,13 +220,12 @@ exports.handler = async function (autotaskEvent) {
   // wait for the promises to settle
   const messages = await Promise.all(promises);
 
-  const promises = messages.map((message) => {
+  for (let i = 0; i < messages.length; i++) {
     console.log('Posting to Discord');
-    console.log(message);
-    return postToDiscord(discordUrl, message)
-  });
-
-  await Promise.all(promises);
+    console.log(messages[i]);
+    // eslint-disable-next-line no-await-in-loop
+    await postToDiscord(discordUrl, messages[i]);
+  }
 
   console.log('Posted!');
 

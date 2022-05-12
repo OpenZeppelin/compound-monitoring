@@ -1,0 +1,207 @@
+//  CTOKEN UNDERLYING ASSET MONITOR AGENT ALERT - note there's never been an alert to this agent yet
+// agent id - 0x3f02bee8b17edc945c5c1438015aede79225ac69c46e9cd6cff679bb71f35576
+
+/* eslint-disable import/no-extraneous-dependencies */
+const axios = require('axios');
+/* eslint-enable import/no-extraneous-dependencies */
+
+const fortaApiEndpoint = 'https://api.forta.network/graphql';
+
+function createDiscordMessage(cTokenSymbol, transactionHash) {
+  // // construct the Etherscan transaction link
+  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
+
+  return `${etherscanLink} 🆙 Underlying asset for the **${cTokenSymbol}** cToken contract was upgraded`;
+}
+
+function getRandomInt(min, max) {
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+// post to discord
+async function postToDiscord(url, message) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  const body = {
+    content: message,
+  };
+
+  const discordObject = {
+    url,
+    method: 'post',
+    headers,
+    data: JSON.stringify(body),
+  };
+
+  let response;
+  try {
+    // perform the POST request
+    response = await axios(discordObject);
+  } catch (error) {
+    // is this a "too many requests" error (HTTP status 429)
+    if (error.response && error.response.status === 429) {
+      // rate-limited, retry
+      // after waiting a random amount of time between 2 and 15 seconds
+      const delay = getRandomInt(2000, 15000);
+      // eslint-disable-next-line no-promise-executor-return
+      const promise = new Promise((resolve) => setTimeout(resolve, delay));
+      await promise;
+      response = await axios(discordObject);
+    } else {
+      // re-throw the error if it's not from a 429 status
+      throw error;
+    }
+  }
+
+  return response;
+}
+
+async function getFortaAlerts(agentId, transactionHash) {
+  const headers = {
+    'content-type': 'application/json',
+  };
+
+  // construct query with data that you want to get back
+  const graphqlQuery = {
+    operationName: 'recentAlerts',
+    query: `query recentAlerts($input: AlertsInput) {
+      alerts(input: $input) {
+        pageInfo {
+          hasNextPage
+          endCursor {
+            alertId
+            blockNumber
+          }
+        }
+        alerts {
+          createdAt
+          name
+          protocol
+          findingType
+          hash
+          source {
+            transactionHash
+            block {
+              number
+              chainId
+            }
+            agent {
+              id
+            }
+          }
+          severity
+          metadata
+          description
+        }
+      }
+    }`,
+    variables: {
+      input: {
+        first: 100,
+        agents: [agentId],
+        transactionHash,
+        createdSince: 0,
+        chainId: 1,
+      },
+    },
+  };
+
+  // perform the POST request
+  const response = await axios.post(
+    fortaApiEndpoint,
+    graphqlQuery,
+    headers,
+  );
+
+  const { data } = response;
+  if (data === undefined) {
+    return undefined;
+  }
+
+  console.log('Forta Public API data');
+  console.log(JSON.stringify(data, null, 2));
+  const { data: { alerts: { alerts } } } = data;
+  return alerts;
+}
+
+// entry point for autotask
+// eslint-disable-next-line func-names
+exports.handler = async function (autotaskEvent) {
+  // ensure that the autotaskEvent Object exists
+  if (autotaskEvent === undefined) {
+    return {};
+  }
+  console.log('Autotask Event');
+  console.log(JSON.stringify(autotaskEvent, null, 2));
+
+  const { secrets } = autotaskEvent;
+  if (secrets === undefined) {
+    return {};
+  }
+
+  // ensure that there is a DiscordUrl secret. Name changes depending on what webhook secret you use
+  const { FortaSentinelTestingDiscord: discordUrl } = secrets;
+  if (discordUrl === undefined) {
+    return {};
+  }
+
+  // ensure that the request key exists within the autotaskEvent Object
+  const { request } = autotaskEvent;
+  if (request === undefined) {
+    return {};
+  }
+
+  // ensure that the body key exists within the request Object
+  const { body } = request;
+  if (body === undefined) {
+    return {};
+  }
+  console.log('Body');
+  console.log(JSON.stringify(body, null, 2));
+
+  // ensure that the alert key exists within the body Object
+  const { alert } = body;
+  if (alert === undefined) {
+    return {};
+  }
+
+  // extract the transaction hash and agent ID from the alert Object
+  const {
+    hash,
+    source: {
+      transactionHash,
+      agent: {
+        id: agentId,
+      },
+    },
+  } = alert;
+
+  // retrieve the metadata from the Forta public API
+  let alerts = await getFortaAlerts(agentId, transactionHash);
+  alerts = alerts.filter((alertObject) => alertObject.hash === hash);
+  console.log('Alerts');
+  console.log(JSON.stringify(alerts, null, 2));
+
+  const promises = alerts.map((alertData) => {
+    const { metadata } = alertData;
+    const { cTokenSymbol } = metadata;
+
+    return createDiscordMessage(
+      cTokenSymbol,
+      transactionHash,
+    );
+  });
+
+  // // wait for the promises to settle
+  const messages = await Promise.all(promises);
+
+  // // create promises for posting messages to Discord webhook
+  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${message}`));
+
+  // // wait for the promises to settle
+  await Promise.all(discordPromises);
+
+  return {};
+};

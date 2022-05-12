@@ -1,10 +1,13 @@
-/* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
+// ORACLE PRICE ALERT - note there's never been an alert to this agent yet
+// agent id - 0x8a6e2ae3b279c561f7ba64e5011313df19e08b1f398d59d94dfbd4148e6cafce
+
+/* eslint-disable import/no-unresolved,import/no-extraneous-dependencies */
 const axios = require('axios');
 const ethers = require('ethers');
 
 // import the DefenderRelayProvider to interact with its JSON-RPC endpoint
 const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
-/* eslint-enable import/no-extraneous-dependencies,import/no-unresolved */
+/* eslint-enable import/no-unresolved,import/no-extraneous-dependencies */
 
 const TOKEN_ABI = [
   'function decimals() view returns (uint8)',
@@ -21,36 +24,6 @@ const saiTokenAddress = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'.toLowerCase
 const oddTokens = [makerTokenAddress, saiTokenAddress];
 
 const fortaApiEndpoint = 'https://api.forta.network/graphql';
-
-const eventMapping = {
-  Borrow: {
-    amountKey: 'borrowAmount',
-    byKey: 'borrower',
-    action: 'borrow',
-  },
-  LiquidateBorrow: {
-    amountKey: 'repayAmount',
-    byKey: 'liquidator',
-    fromKey: 'borrower',
-    action: 'liquidate',
-  },
-  Mint: {
-    amountKey: 'mintAmount',
-    byKey: 'minter',
-    action: 'supply',
-  },
-  Redeem: {
-    amountKey: 'redeemAmount',
-    byKey: 'redeemer',
-    action: 'withdraw',
-  },
-  RepayBorrow: {
-    amountKey: 'repayAmount',
-    byKey: 'payer',
-    forKey: 'borrower',
-    action: 'repay',
-  },
-};
 
 async function getDecimalsAndSymbol(cTokenAddress, provider) {
   const cTokenContract = new ethers.Contract(
@@ -89,6 +62,7 @@ async function getDecimalsAndSymbol(cTokenAddress, provider) {
 }
 
 function formatAmountString(amount, decimals) {
+  console.log('amount here', amount);
   const amountBN = ethers.BigNumber.from(amount);
   const divisorBN = ethers.BigNumber.from(10).pow(decimals);
 
@@ -106,61 +80,54 @@ function formatAmountString(amount, decimals) {
   return internationalNumberFormat.format(resultString);
 }
 
-function createDiscordMessage(eventName, metadata, decimals, symbol, description) {
-  const eventObject = eventMapping[eventName];
-  if (eventObject !== undefined) {
-    const amount = metadata[eventObject.amountKey];
-    const amountString = formatAmountString(amount, decimals);
-    const byAddress = metadata[eventObject.byKey];
-    const { action } = eventObject;
-    let message = `**${amountString} ${symbol}** ${action}`;
+async function createDiscordMessage(reporterPrice, cTokenAddress, transactionHash, provider) {
+  const { decimals, symbol } = await getDecimalsAndSymbol(cTokenAddress, provider);
 
-    if (action === 'liquidate') {
-      const fromAddress = metadata[eventObject.fromKey];
-      message += ` from ${fromAddress.slice(0, 6)} by ${byAddress.slice(0, 6)}`;
-    } else if (action === 'repayBorrow') {
-      const forAddress = metadata[eventObject.forKey];
-      message += ` by ${byAddress.slice(0, 6)}`;
-      if (forAddress !== byAddress) {
-        message += ` for ${forAddress.slice(0, 6)}`;
-      }
-    } else {
-      message += ` by ${byAddress.slice(0, 6)}`;
-    }
+  const amountString = formatAmountString(reporterPrice, decimals);
 
-    const emoji = description.slice(0, description.indexOf('-') - 1);
+  console.log('amount string here', amountString);
 
-    return `${emoji} ${message}`;
-  }
-  return undefined;
+  // // construct the Etherscan transaction link
+  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
+
+  return `${etherscanLink} 🚫 reported price of **${amountString}** for **${symbol}** was rejected`;
 }
 
-async function post(url, method, headers, data) {
-  return axios({
-    url, method, headers, data,
-  });
+function getRandomInt(min, max) {
+  return Math.floor((Math.random() * (max - min)) + min);
 }
 
+// post to discord
 async function postToDiscord(url, message) {
-  const method = 'post';
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
+
+  const body = {
+    content: message,
+  };
+
+  const discordObject = {
+    url,
+    method: 'post',
+    headers,
+    data: JSON.stringify(body),
+  };
 
   let response;
   try {
     // perform the POST request
-    response = await post(url, method, headers, data);
+    response = await axios(discordObject);
   } catch (error) {
     // is this a "too many requests" error (HTTP status 429)
     if (error.response && error.response.status === 429) {
-      // the request was made and a response was received
-      // try again after waiting 5 seconds
+      // rate-limited, retry
+      // after waiting a random amount of time between 2 and 15 seconds
+      const delay = getRandomInt(2000, 15000);
       // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, 5000));
+      const promise = new Promise((resolve) => setTimeout(resolve, delay));
       await promise;
-      response = await post(url, method, headers, data);
+      response = await axios(discordObject);
     } else {
       // re-throw the error if it's not from a 429 status
       throw error;
@@ -203,8 +170,8 @@ async function getFortaAlerts(agentId, transactionHash) {
             }
           }
           severity
-      metadata
-      description
+          metadata
+          description
         }
       }
     }`,
@@ -220,13 +187,11 @@ async function getFortaAlerts(agentId, transactionHash) {
   };
 
   // perform the POST request
-  console.log('Getting Forta Alert from Public API');
-  const response = await axios({
-    url: fortaApiEndpoint,
-    method: 'post',
+  const response = await axios.post(
+    fortaApiEndpoint,
+    graphqlQuery,
     headers,
-    data: graphqlQuery,
-  });
+  );
 
   const { data } = response;
   if (data === undefined) {
@@ -239,6 +204,7 @@ async function getFortaAlerts(agentId, transactionHash) {
   return alerts;
 }
 
+// entry point for autotask
 // eslint-disable-next-line func-names
 exports.handler = async function (autotaskEvent) {
   // ensure that the autotaskEvent Object exists
@@ -253,8 +219,8 @@ exports.handler = async function (autotaskEvent) {
     return {};
   }
 
-  // ensure that there is a DiscordUrl secret
-  const { TestingDiscordUrl: discordUrl } = secrets;
+  // ensure that there is a DiscordUrl secret. Name changes depending on what webhook secret you use
+  const { FortaSentinelTestingDiscord: discordUrl } = secrets;
   if (discordUrl === undefined) {
     return {};
   }
@@ -281,7 +247,6 @@ exports.handler = async function (autotaskEvent) {
 
   // extract the transaction hash and agent ID from the alert Object
   const {
-    hash,
     source: {
       transactionHash,
       agent: {
@@ -291,37 +256,31 @@ exports.handler = async function (autotaskEvent) {
   } = alert;
 
   // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(agentId, transactionHash);
-  alerts = alerts.filter((alertObject) => alertObject.hash === hash);
+  const alerts = await getFortaAlerts(agentId, transactionHash);
+  // alerts = alerts.filter((alertObject) => alertObject.hash === hash);
   console.log('Alerts');
   console.log(JSON.stringify(alerts, null, 2));
 
   // use the relayer provider for JSON-RPC requests
   const provider = new DefenderRelayProvider(autotaskEvent);
 
-  const promises = alerts.map(async (alertData) => {
-    const { metadata, description } = alertData;
-    const { eventName, contractAddress, cTokenSymbol } = metadata;
-    let decimals;
-    let symbol;
-    if (cTokenSymbol === 'cETH') {
-      decimals = 18;
-      symbol = 'ETH';
-    } else {
-      ({ decimals, symbol } = await getDecimalsAndSymbol(contractAddress, provider));
-    }
-    // craft the Discord message
-    return createDiscordMessage(eventName, metadata, decimals, symbol, description);
+  const promises = alerts.map((alertData) => {
+    const { metadata } = alertData;
+    const { reporterPrice, cTokenAddress } = metadata;
+
+    return createDiscordMessage(
+      reporterPrice,
+      cTokenAddress,
+      transactionHash,
+      provider,
+    );
   });
 
   // wait for the promises to settle
   const messages = await Promise.all(promises);
 
-  // construct the Etherscan transaction link
-  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-
   // create promises for posting messages to Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
+  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${message}`));
 
   // wait for the promises to settle
   await Promise.all(discordPromises);
