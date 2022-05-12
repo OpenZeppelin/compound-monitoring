@@ -1,51 +1,35 @@
-/* eslint-disable import/no-extraneous-dependencies */
+/* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
 const axios = require('axios');
-/* eslint-enable import/no-extraneous-dependencies */
+/* eslint-enable import/no-extraneous-dependencies,import/no-unresolved */
 
 const fortaApiEndpoint = 'https://api.forta.network/graphql';
 
-function createDiscordMessage(cTokenSymbol, transactionHash) {
-  // // construct the Etherscan transaction link
-  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-
-  return `${etherscanLink} 🆙 Underlying asset for the **${cTokenSymbol}** cToken contract was upgraded`;
+async function post(url, method, headers, data) {
+  return axios({
+    url, method, headers, data,
+  });
 }
 
-function getRandomInt(min, max) {
-  return Math.floor((Math.random() * (max - min)) + min);
-}
-
-// post to discord
 async function postToDiscord(url, message) {
+  const method = 'post';
   const headers = {
     'Content-Type': 'application/json',
   };
-
-  const body = {
-    content: message,
-  };
-
-  const discordObject = {
-    url,
-    method: 'post',
-    headers,
-    data: JSON.stringify(body),
-  };
+  const data = JSON.stringify({ content: message });
 
   let response;
   try {
     // perform the POST request
-    response = await axios(discordObject);
+    response = await post(url, method, headers, data);
   } catch (error) {
     // is this a "too many requests" error (HTTP status 429)
     if (error.response && error.response.status === 429) {
-      // rate-limited, retry
-      // after waiting a random amount of time between 2 and 15 seconds
-      const delay = getRandomInt(2000, 15000);
+      // the request was made and a response was received
+      // try again after waiting 5 seconds
       // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, delay));
+      const promise = new Promise((resolve) => setTimeout(resolve, 5000));
       await promise;
-      response = await axios(discordObject);
+      response = await post(url, method, headers, data);
     } else {
       // re-throw the error if it's not from a 429 status
       throw error;
@@ -60,7 +44,6 @@ async function getFortaAlerts(botId, transactionHash) {
     'content-type': 'application/json',
   };
 
-  // construct query with data that you want to get back
   const graphqlQuery = {
     operationName: 'recentAlerts',
     query: `query recentAlerts($input: AlertsInput) {
@@ -89,8 +72,8 @@ async function getFortaAlerts(botId, transactionHash) {
             }
           }
           severity
-          metadata
-          description
+      metadata
+      description
         }
       }
     }`,
@@ -106,11 +89,13 @@ async function getFortaAlerts(botId, transactionHash) {
   };
 
   // perform the POST request
-  const response = await axios.post(
-    fortaApiEndpoint,
-    graphqlQuery,
+  console.log('Getting Forta Alert from Public API');
+  const response = await axios({
+    url: fortaApiEndpoint,
+    method: 'post',
     headers,
-  );
+    data: graphqlQuery,
+  });
 
   const { data } = response;
   if (data === undefined) {
@@ -123,7 +108,6 @@ async function getFortaAlerts(botId, transactionHash) {
   return alerts;
 }
 
-// entry point for autotask
 // eslint-disable-next-line func-names
 exports.handler = async function (autotaskEvent) {
   // ensure that the autotaskEvent Object exists
@@ -138,8 +122,8 @@ exports.handler = async function (autotaskEvent) {
     return {};
   }
 
-  // ensure that there is a DiscordUrl secret. Name changes depending on what webhook secret you use
-  const { FortaSentinelTestingDiscord: discordUrl } = secrets;
+  // ensure that there is a DiscordUrl secret
+  const { TestingDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
     return {};
   }
@@ -181,23 +165,16 @@ exports.handler = async function (autotaskEvent) {
   console.log('Alerts');
   console.log(JSON.stringify(alerts, null, 2));
 
-  const promises = alerts.map((alertData) => {
-    const { metadata } = alertData;
-    const { cTokenSymbol } = metadata;
+  // wait for the promises to settle
+  const messages = alerts.map((alertData) => alertData.description);
 
-    return createDiscordMessage(
-      cTokenSymbol,
-      transactionHash,
-    );
-  });
+  // construct the Etherscan transaction link
+  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
-  // // wait for the promises to settle
-  const messages = await Promise.allSettled(promises);
+  // create promises for posting messages to Discord webhook
+  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
 
-  // // create promises for posting messages to Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${message}`));
-
-  // // wait for the promises to settle
+  // wait for the promises to settle
   await Promise.allSettled(discordPromises);
 
   return {};

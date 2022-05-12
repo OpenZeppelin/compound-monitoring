@@ -1,14 +1,20 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
+/* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
 const axios = require('axios');
+const ethers = require('ethers');
+
+// import the DefenderRelayProvider to interact with its JSON-RPC endpoint
+const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
+/* eslint-enable import/no-extraneous-dependencies,import/no-unresolved */
 
 const fortaApiEndpoint = 'https://api.forta.network/graphql';
+
+const CTOKEN_ABI = ['function symbol() view returns (string)'];
 
 function getRandomInt(min, max) {
   return Math.floor((Math.random() * (max - min)) + min);
 }
 
-// post to discord
-async function postToDiscord(url, message) {
+async function postToDiscord(discordWebhook, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
@@ -18,7 +24,7 @@ async function postToDiscord(url, message) {
   };
 
   const discordObject = {
-    url,
+    url: discordWebhook,
     method: 'post',
     headers,
     data: JSON.stringify(body),
@@ -28,9 +34,8 @@ async function postToDiscord(url, message) {
   try {
     // perform the POST request
     response = await axios(discordObject);
-  } catch (error) {
-    // is this a "too many requests" error (HTTP status 429)
-    if (error.response && error.response.status === 429) {
+  } catch (err) {
+    if (err.response && err.response.status === 429) {
       // rate-limited, retry
       // after waiting a random amount of time between 2 and 15 seconds
       const delay = getRandomInt(2000, 15000);
@@ -39,11 +44,9 @@ async function postToDiscord(url, message) {
       await promise;
       response = await axios(discordObject);
     } else {
-      // re-throw the error if it's not from a 429 status
-      throw error;
+      throw err;
     }
   }
-
   return response;
 }
 
@@ -131,112 +134,86 @@ async function getProposalTitle(proposalId) {
   return title;
 }
 
-function getProposalTitleFromDescription(description) {
-  const lines = description.split('\n');
-  let [proposalName] = lines;
-  // remove markdown heading symbol and then leading and trailing spaces
-  proposalName = proposalName.replaceAll('#', '').trim();
-  return proposalName;
-}
-
-async function getAccountDisplayName(voter, proposalId) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voter}&proposal_id=${proposalId}`;
-  let displayName;
-  try {
-    console.log(baseUrl + queryUrl);
-    const result = await axios.get(baseUrl + queryUrl);
-    console.log(result);
-    displayName = result.data.proposal_vote_receipts[0].voter.display_name;
-    console.log(displayName);
-    if (displayName === null) {
-      displayName = '';
-    }
-  } catch {
-    displayName = '';
-  }
-  return displayName;
-}
-
-async function createDiscordMessage(metadata, description, alertId, transactionHash) {
-  let proposer;
-  let voter;
-  let votes;
-  let reason;
+async function createDiscordMessage(metadata, description, alertId, transactionHash, provider) {
+  let oldPauseGuardian;
+  let newPauseGuardian;
+  let action;
+  let oldAdmin;
+  let newAdmin;
+  let oldThreshold;
+  let newThreshold;
+  let oldBorrowCapGuardian;
+  let newBorrowCapGuardian;
+  let cToken;
+  let symbol;
+  let newBorrowCap;
+  let contract;
   let proposalName;
-  let proposalDescription;
   let message;
-  let displayName;
   let id;
-  let supportEmoji;
-  let eta;
-  const internationalNumberFormat = new Intl.NumberFormat('en-US');
-
-  const noEntryEmoji = '⛔';
-  const checkMarkEmoji = '✅';
+  let owner;
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   switch (alertId) {
-    case 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED':
-      ({ proposer, id, description: proposalDescription } = metadata);
-      proposalName = getProposalTitleFromDescription(proposalDescription);
-      message = `**New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
+    case 'AE-COMP-MULTISIG-OWNER-ADDED-ALERT':
+      ({ owner } = metadata);
+      message = `**Added Owner** ${owner} to Community Multi-Sig ${etherscanLink}`;
+      break;
+    case 'AE-COMP-MULITSIG-OWNER-REMOVED-ALERT':
+      ({ owner } = metadata);
+      message = `**Removed Owner** ${owner} from Community Multi-Sig ${etherscanLink}`;
+      break;
+    case 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT':
+      ({ proposalId: id } = metadata);
+      message = `**New Proposal** created by Community Multi-Sig ${etherscanLink}`;
       message += `\nDetails: https://compound.finance/governance/proposals/${id}`;
       break;
-    case 'AE-COMP-GOVERNANCE-VOTE-CAST':
-      ({
-        reason,
-        voter,
-        votes,
-        displayName,
-        id,
-      } = metadata);
-
-      console.log('Retrieving name from Compound API');
-      displayName = await getAccountDisplayName(voter, id);
-
-      if (description.includes('against')) {
-        supportEmoji = noEntryEmoji;
-      } else if (description.includes('in support of')) {
-        supportEmoji = checkMarkEmoji;
-      }
-
-      if (votes.length > 18) {
-        votes = votes.slice(0, votes.length - 18);
-      } else {
-        votes = '0';
-      }
-      votes = internationalNumberFormat.format(votes);
-
+    case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT':
+      ({ proposalId: id } = metadata);
       proposalName = await getProposalTitle(id);
-      if (displayName !== '') {
-        message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${displayName} ${etherscanLink}`;
-      } else {
-        message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${voter.slice(0, 6)} ${etherscanLink}`;
-      }
-
-      if (reason !== '') {
-        message += `\n\`\`\`${reason}\`\`\``;
-      }
+      message = `**Executed Proposal** ${proposalName} by Community Multi-Sig ${etherscanLink}`;
       break;
-    case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED':
-      ({ id } = metadata);
+    case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT':
+      ({ proposalId: id } = metadata);
       proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposa**l ${proposalName} ${noEntryEmoji}`;
+      message = `**Canceled Proposal** ${proposalName} by Community Multi-Sig ${etherscanLink}`;
       break;
-    case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED':
-      ({ id } = metadata);
+    case 'AE-COMP-GOVERNANCE-VOTE-CAST-ALERT':
+      ({ proposalId: id } = metadata);
       proposalName = await getProposalTitle(id);
-      message = `**Executed Proposal** ${proposalName} ${checkMarkEmoji}`;
+      message = `**Vote Cast** on proposal ${proposalName} by Community Multi-Sig ${etherscanLink}`;
       break;
-    case 'AE-COMP-GOVERNANCE-PROPOSAL-QUEUED':
-      ({ eta, id } = metadata);
-      proposalName = await getProposalTitle(id);
-      // message = `Queued Proposal ${proposalName} ${checkMarkEmoji}
-      // available to execute after ${eta} days`;
-      message = `**Queued Proposal** ${proposalName} ${checkMarkEmoji} available to execute at timestamp ${eta}`;
+    case 'AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET-ALERT':
+      ({ oldThreshold, newThreshold } = metadata);
+      message = `**Proposal Threshold Changed** from ${oldThreshold} to ${newThreshold} by Community Multi-Sig ${etherscanLink}`;
+      break;
+    case 'AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT':
+      ({ oldAdmin, newAdmin } = metadata);
+      message = `**Admin Changed** from ${oldAdmin} to ${newAdmin} by Community Multi-Sig ${etherscanLink}`;
+      break;
+    case 'AE-COMP-NEW-PAUSE-GUARDIAN-ALERT':
+      ({ oldPauseGuardian, newPauseGuardian } = metadata);
+      message = `**Pause Guardian Changed** from ${oldPauseGuardian} to ${newPauseGuardian} by Community Multi-Sig ${etherscanLink}`;
+      break;
+    case 'AE-COMP-ACTION-PAUSED-ALERT':
+      ({ action } = metadata);
+      message = `**Pause on Action** ${action} by Community Multi-Sig ${etherscanLink}`;
+      break;
+    case 'AE-COMP-NEW-BORROW-CAP-ALERT':
+      ({ cToken, newBorrowCap } = metadata);
+      contract = new ethers.Contract(
+        cToken,
+        CTOKEN_ABI,
+        provider,
+      );
+      symbol = await contract.symbol();
+      message = `**New Borrow Cap** for ${symbol} set to ${newBorrowCap} by Community Multi-Sig ${etherscanLink}`;
+      break;
+    case 'AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT':
+      ({ oldBorrowCapGuardian, newBorrowCapGuardian } = metadata);
+      message = `**New Borrow Cap Guardian** changed from ${oldBorrowCapGuardian} to ${newBorrowCapGuardian} by Community Multi-Sig ${etherscanLink}`;
       break;
     default:
       return undefined;
@@ -253,6 +230,9 @@ exports.handler = async function (autotaskEvent) {
   }
   console.log('autotaskEvent');
   console.log(JSON.stringify(autotaskEvent, null, 2));
+
+  // use the relayer provider for JSON-RPC requests
+  const provider = new DefenderRelayProvider(autotaskEvent);
 
   const { secrets } = autotaskEvent;
   if (secrets === undefined) {
@@ -302,7 +282,13 @@ exports.handler = async function (autotaskEvent) {
 
   const promises = alerts.map(async (alertData) => {
     const { metadata, description, alertId } = alertData;
-    const message = await createDiscordMessage(metadata, description, alertId, transactionHash);
+    const message = await createDiscordMessage(
+      metadata,
+      description,
+      alertId,
+      transactionHash,
+      provider,
+    );
     return message;
   });
 

@@ -4,11 +4,13 @@ const axios = require('axios');
 
 const fortaApiEndpoint = 'https://api.forta.network/graphql';
 
-function createDiscordMessage(cTokenSymbol, transactionHash) {
+function createDiscordMessage(delegateAddress, governanceEvent, transactionHash) {
+  const delegateFormatted = delegateAddress.slice(0, 6);
+
   // // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
-  return `${etherscanLink} 🆙 Underlying asset for the **${cTokenSymbol}** cToken contract was upgraded`;
+  return `${etherscanLink} 💸 **${delegateFormatted}** has had enough **COMP** tokens delegated to pass min threshold for the governance event: **${governanceEvent}**`;
 }
 
 function getRandomInt(min, max) {
@@ -183,10 +185,13 @@ exports.handler = async function (autotaskEvent) {
 
   const promises = alerts.map((alertData) => {
     const { metadata } = alertData;
-    const { cTokenSymbol } = metadata;
-
+    const {
+      delegateAddress,
+      levelName: governanceEvent,
+    } = metadata;
     return createDiscordMessage(
-      cTokenSymbol,
+      delegateAddress,
+      governanceEvent,
       transactionHash,
     );
   });
