@@ -1,5 +1,3 @@
-const BigNumber = require('bignumber.js');
-
 const minLiquidationInUSD = 500;
 
 // Simulated prices of:
@@ -8,27 +6,27 @@ const minLiquidationInUSD = 500;
 //   USDC = $1
 // Bot prices are tracked in ETH denomination.
 // Ref: https://docs.1inch.io/docs/spot-price-aggregator/examples
-const mockBtcPrice = '100000000000000000000000000000'; // 1 BTC = 10 ETH
-const mockEthPrice = '1000000000000000000'; // 1 ETH = 1 ETH
-const mockUsdcPrice = '330000000000000000000000000'; // 1 USDC = 0.00033 ETH
-const mockCDecimals = 8;
-const mockBtcDecimals = 8;
-const mockEthDecimals = 18;
-const mockUsdcDecimals = 6;
+let mockBtcPrice = '100000000000000000000000000000'; // 1 BTC = 10 ETH
+let mockEthPrice = '1000000000000000000'; // 1 ETH = 1 ETH
+let mockUsdcPrice = '330000000000000000000000000'; // 1 USDC = 0.00033 ETH
+let mockCDecimals = 8;
+let mockBtcDecimals = 8;
+let mockEthDecimals = 18;
+let mockUsdcDecimals = 6;
 const mockBorrower = '0x1111';
 
 // https://compound.finance/docs/comptroller#get-assets-in
 const mockGetAssetsIn = ['0x0cbtc', '0x0ceth'];
 
 // Ref https://compound.finance/docs/comptroller#collateral-factor
-const mockBtcCollateralFactor = '700000000000000000'; // 70%
-const mockEthCollateralFactor = '850000000000000000'; // 85%
-const mockUsdcCollateralFactor = '800000000000000000'; // 80%
+let mockBtcCollateralFactor = '700000000000000000'; // 70%
+let mockEthCollateralFactor = '850000000000000000'; // 85%
+let mockUsdcCollateralFactor = '800000000000000000'; // 80%
 
 // Ref: https://compound.finance/docs/ctokens#exchange-rate
-const mockBtcCTokenRate = '20000000000000000'; // 1 cBTC = 0.02 BTC
-const mockEthCTokenRate = '200000000000000000000000000'; // 1 cETH = 0.02 ETH
-const mockUsdcCTokenRate = '200000000000000'; // 1 cUSDC = 0.02 USDC
+let mockBtcCTokenRate = '20000000000000000'; // 1 cBTC = 0.02 BTC
+let mockEthCTokenRate = '200000000000000000000000000'; // 1 cETH = 0.02 ETH
+let mockUsdcCTokenRate = '200000000000000'; // 1 cUSDC = 0.02 USDC
 
 // In this mock, ETH Collateral Factor is 0.85 and 1 BTC = 10 ETH.
 // Starting data with a user that supplied 10 ETH and borrowed 0.85 BTC.
@@ -106,6 +104,23 @@ const config = require('../bot-config.json');
 const {
   provideInitialize, provideHandleBlock, createAlert,
 } = require('./agent');
+
+// Convert the string numbers to ethers.BigNumber
+/* eslint-disable new-cap */
+mockBtcPrice = new ethers.BigNumber.from(mockBtcPrice);
+mockEthPrice = new ethers.BigNumber.from(mockEthPrice);
+mockUsdcPrice = new ethers.BigNumber.from(mockUsdcPrice);
+mockCDecimals = new ethers.BigNumber.from(mockCDecimals);
+mockBtcDecimals = new ethers.BigNumber.from(mockBtcDecimals);
+mockEthDecimals = new ethers.BigNumber.from(mockEthDecimals);
+mockUsdcDecimals = new ethers.BigNumber.from(mockUsdcDecimals);
+mockBtcCollateralFactor = new ethers.BigNumber.from(mockBtcCollateralFactor);
+mockEthCollateralFactor = new ethers.BigNumber.from(mockEthCollateralFactor);
+mockUsdcCollateralFactor = new ethers.BigNumber.from(mockUsdcCollateralFactor);
+mockBtcCTokenRate = new ethers.BigNumber.from(mockBtcCTokenRate);
+mockEthCTokenRate = new ethers.BigNumber.from(mockEthCTokenRate);
+mockUsdcCTokenRate = new ethers.BigNumber.from(mockUsdcCTokenRate);
+const mockEthersZero = new ethers.BigNumber.from(0);
 
 // check the configuration file to verify the values
 describe('check agent configuration file', () => {
@@ -244,18 +259,18 @@ function setDefaultMocks() {
   // Comptroller
   /* eslint-disable new-cap */
   getAssetsIn.mockResolvedValue(mockGetAssetsIn);
-  markets.mockResolvedValue(true, new ethers.BigNumber.from(mockBtcCollateralFactor), true);
-  getAccountLiquidity.mockResolvedValue(0, 0, new ethers.BigNumber.from(0));
+  markets.mockResolvedValue(true, mockBtcCollateralFactor, true);
+  getAccountLiquidity.mockResolvedValue(mockEthersZero, mockEthersZero, mockEthersZero);
   // OneInch
-  getRateToEth.mockResolvedValue(new ethers.BigNumber.from(mockCDecimals));
+  getRateToEth.mockResolvedValue(mockCDecimals);
   // ERC20
-  decimals.mockResolvedValue(new ethers.BigNumber.from(mockBtcDecimals));
+  decimals.mockResolvedValue(mockBtcDecimals);
   getAccountSnapshot.mockResolvedValue(
-    0, new ethers.BigNumber.from(0), new ethers.BigNumber.from(0), 0,
+    mockEthersZero, mockEthersZero, mockEthersZero, mockEthersZero,
   );
   symbol.mockResolvedValue('TOKEN');
   underlying.mockResolvedValue('0x0');
-  exchangeRateStored.mockResolvedValue(new ethers.BigNumber.from(mockBtcCTokenRate));
+  exchangeRateStored.mockResolvedValue(mockBtcCTokenRate);
 
   // Clear Mock counters before calling initialize
   axios.post.mockClear();
@@ -395,10 +410,14 @@ describe('handleBlock', () => {
     mockContract.getRateToEth.mockResolvedValueOnce('');
     // Collateral factor All
     mockContract.markets.mockResolvedValueOnce('');
+    // cToken rate
+    mockContract.exchangeRateStored.mockResolvedValueOnce('');
 
-    
+    // Low health Mock
+    mockContract.getAccountLiquidity.mockResolvedValueOnce('');
+
+
     await (provideHandleBlock(initializeData))();
-
   });
   it('should use axios 2 times}', async () => {
     // Check counter from the initialize step.
