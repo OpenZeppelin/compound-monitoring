@@ -17,6 +17,7 @@ let mockBtcDecimals = 8;
 let mockEthDecimals = 8;
 let mockUsdcDecimals = 8;
 const mockBorrower = '0x1111';
+const newBorrower = '0x2222222222222222222222222222222222222222';
 
 // https://compound.finance/docs/comptroller#get-assets-in
 const mockGetAssetsIn = ['0x0cbtc', '0x0ceth'];
@@ -100,7 +101,7 @@ jest.mock('forta-agent', () => ({
 }));
 
 const {
-  ethers, Finding, FindingType, FindingSeverity,
+  ethers, Finding, FindingType, FindingSeverity, createTransactionEvent,
 } = require('forta-agent');
 const config = require('../bot-config.json');
 
@@ -799,12 +800,52 @@ describe('handleBlock', () => {
   });
 });
 
-function mockTransaction(eventID, address) {
-  return transactionObject;
+const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
+const exitMarketString = 'event MarketExited(address cToken, address account)';
+
+// const iface = new ethers.utils.Interface(borrowString);
+console.log(borrowString);
+// console.log(iface.encodeFilterTopics('Borrow', []));
+
+function mockTransaction(address, topic, data) {
+  // the Borrow event with the cCOMP address
+  const mockTopics = iface.encodeFilterTopics('Borrow', []);
+  const mockData = ethers.utils.defaultAbiCoder.encode(
+    ['address', 'uint256', 'uint256', 'uint256'],
+    [mockBorrowerAddress, 1, 1, 1],
+  );
+  const mockReceipt = {
+    logs: [{
+      address: cCOMPAddress,
+      topics: mockTopics,
+      data: mockData,
+    }],
+  };
+  mockTxEvent = createTransactionEvent({
+    receipt: {
+      logs: [
+        {
+          name: '',
+          address: '',
+          signature: '',
+          topics: [],
+          data: `0x${'0'.repeat(1000)}`,
+          args: [],
+        },
+      ],
+    },
+  });
+
+  // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
+  // create the mock txEvent
+  const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
+
+  return mockTxEvent;
 }
 
 describe('handleTransaction', () => {
   let initializeData = {};
+  let iface;
 
   beforeEach(async () => {
     // Initialize
@@ -816,6 +857,8 @@ describe('handleTransaction', () => {
     // Replace the imported thresholds with the test ones.
     initializeData.minimumLiquidationInUSD = minimumLiquidationInUSD;
     initializeData.lowHealthThreshold = lowHealthThreshold;
+    iface = new ethers.utils.Interface(initializeData.cTokenABI);
+
 
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
@@ -825,6 +868,15 @@ describe('handleTransaction', () => {
 
   it('works', async () => {
     // PASS
+
+    // ethers.constants.AddressZero
+    const mockTopics = iface.encodeFilterTopics('Borrow', []);
+    const mockData = ethers.utils.defaultAbiCoder.encode(
+      ['address', 'uint256', 'uint256', 'uint256'],
+      [newBorrower, 1, 1, 1],
+    );
+    console.log(mockTopics);
+    console.log(mockData);
   });
 });
 
