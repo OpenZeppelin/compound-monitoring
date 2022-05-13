@@ -391,7 +391,6 @@ function getShortFallUSD(borrowEth, supplyEth) {
 
   // Scale to 1e18 for mocking and convert to ethers.Bignumber
   shortfall = shortfall.times(scale).dp(0).toString(); // Scale out and remove decimals
-  console.log(shortfall);
   const e18Multiplier = new ethers.BigNumber.from(10).pow(18);
   shortfall = new ethers.BigNumber.from(shortfall).mul(e18Multiplier).div(scale);
 
@@ -495,6 +494,48 @@ describe('handleBlock', () => {
     expect(actualUserHealth).toBe(expectedUserHealth);
     expect(actualBorrowBalance).toBe(expectedBorrowBalance);
     expect(actualSupplyBalance).toBe(expectedSupplyBalance);
+  });
+
+  it('returns no findings if borrowed asset decreases and remains below minimumLiquidation threshold', async () => {
+    // Borrowed BTC decreases 1% in value
+    // Scaled to integer, because ethers.BigNumbers doesn't accept floats
+    let multiplier = 99;
+    const scale = 100;
+
+    // Starting values are BtcPrice = 10, UserBalance = 8.5 and health = 1
+    // All expected are rounded to 2 decimal points
+    const expectedBtcPrice = '9.9'; // In ETH value
+    // User borrowed BTC, so health is inversely affected by its price.
+    const expectedUserHealth = '1.01';
+    const expectedBorrowBalance = '8.42';
+    const expectedSupplyBalance = '8.5'; // Supply is unchanged
+
+    multiplier = new ethers.BigNumber.from(multiplier);
+    const newBtcPrice = mockBtcPrice.mul(multiplier).div(scale);
+
+    const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
+
+    // Mock and process new block
+    setPriceMocks(newBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    mockContract.getAccountLiquidity.mockResolvedValueOnce(
+      [mockEthersZero, mockEthersZero, shortfallUSD],
+    );
+    mockContract.getAccountLiquidity.mockClear();
+    const findings = await (provideHandleBlock(initializeData))();
+
+    const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
+    const actualBtcPrice = initializeData.tokens['0x0cbtc'].price.dp(2).toString();
+    const actualBorrowBalance = borrowBalance.dp(2).toString();
+    const actualSupplyBalance = supplyBalance.dp(2).toString();
+    const actualUserHealth = health.dp(2).toString();
+
+    expect(actualBtcPrice).toBe(expectedBtcPrice);
+    expect(actualUserHealth).toBe(expectedUserHealth);
+    expect(actualBorrowBalance).toBe(expectedBorrowBalance);
+    expect(actualSupplyBalance).toBe(expectedSupplyBalance);
+    expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
+    expect(findings).toStrictEqual([]);
   });
 
   it('returns no findings if borrowed asset increases and health remains below minimumLiquidation threshold', async () => {
@@ -603,139 +644,200 @@ describe('handleBlock', () => {
     expect(findings).toStrictEqual([expectedFinding]);
   });
 
-  /*
-  // Process the first block to establish prices and health
-  // Set block mocks
-  // If zero health accounts, getAssets in
-  mockContract.getAssetsIn.mockResolvedValueOnce('');
-  // VerifyToken if new token
-  // setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
-  // Get account snapshots for new accounts / tokens
-  mockContract.getAccountSnapshot.mockResolvedValueOnce('');
+  it('returns no findings if supplied asset increases and remains below minimumLiquidation threshold', async () => {
+    // Supplied ETH increases 1% in value
 
-  // Low health Mock
-  mockContract.getAccountLiquidity.mockResolvedValueOnce('');
-  */
+    // This is an odd test since all token values are stored in ETH. But it is still a valid test.
+    //   Imagine if wETH de-pegged a little and was trading against the actual ETH value. That is
+    //   what this test is illustrating.
 
-  it('returns no findings if borrowed asset increases and remains below minimumLiquidation threshold', async () => {
-    // Borrowed BTC increases 1% in value
-    //  Using all JS BigNumbers in this section.
-    const multiplier = new BigNumber(1.91);
-    const newBTCPrice = new BigNumber(mockBtcPrice.toString()).times(multiplier);
+    // Scaled to integer, because ethers.BigNumbers doesn't accept floats
+    let multiplier = 101;
+    const scale = 100;
 
-    const { supplyBalance, borrowBalance } = initializeData.accounts['0x1111'];
-    const newSupplyBalance = supplyBalance.times(multiplier);
+    // Starting values are BtcPrice = 10, UserBalance = 8.5 and health = 1
+    // All expected are rounded to 2 decimal points
+    const expectedEthPrice = '1.01'; // In ETH value
+    // User supplied ETH, so health is inversely affected by its price.
+    const expectedUserHealth = '1.01';
+    const expectedBorrowBalance = '8.5'; // Borrow is unchanged
+    const expectedSupplyBalance = '8.59';
 
-    // Calculate shortfall amount
-    let shortfall = new BigNumber(0);
-    // let liquidationAmount = new ethers.BigNumber.from(0);
-    if (borrowBalance.gt(newSupplyBalance)) {
-      shortfall = borrowBalance.minus(newSupplyBalance);
+    multiplier = new ethers.BigNumber.from(multiplier);
+    const newEthPrice = mockEthPrice.mul(multiplier).div(scale);
 
-      // Convert to USDC
-      // Price in USDC to ETH, to convert ETH to USDC, the EthAmount needs to be divided by 
-      //  the price. Also needs to be scaled my the 1inch multiplier.
-      const oneInchMult = new BigNumber(10).pow(36 - mockUsdcDecimals).toString();
-      shortfall = shortfall.dividedBy(mockUsdcPrice).times(oneInchMult);
-    }
+    const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
 
-    // Mock shortfall amount
-    mockContract.getAccountLiquidity(
-      mockEthersZero, mockEthersZero, shortfall.shiftedBy(18), mockEthersZero,
+    // Mock and process new block
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(newEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    mockContract.getAccountLiquidity.mockResolvedValueOnce(
+      [mockEthersZero, mockEthersZero, shortfallUSD],
     );
-
-    // Mo
-    let newBtcPrice = '110000000000000000000000000000'; // 1 BTC = 10 ETH
-    newBtcPrice = new ethers.BigNumber.from(newBtcPrice);
-
-    setPriceMocks(newBTCPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
-    setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
-    // TS
-    const { contract, ...other } = initializeData.tokens['0x0cbtc'];
+    mockContract.getAccountLiquidity.mockClear();
     const findings = await (provideHandleBlock(initializeData))();
-    const { contract: contract1, ...other1 } = initializeData.tokens['0x0cbtc'];
 
-    expect(findings).toStrictEqual([]);
-    expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
+    const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
+    const actualEthPrice = initializeData.tokens['0x0ceth'].price.dp(2).toString();
+    const actualBorrowBalance = borrowBalance.dp(2).toString();
+    const actualSupplyBalance = supplyBalance.dp(2).toString();
+    const actualUserHealth = health.dp(2).toString();
+
+    expect(actualEthPrice).toBe(expectedEthPrice);
+    expect(actualUserHealth).toBe(expectedUserHealth);
+    expect(actualBorrowBalance).toBe(expectedBorrowBalance);
+    expect(actualSupplyBalance).toBe(expectedSupplyBalance);
     expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
+    expect(findings).toStrictEqual([]);
   });
 
-  // it('returns findings if borrowed asset increases and account exceeds the minimumLiquidation threshold', async () => {
-  //   // Borrowed BTC increases 2% in value
-  //   data.tokens['0xBTC'] = { price: mockBtcPrice * 1.02 };
-  //   const borrowerAddress = mockBorrower;
-  //   const liquidationAmount = '713.01';
-  //   const shortfallAmount = '727.27';
-  //   const healthFactor = '0.98';
+  it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
+    // Supplied ETH decreases 1% in value
+    // Scaled to integer, because ethers.BigNumbers doesn't accept floats
+    let multiplier = 99;
+    const scale = 100;
 
-  //   const expectedFinding = Finding.fromObject({
-  //     name: `${data.protocolName} Liquidation Threshold Alert`,
-  //     description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
-  //       + `The account may be liquidated for: $${liquidationAmount} USD`,
-  //     alertId: `${data.developerAbbreviation}-${data.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
-  //     type: FindingType[data.alert.type],
-  //     severity: FindingSeverity[data.alert.severity],
-  //     protocol: data.protocolName,
-  //     metadata: {
-  //       borrowerAddress,
-  //       liquidationAmount,
-  //       shortfallAmount,
-  //       healthFactor,
-  //     },
-  //   });
+    // Starting values are BtcPrice = 10, UserBalance = 8.5 and health = 1
+    // All expected are rounded to 2 decimal points
+    const expectedEthPrice = '0.99'; // In ETH value
+    // User supplied ETH, so health is inversely affected by its price.
+    const expectedUserHealth = '0.99';
+    const expectedBorrowBalance = '8.5'; // Borrow is unchanged
+    const expectedSupplyBalance = '8.42';
 
-  //   // Process Block
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([expectedFinding]);
-  // });
+    multiplier = new ethers.BigNumber.from(multiplier);
+    const newEthPrice = mockEthPrice.mul(multiplier).div(scale);
 
-  // it('returns no findings if borrowed asset decreases and remains below minimumLiquidation threshold', async () => {
-  //   // Borrowed BTC decreases 1% in value
-  //   data.tokens['0xBTC'] = { price: mockBtcPrice * 0.99 };
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([]);
-  // });
+    const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
 
-  // it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
-  //   // Supplied ETH decreases 1% in value
-  //   data.tokens['0xETH'] = { price: mockEthPrice * 0.99 };
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([]);
-  // });
+    // Mock and process new block
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(newEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    mockContract.getAccountLiquidity.mockResolvedValueOnce(
+      [mockEthersZero, mockEthersZero, shortfallUSD],
+    );
+    mockContract.getAccountLiquidity.mockClear();
+    const findings = await (provideHandleBlock(initializeData))();
 
-  // it('returns findings if supplied asset decreases and account exceeds the minimumLiquidation threshold', async () => {
-  //   // Supplied ETH decreases 2% in value
-  //   data.tokens['0xETH'] = { price: mockEthPrice * 0.98 };
-  //   const borrowerAddress = mockBorrower;
-  //   const liquidationAmount = '712.73';
-  //   const shortfallAmount = '727.27';
-  //   const healthFactor = '0.98';
+    const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
+    const actualEthPrice = initializeData.tokens['0x0ceth'].price.dp(2).toString();
+    const actualBorrowBalance = borrowBalance.dp(2).toString();
+    const actualSupplyBalance = supplyBalance.dp(2).toString();
+    const actualUserHealth = health.dp(2).toString();
 
-  //   const expectedFinding = Finding.fromObject({
-  //     name: `${data.protocolName} Liquidation Threshold Alert`,
-  //     description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
-  //       + `The account may be liquidated for: $${liquidationAmount} USD`,
-  //     alertId: `${data.developerAbbreviation}-${data.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
-  //     type: FindingType[data.alert.type],
-  //     severity: FindingSeverity[data.alert.severity],
-  //     protocol: data.protocolName,
-  //     metadata: {
-  //       borrowerAddress,
-  //       liquidationAmount,
-  //       shortfallAmount,
-  //       healthFactor,
-  //     },
-  //   });
+    expect(actualEthPrice).toBe(expectedEthPrice);
+    expect(actualUserHealth).toBe(expectedUserHealth);
+    expect(actualBorrowBalance).toBe(expectedBorrowBalance);
+    expect(actualSupplyBalance).toBe(expectedSupplyBalance);
+    expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
+    expect(findings).toStrictEqual([]);
+  });
 
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([expectedFinding]);
-  // });
+  it('returns findings if supplied asset decreases and account exceeds the minimumLiquidation threshold', async () => {
+    // Supplied ETH decreases 2% in value
+    // Scaled to integer, because ethers.BigNumbers doesn't accept floats
+    let multiplier = 98;
+    const scale = 100;
 
-  // it('returns no findings if supplied asset decreases and remains below minimumLiquidation threshold', async () => {
-  //   // Supplied ETH decreases 1% in value
-  //   data.tokens['0xBTC'] = { price: mockEthPrice * 1.01 };
-  //   const findings = handleMockBlockEvent();
-  //   expect(findings).toStrictEqual([]);
-  // });
+    // Starting values are BtcPrice = 10, UserBalance = 8.5 and health = 1
+    // All expected are rounded to 2 decimal points
+    const expectedEthPrice = '0.98'; // In ETH value
+    // User supplied ETH, so health is inversely affected by its price.
+    const expectedUserHealth = '0.98';
+    const expectedBorrowBalance = '8.5'; // Borrow is unchanged
+    const expectedSupplyBalance = '8.33';
+    const expectedLiquidationAmount = '515.15';
 
+
+    multiplier = new ethers.BigNumber.from(multiplier);
+    const newEthPrice = mockEthPrice.mul(multiplier).div(scale);
+
+    const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
+
+    // Mock and process new block
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(newEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    mockContract.getAccountLiquidity.mockResolvedValueOnce(
+      [mockEthersZero, mockEthersZero, shortfallUSD],
+    );
+    mockContract.getAccountLiquidity.mockClear();
+    const findings = await (provideHandleBlock(initializeData))();
+
+    // Expected finding
+    const borrowerAddress = mockBorrower;
+    const liquidationAmount = expectedLiquidationAmount;
+    const shortfallAmount = expectedLiquidationAmount;
+    const healthFactor = expectedUserHealth;
+    const expectedFinding = Finding.fromObject({
+      name: `${initializeData.protocolName} Liquidation Threshold Alert`,
+      description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
+        + `The account may be liquidated for: $${liquidationAmount} USD`,
+      alertId: `${initializeData.developerAbbreviation}-${initializeData.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+      type: FindingType[initializeData.alert.type],
+      severity: FindingSeverity[initializeData.alert.severity],
+      protocol: initializeData.protocolName,
+      metadata: {
+        borrowerAddress,
+        liquidationAmount,
+        shortfallAmount,
+        healthFactor,
+      },
+    });
+
+    const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
+    const actualEthPrice = initializeData.tokens['0x0ceth'].price.dp(2).toString();
+    const actualBorrowBalance = borrowBalance.dp(2).toString();
+    const actualSupplyBalance = supplyBalance.dp(2).toString();
+    const actualUserHealth = health.dp(2).toString();
+
+    expect(actualEthPrice).toBe(expectedEthPrice);
+    expect(actualUserHealth).toBe(expectedUserHealth);
+    expect(actualBorrowBalance).toBe(expectedBorrowBalance);
+    expect(actualSupplyBalance).toBe(expectedSupplyBalance);
+    expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
+    expect(findings).toStrictEqual([expectedFinding]);
+  });
 });
+
+function mockTransaction(eventID, address) {
+  return transactionObject;
+}
+
+describe('handleTransaction', () => {
+  let initializeData = {};
+
+  beforeEach(async () => {
+    // Initialize
+    initializeData = {};
+    setDefaultMocks();
+    setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
+    setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
+    await (provideInitialize(initializeData))();
+    // Replace the imported thresholds with the test ones.
+    initializeData.minimumLiquidationInUSD = minimumLiquidationInUSD;
+    initializeData.lowHealthThreshold = lowHealthThreshold;
+
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    await (provideHandleBlock(initializeData))();
+    // Same beforeEach as handleBlock
+  });
+
+  it('works', async () => {
+    // PASS
+  });
+});
+
+/*
+// Process the first block to establish prices and health
+// Set block mocks
+// If zero health accounts, getAssets in
+mockContract.getAssetsIn.mockResolvedValueOnce('');
+// VerifyToken if new token
+// setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
+// Get account snapshots for new accounts / tokens
+mockContract.getAccountSnapshot.mockResolvedValueOnce('');
+
+// Low health Mock
+mockContract.getAccountLiquidity.mockResolvedValueOnce('');
+*/
