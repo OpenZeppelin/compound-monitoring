@@ -370,8 +370,8 @@ function provideHandleBlock(data) {
 
     // Check the Comptroller contract for actual liquidity if the health is below x
     const lowHealthAccounts = [];
-    Object.keys(accounts).forEach((currentAccount) => {
-      if (accounts[currentAccount].health.isLessThan(data.lowHealthThreshold)) {
+    Object.entries(accounts).forEach(([currentAccount, entry]) => {
+      if (entry.health.isLessThan(data.lowHealthThreshold)) {
         lowHealthAccounts.push(currentAccount);
       }
     });
@@ -413,9 +413,9 @@ function provideHandleBlock(data) {
           data.alert.type,
           data.alert.severity,
           currentAccount,
-          liquidationAmount.dp(2),
-          shortfallUSD.dp(2),
-          accounts[currentAccount].health.dp(2),
+          liquidationAmount.dp(2).toString(),
+          shortfallUSD.dp(2).toString(),
+          accounts[currentAccount].health.dp(2).toString(),
         );
         findings.push(newFinding);
       }
