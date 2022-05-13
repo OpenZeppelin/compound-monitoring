@@ -205,14 +205,22 @@ exports.handler = async function (autotaskEvent) {
     );
   });
 
-  // // wait for the promises to settle
-  const messages = await Promise.allSettled(promises);
+  // wait for the promises to settle
+  let results = await Promise.allSettled(promises);
 
-  // // create promises for posting messages to Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${message}`));
+  // construct the Etherscan transaction link
+  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
-  // // wait for the promises to settle
-  await Promise.allSettled(discordPromises);
+  // create promises for posting messages to Discord webhook
+  const discordPromises = results.map((result) => postToDiscord(discordUrl, `${etherscanLink} ${result.value}`));
+
+  // wait for the promises to settle
+  results = await Promise.allSettled(discordPromises);
+  results = results.filter((result) => result.status === 'rejected');
+
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
+  }
 
   return {};
 };

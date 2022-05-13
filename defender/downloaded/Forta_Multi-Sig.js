@@ -14,7 +14,7 @@ function getRandomInt(min, max) {
   return Math.floor((Math.random() * (max - min)) + min);
 }
 
-async function postToDiscord(url, message) {
+async function postToDiscord(discordWebhook, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
@@ -24,7 +24,7 @@ async function postToDiscord(url, message) {
   };
 
   const discordObject = {
-    url,
+    url: discordWebhook,
     method: 'post',
     headers,
     data: JSON.stringify(body),
@@ -70,8 +70,8 @@ async function getFortaAlerts(botId, transactionHash) {
           alertId
           createdAt
           name
-          protocol
           hash
+          protocol
           findingType
           source {
             transactionHash
@@ -241,7 +241,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { TestingDiscordUrl: discordUrl } = secrets;
+  const { COMPSecurityAlertsDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
     return {};
   }
@@ -294,13 +294,21 @@ exports.handler = async function (autotaskEvent) {
   });
 
   // wait for the promises to settle
-  const messages = await Promise.allSettled(promises);
+  let results = await Promise.allSettled(promises);
 
-  // create promises for posting message to the Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, message));
+  // construct the Etherscan transaction link
+  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
+
+  // create promises for posting messages to Discord webhook
+  const discordPromises = results.map((result) => postToDiscord(discordUrl, `${etherscanLink} ${result.value}`));
 
   // wait for the promises to settle
-  await Promise.allSettled(discordPromises);
+  results = await Promise.allSettled(discordPromises);
+  results = results.filter((result) => result.status === 'rejected');
+
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
+  }
 
   return {};
 };

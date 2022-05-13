@@ -123,7 +123,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { TestingDiscordUrl: discordUrl } = secrets;
+  const { COMPSecurityAlertsDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
     return {};
   }
@@ -175,7 +175,12 @@ exports.handler = async function (autotaskEvent) {
   const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
 
   // wait for the promises to settle
-  await Promise.allSettled(discordPromises);
+  let results = await Promise.allSettled(discordPromises);
+  results = results.filter((result) => result.status === 'rejected');
 
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
+  }
+  
   return {};
 };
