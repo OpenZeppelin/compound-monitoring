@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
-async function postToDiscord(discordWebhook, message) {
+async function postToDiscord(url, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
@@ -12,7 +12,7 @@ async function postToDiscord(discordWebhook, message) {
 
   // perform the POST request
   const response = await axios({
-    url: discordWebhook,
+    url,
     method: 'post',
     headers,
     data: JSON.stringify(body),

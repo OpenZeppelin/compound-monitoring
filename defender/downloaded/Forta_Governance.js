@@ -68,6 +68,7 @@ async function getFortaAlerts(botId, transactionHash) {
           createdAt
           name
           protocol
+          hash
           findingType
           source {
             transactionHash
