@@ -232,7 +232,7 @@ function getRandomInt(min, max) {
   return Math.floor((Math.random() * (max - min)) + min);
 }
 
-async function postToDiscord(discordWebhook, message) {
+async function postToDiscord(url, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
@@ -242,7 +242,7 @@ async function postToDiscord(discordWebhook, message) {
   };
 
   const discordObject = {
-    url: discordWebhook,
+    url,
     method: 'post',
     headers,
     data: JSON.stringify(body),
