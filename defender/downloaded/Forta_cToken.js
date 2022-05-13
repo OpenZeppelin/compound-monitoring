@@ -315,16 +315,21 @@ exports.handler = async function (autotaskEvent) {
   });
 
   // wait for the promises to settle
-  const messages = await Promise.allSettled(promises);
+  let results = await Promise.allSettled(promises);
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   // create promises for posting messages to Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
+  const discordPromises = results.map((result) => postToDiscord(discordUrl, `${etherscanLink} ${result.value}`));
 
   // wait for the promises to settle
-  await Promise.allSettled(discordPromises);
+  results = await Promise.all(discordPromises);
+  results = results.filter((result) => result.status === 'rejected');
+
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
+  }
 
   return {};
 };
