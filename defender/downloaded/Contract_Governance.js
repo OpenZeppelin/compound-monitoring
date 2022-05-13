@@ -1,7 +1,11 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
-async function postToDiscord(url, message) {
+function getRandomInt(min, max) {
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
+async function postToDiscord(discordWebhook, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
@@ -10,14 +14,28 @@ async function postToDiscord(url, message) {
     content: message,
   };
 
-  // perform the POST request
-  const response = await axios({
-    url,
+  const discordObject = {
+    url: discordWebhook,
     method: 'post',
     headers,
     data: JSON.stringify(body),
-  });
-
+  };
+  let response;
+  try {
+    // perform the POST request
+    response = await axios(discordObject);
+  } catch (err) {
+    if (err.response && err.response.status === 429) {
+      // rate-limited, retry
+      // after waiting a random amount of time between 2 and 15 seconds
+      const delay = getRandomInt(2000, 15000);
+      const promise = new Promise((resolve) => setTimeout(resolve, delay));
+      await promise;
+      response = await axios(discordObject);
+    } else {
+      throw err;
+    }
+  }
   return response;
 }
 
@@ -181,7 +199,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { GovernanceDiscordUrl: discordUrl } = secrets;
+  const { COMPGovernanceDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
     return {};
   }

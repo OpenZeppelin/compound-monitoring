@@ -23,6 +23,9 @@ async function postToDiscord(url, message) {
     headers,
     data: JSON.stringify(body),
   };
+  
+  console.log(`discordObject: ${discordObject}`);
+  console.log(`stringified: ${JSON.stringify(discordObject, null, 2)}`);
 
   let response;
   try {
@@ -225,7 +228,7 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED':
       ({ id } = metadata);
       proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposa**l ${proposalName} ${noEntryEmoji}`;
+      message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED':
       ({ id } = metadata);
@@ -304,17 +307,26 @@ exports.handler = async function (autotaskEvent) {
   const promises = alerts.map(async (alertData) => {
     const { metadata, description, alertId } = alertData;
     const message = await createDiscordMessage(metadata, description, alertId, transactionHash);
+    console.log(`message created: ${message}`);
     return message;
   });
 
   // wait for the promises to settle
-  const messages = await Promise.allSettled(promises);
+  let results = await Promise.allSettled(promises);
 
-  // create promises for posting message to the Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, message));
+  // construct the Etherscan transaction link
+  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
+
+  // create promises for posting messages to Discord webhook
+  const discordPromises = results.map((result) => postToDiscord(discordUrl, `${etherscanLink} ${result.value}`));
 
   // wait for the promises to settle
-  await Promise.allSettled(discordPromises);
+  results = await Promise.allSettled(discordPromises);
+  results = results.filter((result) => result.status === 'rejected');
 
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
+  }
+  
   return {};
 };

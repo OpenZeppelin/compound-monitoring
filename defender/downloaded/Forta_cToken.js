@@ -135,38 +135,41 @@ function createDiscordMessage(eventName, metadata, decimals, symbol, description
   return undefined;
 }
 
-async function post(url, method, headers, data) {
-  return axios({
-    url, method, headers, data,
-  });
+function getRandomInt(min, max) {
+  return Math.floor((Math.random() * (max - min)) + min);
 }
 
-async function postToDiscord(url, message) {
-  const method = 'post';
+async function postToDiscord(discordWebhook, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
 
+  const body = {
+    content: message,
+  };
+
+  const discordObject = {
+    url: discordWebhook,
+    method: 'post',
+    headers,
+    data: JSON.stringify(body),
+  };
   let response;
   try {
     // perform the POST request
-    response = await post(url, method, headers, data);
-  } catch (error) {
-    // is this a "too many requests" error (HTTP status 429)
-    if (error.response && error.response.status === 429) {
-      // the request was made and a response was received
-      // try again after waiting 5 seconds
-      // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, 5000));
+    response = await axios(discordObject);
+  } catch (err) {
+    if (err.response && err.response.status === 429) {
+      // rate-limited, retry
+      // after waiting a random amount of time between 2 and 15 seconds
+      const delay = getRandomInt(2000, 15000);
+      const promise = new Promise((resolve) => setTimeout(resolve, delay));
       await promise;
-      response = await post(url, method, headers, data);
+      response = await axios(discordObject);
     } else {
-      // re-throw the error if it's not from a 429 status
-      throw error;
+      throw err;
     }
   }
-
   return response;
 }
 
@@ -324,9 +327,9 @@ exports.handler = async function (autotaskEvent) {
   const discordPromises = results.map((result) => postToDiscord(discordUrl, `${etherscanLink} ${result.value}`));
 
   // wait for the promises to settle
-  results = await Promise.all(discordPromises);
+  results = await Promise.allSettled(discordPromises);
   results = results.filter((result) => result.status === 'rejected');
-
+  
   if (results.length > 0) {
     throw new Error(results[0].reason);
   }
