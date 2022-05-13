@@ -1,7 +1,7 @@
 const BigNumber = require('bignumber.js');
 
-const minimumLiquidationInUSD = 300;
-const lowHealthThreshold = 1.10;
+const setMinimumLiquidationInUSD = 300;
+const setLowHealthThreshold = 1.10;
 
 // Simulated prices of:
 //   BTC = $30,000
@@ -106,7 +106,7 @@ const {
 const config = require('../bot-config.json');
 
 const {
-  provideInitialize, provideHandleBlock, provideHandleTransaction, createAlert,
+  provideInitialize, provideHandleBlock, provideHandleTransaction,
 } = require('./agent');
 
 // Convert the string numbers to ethers.BigNumber
@@ -282,6 +282,7 @@ function setDefaultMocks() {
   underlying.mockClear();
   exchangeRateStored.mockClear();
   decimals.mockClear();
+  getAssetsIn.mockClear();
 }
 
 function setVerifyTokenMocks(setSymbol, setUnderlying, setExchange, setDecimals) {
@@ -414,8 +415,8 @@ describe('handleBlock', () => {
     await (provideInitialize(initializeData))();
 
     // Replace the imported thresholds with the test ones.
-    initializeData.minimumLiquidationInUSD = minimumLiquidationInUSD;
-    initializeData.lowHealthThreshold = lowHealthThreshold;
+    initializeData.minimumLiquidationInUSD = setMinimumLiquidationInUSD;
+    initializeData.lowHealthThreshold = setLowHealthThreshold;
 
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
@@ -750,7 +751,6 @@ describe('handleBlock', () => {
     const expectedSupplyBalance = '8.33';
     const expectedLiquidationAmount = '515.15';
 
-
     multiplier = new ethers.BigNumber.from(multiplier);
     const newEthPrice = mockEthPrice.mul(multiplier).div(scale);
 
@@ -802,14 +802,6 @@ describe('handleBlock', () => {
 });
 
 function mockTransaction(mockAddress, mockTopic, mockData) {
-  // the Borrow event with the cCOMP address
-  const mockReceipt = {
-    logs: [{
-      address: mockAddress,
-      topics: mockTopic,
-      data: mockData,
-    }],
-  };
   const mockLogs = [{
     address: mockAddress,
     topics: mockTopic,
@@ -840,8 +832,8 @@ describe('handleTransaction', () => {
     await (provideInitialize(initializeData))();
 
     // Replace the imported thresholds with the test ones.
-    initializeData.minimumLiquidationInUSD = minimumLiquidationInUSD;
-    initializeData.lowHealthThreshold = lowHealthThreshold;
+    initializeData.minimumLiquidationInUSD = setMinimumLiquidationInUSD;
+    initializeData.lowHealthThreshold = setLowHealthThreshold;
     cErcIface = new ethers.utils.Interface(initializeData.cTokenABI);
     comptrollerIface = new ethers.utils.Interface(initializeData.comptrollerABI);
 
@@ -902,16 +894,109 @@ describe('handleTransaction', () => {
   });
 });
 
-/*
-// Process the first block to establish prices and health
-// Set block mocks
-// If zero health accounts, getAssets in
-mockContract.getAssetsIn.mockResolvedValueOnce('');
-// VerifyToken if new token
-// setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
-// Get account snapshots for new accounts / tokens
-mockContract.getAccountSnapshot.mockResolvedValueOnce('');
+function mockSnapshot(setBorrow, setSupply, setDecimals) {
+  const decimalsMultiplier = new ethers.BigNumber.from(10).pow(setDecimals);
+  // 1 cToken = 0.02 token , so 1 token = 50 cTokens
+  const tokenToCTokenMultiplier = new ethers.BigNumber.from(50);
+  setBorrow = new ethers.BigNumber.from(setBorrow).mul(decimalsMultiplier);
+  const setCSupply = new ethers.BigNumber.from(setSupply).mul(decimalsMultiplier)
+    .mul(tokenToCTokenMultiplier);
 
-// Low health Mock
-mockContract.getAccountLiquidity.mockResolvedValueOnce('');
-*/
+  mockContract.getAccountSnapshot.mockResolvedValueOnce(
+    [mockEthersZero, setCSupply, setBorrow, mockEthersZero],
+  );
+  // Ref: https://github.com/compound-finance/compound-protocol/blob/3affca87636eecd901eb43f81a4813186393905d/contracts/CToken.sol#L220
+}
+
+describe('process newBorrower', () => {
+  let initializeData;
+
+  beforeEach(async () => {
+    // Initialize
+    initializeData = {};
+    setDefaultMocks();
+    setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
+    setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
+    await (provideInitialize(initializeData))();
+
+    // Replace the imported thresholds with the test ones.
+    initializeData.minimumLiquidationInUSD = setMinimumLiquidationInUSD;
+    initializeData.lowHealthThreshold = setLowHealthThreshold;
+
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    await (provideHandleBlock(initializeData))();
+    // Same beforeEach as handleBlock
+
+    // handleTransaction already verified the newBorrower addition process. The result
+    //  is that the address is added to this array. Directly adding the account
+    //  simplifies the setup for this set of tests.
+    initializeData.newAccounts = [newBorrower];
+  });
+
+  it('should use contract calls ', async () => {
+    // Verify new account is waiting to be added
+    expect(initializeData.newAccounts).toStrictEqual([newBorrower]);
+
+    // Mocks for price updates
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+
+    // Start the block
+    await (provideHandleBlock(initializeData))();
+
+    // Should check which tokens this account has.
+    expect(mockContract.getAssetsIn).toBeCalledTimes(1);
+    // Default mock was set to BTC and ETH, so it should get 2 snapshots.
+    expect(mockContract.getAccountSnapshot).toBeCalledTimes(2);
+
+    // Check counters from the block / price update step.
+    expect(mockContract.getRateToEth).toBeCalledTimes(2);
+    expect(mockContract.markets).toBeCalledTimes(2);
+    expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
+    expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
+
+    // After processing newAccount, clear the array.
+    expect(initializeData.newAccounts).toStrictEqual([]);
+  });
+
+  it('should add user balances to database', async () => {
+    // Verify new account is waiting to be added
+    expect(initializeData.newAccounts).toStrictEqual([newBorrower]);
+
+    const setBTCBorrow = 0;
+    const setBTCSupply = 2;
+    const setETHBorrow = 10;
+    const setETHSupply = 0;
+    const setAssetsIn = ['0x0cbtc', '0x0ceth'];
+
+    // Mock account info lookup
+    mockContract.getAssetsIn(setAssetsIn);
+    mockContract.getAssetsIn.mockClear();
+    mockSnapshot(setBTCBorrow, setBTCSupply, mockBtcDecimals);
+    mockSnapshot(setETHBorrow, setETHSupply, mockBtcDecimals);
+
+    // Mocks for price updates
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+
+    // Start the block
+    mockContract.getAssetsIn.mockClear();
+    mockContract.getAccountSnapshot.mockClear();
+    mockContract.getAccountSnapshot.mockClear();
+    await (provideHandleBlock(initializeData))();
+
+    // Should check which tokens this account has.
+    expect(mockContract.getAssetsIn).toBeCalledTimes(1);
+    // Default mock was set to BTC and ETH, so it should get 2 snapshots.
+    expect(mockContract.getAccountSnapshot).toBeCalledTimes(2);
+
+    // Check counters from the block / price update step.
+    expect(mockContract.getRateToEth).toBeCalledTimes(2);
+    expect(mockContract.markets).toBeCalledTimes(2);
+    expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
+
+    // After processing newAccount, clear the array.
+    expect(initializeData.newAccounts).toStrictEqual([]);
+  });
+});
