@@ -348,7 +348,7 @@
         "frequencyMinutes": 525600000,
         "type": "schedule"
       },
-      "paused": false,
+      "paused": true,
       "autotaskFilePath": "./downloaded/Forta_cToken.js"
     },
     {
@@ -375,7 +375,7 @@
         "frequencyMinutes": 525600000,
         "type": "schedule"
       },
-      "paused": false,
+      "paused": true,
       "autotaskFilePath": "./downloaded/Forta_Governance.js"
     },
     {
