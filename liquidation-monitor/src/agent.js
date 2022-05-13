@@ -123,6 +123,7 @@ function provideInitialize(data) {
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     const oneInchABI = getAbi(config.liquidationMonitor.oneInchABI);
     data.comptrollerAddress = comptrollerAddress;
+    data.comptrollerABI = comptrollerABI;
     data.comptrollerContract = new ethers.Contract(
       comptrollerAddress,
       comptrollerABI,

@@ -101,12 +101,12 @@ jest.mock('forta-agent', () => ({
 }));
 
 const {
-  ethers, Finding, FindingType, FindingSeverity, createTransactionEvent,
+  ethers, Finding, FindingType, FindingSeverity, TransactionEvent,
 } = require('forta-agent');
 const config = require('../bot-config.json');
 
 const {
-  provideInitialize, provideHandleBlock, createAlert,
+  provideInitialize, provideHandleBlock, provideHandleTransaction, createAlert,
 } = require('./agent');
 
 // Convert the string numbers to ethers.BigNumber
@@ -302,7 +302,7 @@ function setVerifyTokenMocks(setSymbol, setUnderlying, setExchange, setDecimals)
 
 // agent tests
 describe('initializeData', () => {
-  let initializeData = {};
+  let initializeData;
 
   beforeEach(async () => {
     // Initialize
@@ -403,7 +403,7 @@ function getShortFallUSD(borrowEth, supplyEth) {
 }
 
 describe('handleBlock', () => {
-  let initializeData = {};
+  let initializeData;
 
   beforeEach(async () => {
     // Initialize
@@ -412,6 +412,7 @@ describe('handleBlock', () => {
     setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
     setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
     await (provideInitialize(initializeData))();
+
     // Replace the imported thresholds with the test ones.
     initializeData.minimumLiquidationInUSD = minimumLiquidationInUSD;
     initializeData.lowHealthThreshold = lowHealthThreshold;
@@ -800,65 +801,49 @@ describe('handleBlock', () => {
   });
 });
 
-const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
-const exitMarketString = 'event MarketExited(address cToken, address account)';
-
-// const iface = new ethers.utils.Interface(borrowString);
-console.log(borrowString);
-// console.log(iface.encodeFilterTopics('Borrow', []));
-
-function mockTransaction(address, topic, data) {
+function mockTransaction(mockAddress, mockTopic, mockData) {
   // the Borrow event with the cCOMP address
-  const mockTopics = iface.encodeFilterTopics('Borrow', []);
-  const mockData = ethers.utils.defaultAbiCoder.encode(
-    ['address', 'uint256', 'uint256', 'uint256'],
-    [mockBorrowerAddress, 1, 1, 1],
-  );
   const mockReceipt = {
     logs: [{
-      address: cCOMPAddress,
-      topics: mockTopics,
+      address: mockAddress,
+      topics: mockTopic,
       data: mockData,
     }],
   };
-  mockTxEvent = createTransactionEvent({
-    receipt: {
-      logs: [
-        {
-          name: '',
-          address: '',
-          signature: '',
-          topics: [],
-          data: `0x${'0'.repeat(1000)}`,
-          args: [],
-        },
-      ],
-    },
-  });
+  const mockLogs = [{
+    address: mockAddress,
+    topics: mockTopic,
+    data: mockData,
+  }];
 
   // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
   // create the mock txEvent
-  const txEvent = new TransactionEvent(null, null, null, mockReceipt, [], [], null);
+  const mockTxEvent = new TransactionEvent(null, null, null, [], [], [], mockLogs);
 
   return mockTxEvent;
 }
 
 describe('handleTransaction', () => {
-  let initializeData = {};
-  let iface;
+  let initializeData;
+  let handleTransaction;
+  let cErcIface;
+  let comptrollerIface;
 
   beforeEach(async () => {
     // Initialize
     initializeData = {};
+    handleTransaction = provideHandleTransaction(initializeData);
+
     setDefaultMocks();
     setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
     setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
     await (provideInitialize(initializeData))();
+
     // Replace the imported thresholds with the test ones.
     initializeData.minimumLiquidationInUSD = minimumLiquidationInUSD;
     initializeData.lowHealthThreshold = lowHealthThreshold;
-    iface = new ethers.utils.Interface(initializeData.cTokenABI);
-
+    cErcIface = new ethers.utils.Interface(initializeData.cTokenABI);
+    comptrollerIface = new ethers.utils.Interface(initializeData.comptrollerABI);
 
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
@@ -866,17 +851,54 @@ describe('handleTransaction', () => {
     // Same beforeEach as handleBlock
   });
 
-  it('works', async () => {
-    // PASS
+  it('should not add any address to the newAccount list if no events are emitted', async () => {
+    const txEvent = mockTransaction(ethers.constants.AddressZero, null, null);
+    expect(initializeData.newAccounts).toStrictEqual([]);
+    await handleTransaction(txEvent);
+    expect(initializeData.newAccounts).toStrictEqual([]);
+  });
 
-    // ethers.constants.AddressZero
-    const mockTopics = iface.encodeFilterTopics('Borrow', []);
-    const mockData = ethers.utils.defaultAbiCoder.encode(
+  it('should add address to the newAccount list on any Borrow event', async () => {
+    const mockBorrowTopics = cErcIface.encodeFilterTopics('Borrow', []);
+    const mockBorrowData = ethers.utils.defaultAbiCoder.encode(
       ['address', 'uint256', 'uint256', 'uint256'],
       [newBorrower, 1, 1, 1],
     );
-    console.log(mockTopics);
-    console.log(mockData);
+
+    // Event originating from ZeroAddress address
+    const txEvent = mockTransaction(ethers.constants.AddressZero, mockBorrowTopics, mockBorrowData);
+    expect(initializeData.newAccounts).toStrictEqual([]);
+    await handleTransaction(txEvent);
+    expect(initializeData.newAccounts).toStrictEqual([newBorrower]);
+  });
+
+  it('should add address to the newAccount list on comptroller MarketExited event', async () => {
+    const mockExitTopics = comptrollerIface.encodeFilterTopics('MarketExited', []);
+    const mockExitData = ethers.utils.defaultAbiCoder.encode(
+      ['address', 'address'],
+      [ethers.constants.AddressZero, newBorrower],
+    );
+
+    const { comptrollerAddress } = initializeData;
+    // Event originating from comptroller address
+    const txEvent = mockTransaction(comptrollerAddress, mockExitTopics, mockExitData);
+    expect(initializeData.newAccounts).toStrictEqual([]);
+    await handleTransaction(txEvent);
+    expect(initializeData.newAccounts).toStrictEqual([newBorrower]);
+  });
+
+  it('should not add address to the newAccount list on non-comptroller MarketExited event', async () => {
+    const mockExitTopics = comptrollerIface.encodeFilterTopics('MarketExited', []);
+    const mockExitData = ethers.utils.defaultAbiCoder.encode(
+      ['address', 'address'],
+      [ethers.constants.AddressZero, newBorrower],
+    );
+
+    // Event originating from non-comptroller address
+    const txEvent = mockTransaction(ethers.constants.AddressZero, mockExitTopics, mockExitData);
+    expect(initializeData.newAccounts).toStrictEqual([]);
+    await handleTransaction(txEvent);
+    expect(initializeData.newAccounts).toStrictEqual([]);
   });
 });
 
