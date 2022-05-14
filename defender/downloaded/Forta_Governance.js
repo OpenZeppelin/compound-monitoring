@@ -23,7 +23,7 @@ async function postToDiscord(url, message) {
     headers,
     data: JSON.stringify(body),
   };
-  
+
   console.log(`discordObject: ${discordObject}`);
   console.log(`stringified: ${JSON.stringify(discordObject, null, 2)}`);
 
@@ -327,6 +327,6 @@ exports.handler = async function (autotaskEvent) {
   if (results.length > 0) {
     throw new Error(results[0].reason);
   }
-  
+
   return {};
 };
