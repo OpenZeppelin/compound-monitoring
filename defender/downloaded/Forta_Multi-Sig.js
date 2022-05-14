@@ -27,7 +27,7 @@ async function postToDiscord(discordWebhook, message) {
     url: discordWebhook,
     method: 'post',
     headers,
-    data: JSON.stringify(body),
+    data: body,
   };
 
   let response;
@@ -35,6 +35,8 @@ async function postToDiscord(discordWebhook, message) {
     // perform the POST request
     response = await axios(discordObject);
   } catch (err) {
+    console.log('Error posting to Discord');
+    console.log(JSON.stringify(err, null, 2));
     if (err.response && err.response.status === 429) {
       // rate-limited, retry
       // after waiting a random amount of time between 2 and 15 seconds
@@ -154,53 +156,50 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
   let id;
   let owner;
 
-  // construct the Etherscan transaction link
-  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-
   switch (alertId) {
     case 'AE-COMP-MULTISIG-OWNER-ADDED-ALERT':
       ({ owner } = metadata);
-      message = `**Added Owner** ${owner} to Community Multi-Sig ${etherscanLink}`;
+      message = `🆕 **Added Owner** ${owner} to Community Multi-Sig`;
       break;
-    case 'AE-COMP-MULITSIG-OWNER-REMOVED-ALERT':
+    case 'AE-COMP-MULTISIG-OWNER-REMOVED-ALERT':
       ({ owner } = metadata);
-      message = `**Removed Owner** ${owner} from Community Multi-Sig ${etherscanLink}`;
+      message = `🙅‍♂️ **Removed Owner** ${owner} from Community Multi-Sig`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT':
       ({ proposalId: id } = metadata);
-      message = `**New Proposal** created by Community Multi-Sig ${etherscanLink}`;
+      message = '📄 **New Proposal** created by Community Multi-Sig';
       message += `\nDetails: https://compound.finance/governance/proposals/${id}`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT':
       ({ proposalId: id } = metadata);
       proposalName = await getProposalTitle(id);
-      message = `**Executed Proposal** ${proposalName} by Community Multi-Sig ${etherscanLink}`;
+      message = `👏 **Executed Proposal** ${proposalName} by Community Multi-Sig`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT':
       ({ proposalId: id } = metadata);
       proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposal** ${proposalName} by Community Multi-Sig ${etherscanLink}`;
+      message = `❌ **Canceled Proposal** ${proposalName} by Community Multi-Sig`;
       break;
     case 'AE-COMP-GOVERNANCE-VOTE-CAST-ALERT':
       ({ proposalId: id } = metadata);
       proposalName = await getProposalTitle(id);
-      message = `**Vote Cast** on proposal ${proposalName} by Community Multi-Sig ${etherscanLink}`;
+      message = `🗳️ **Vote Cast** on proposal ${proposalName} by Community Multi-Sig`;
       break;
-    case 'AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET-ALERT':
+    case 'AE-COMP-GOVERNANCE-THRESHOLD-SET-ALERT':
       ({ oldThreshold, newThreshold } = metadata);
-      message = `**Proposal Threshold Changed** from ${oldThreshold} to ${newThreshold} by Community Multi-Sig ${etherscanLink}`;
+      message = `📶 **Proposal Threshold Changed** from ${oldThreshold} to ${newThreshold} by Community Multi-Sig`;
       break;
     case 'AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT':
       ({ oldAdmin, newAdmin } = metadata);
-      message = `**Admin Changed** from ${oldAdmin} to ${newAdmin} by Community Multi-Sig ${etherscanLink}`;
+      message = `🧑‍⚖️ **Admin Changed** from ${oldAdmin} to ${newAdmin} by Community Multi-Sig`;
       break;
     case 'AE-COMP-NEW-PAUSE-GUARDIAN-ALERT':
       ({ oldPauseGuardian, newPauseGuardian } = metadata);
-      message = `**Pause Guardian Changed** from ${oldPauseGuardian} to ${newPauseGuardian} by Community Multi-Sig ${etherscanLink}`;
+      message = `⏸️ **Pause Guardian Changed** from ${oldPauseGuardian} to ${newPauseGuardian} by Community Multi-Sig`;
       break;
     case 'AE-COMP-ACTION-PAUSED-ALERT':
       ({ action } = metadata);
-      message = `**Pause on Action** ${action} by Community Multi-Sig ${etherscanLink}`;
+      message = `⏯️ **Pause on Action** ${action} by Community Multi-Sig`;
       break;
     case 'AE-COMP-NEW-BORROW-CAP-ALERT':
       ({ cToken, newBorrowCap } = metadata);
@@ -210,16 +209,15 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
         provider,
       );
       symbol = await contract.symbol();
-      message = `**New Borrow Cap** for ${symbol} set to ${newBorrowCap} by Community Multi-Sig ${etherscanLink}`;
+      message = `🧢 **New Borrow Cap** for ${symbol} set to ${newBorrowCap} by Community Multi-Sig`;
       break;
     case 'AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT':
       ({ oldBorrowCapGuardian, newBorrowCapGuardian } = metadata);
-      message = `**New Borrow Cap Guardian** changed from ${oldBorrowCapGuardian} to ${newBorrowCapGuardian} by Community Multi-Sig ${etherscanLink}`;
+      message = `👲 **New Borrow Cap Guardian** changed from ${oldBorrowCapGuardian} to ${newBorrowCapGuardian} by Community Multi-Sig`;
       break;
     default:
       return undefined;
   }
-
   return message;
 }
 

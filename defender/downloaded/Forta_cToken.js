@@ -152,7 +152,7 @@ async function postToDiscord(discordWebhook, message) {
     url: discordWebhook,
     method: 'post',
     headers,
-    data: JSON.stringify(body),
+    data: body,
   };
   let response;
   try {
@@ -163,6 +163,7 @@ async function postToDiscord(discordWebhook, message) {
       // rate-limited, retry
       // after waiting a random amount of time between 2 and 15 seconds
       const delay = getRandomInt(2000, 15000);
+      // eslint-disable-next-line no-promise-executor-return
       const promise = new Promise((resolve) => setTimeout(resolve, delay));
       await promise;
       response = await axios(discordObject);

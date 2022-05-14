@@ -21,7 +21,7 @@ async function postToDiscord(url, message) {
     url,
     method: 'post',
     headers,
-    data: JSON.stringify(body),
+    data: body,
   };
 
   console.log(`discordObject: ${discordObject}`);

@@ -39,7 +39,7 @@ async function postToDiscord(url, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
+  const data = { content: message };
 
   let response;
   try {

@@ -245,7 +245,7 @@ async function postToDiscord(discordWebhook, message) {
     url: discordWebhook,
     method: 'post',
     headers,
-    data: JSON.stringify(body),
+    data: body,
   };
   let response;
   try {
