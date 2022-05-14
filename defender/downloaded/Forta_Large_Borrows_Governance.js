@@ -31,7 +31,7 @@ async function postToDiscord(url, message) {
     url,
     method: 'post',
     headers,
-    data: JSON.stringify(body),
+    data: body,
   };
 
   let response;

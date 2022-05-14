@@ -15,7 +15,7 @@ async function postToDiscord(url, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
+  const data = { content: message };
 
   let response;
   try {
@@ -172,7 +172,8 @@ exports.handler = async function (autotaskEvent) {
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   // create promises for posting messages to Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
+  const warningEmoji = '⚠️';
+  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${warningEmoji} ${message}`));
 
   // wait for the promises to settle
   let results = await Promise.allSettled(discordPromises);

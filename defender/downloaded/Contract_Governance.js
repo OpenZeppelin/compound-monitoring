@@ -18,7 +18,7 @@ async function postToDiscord(discordWebhook, message) {
     url: discordWebhook,
     method: 'post',
     headers,
-    data: JSON.stringify(body),
+    data: body,
   };
   let response;
   try {
@@ -29,6 +29,7 @@ async function postToDiscord(discordWebhook, message) {
       // rate-limited, retry
       // after waiting a random amount of time between 2 and 15 seconds
       const delay = getRandomInt(2000, 15000);
+      // eslint-disable-next-line no-promise-executor-return
       const promise = new Promise((resolve) => setTimeout(resolve, delay));
       await promise;
       response = await axios(discordObject);
@@ -236,13 +237,15 @@ exports.handler = async function (autotaskEvent) {
   });
 
   // wait for the promises to settle
-  const messages = await Promise.all(promises);
+  let results = await Promise.allSettled(promises);
 
-  for (let i = 0; i < messages.length; i++) {
-    console.log('Posting to Discord');
-    console.log(messages[i]);
-    // eslint-disable-next-line no-await-in-loop
-    await postToDiscord(discordUrl, messages[i]);
+  const discordPromises = results.map((result) => postToDiscord(discordUrl, result.value));
+
+  results = await Promise.allSettled(discordPromises);
+  results = results.filter((result) => result.status === 'rejected');
+
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
   }
 
   console.log('Posted!');
