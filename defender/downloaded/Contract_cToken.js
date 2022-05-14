@@ -62,17 +62,17 @@ async function getOracleContract(provider) {
     comptrollerAbi,
     provider,
   );
-  
+
   // get the oracle address
   const oracleAddress = await comptrollerContract.oracle();
-  
+
   // create an ethers.js Contract for the Oracle contract
   const oracleContract = new ethers.Contract(
     oracleAddress,
     oracleAbi,
     provider,
   );
-  
+
   return oracleContract;
 }
 
@@ -82,10 +82,10 @@ async function getTokenPrice(oracleContract, cTokenAddress, decimals) {
   // where baseUnit is the smallest denomination of a token per whole token
   // for example, for Ether, baseUnit = 1e18
   const scaledPrice = await oracleContract.getUnderlyingPrice(cTokenAddress);
-  
+
   // calculate the baseUnit
   const baseUnit = ethers.BigNumber.from(10).pow(decimals);
-  
+
   // remove the decimals scaling
   const usdPerTokenBN = scaledPrice.mul(baseUnit);
 
@@ -256,6 +256,7 @@ async function postToDiscord(discordWebhook, message) {
       // rate-limited, retry
       // after waiting a random amount of time between 2 and 15 seconds
       const delay = getRandomInt(2000, 15000);
+      // eslint-disable-next-line no-promise-executor-return
       const promise = new Promise((resolve) => setTimeout(resolve, delay));
       await promise;
       response = await axios(discordObject);
@@ -271,7 +272,10 @@ function getAddressForMatchReason(reason, logs, abi) {
   let parsedLog;
   const { params, signature } = reason;
   const iface = new ethers.utils.Interface(abi);
-  for (let i=0; i < logs.length; i++) {
+  const keys = Object.keys(params);
+  let key;
+  let value;
+  for (let i = 0; i < logs.length; i++) {
     try {
       // attempt to parse the log
       // because there could be many logs emitted by many contracts
@@ -279,31 +283,37 @@ function getAddressForMatchReason(reason, logs, abi) {
       // wrapping it with a try...catch
       // if parseLog throws, we will move on to the next log
       parsedLog = iface.parseLog(logs[i]);
-      
+
       // check that the event signature matches
       // this should be equivalent to checking the topic hashes
       if (parsedLog.signature !== signature) {
+        // eslint-disable-next-line no-continue
         continue;
       }
-      
+
       // check that all of the parameter names and values match
       // the keys and values in the params variable are the named
       // arguments and their associated values for the event
       // the parsedLog Object will have its named arguments and values
       // stored under the args key
       found = true;
-      Object.entries(params).forEach(([key, value]) => {
+      for (let j = 0; j < keys.length; j++) {
+        key = keys[j];
+        value = params[key];
         if (parsedLog.args[key].toString() !== value.toString()) {
           found = false;
+          break;
         }
-      });
-      
+      }
+
       // if a match was found, return the address from the log
       if (found === true) {
         return logs[i].address;
       }
+      // eslint-disable-next-line no-empty
     } catch {}
   }
+  return undefined;
 }
 
 // eslint-disable-next-line func-names
@@ -342,7 +352,6 @@ exports.handler = async function (autotaskEvent) {
   const {
     matchReasons,
     hash: transactionHash,
-    matchedAddresses,
     transaction: {
       logs,
     },
@@ -356,9 +365,11 @@ exports.handler = async function (autotaskEvent) {
 
   // use the relayer provider for JSON-RPC requests
   const provider = new DefenderRelayProvider(autotaskEvent);
-  
+  console.log('Created provider');
+
   // create an ethers.js Contract for the Compound Oracle contract
   const oracleContract = await getOracleContract(provider);
+  console.log('Created Oracle contract');
 
   // create messages for Discord
   const promises = matchReasons.map(async (reason) => {
@@ -367,14 +378,14 @@ exports.handler = async function (autotaskEvent) {
     // from which address, so we have to go back through all of the logs
     // to make that determination
     const cTokenAddress = getAddressForMatchReason(reason, logs, abi);
-    
+    console.log(`Address for matchReasons: ${cTokenAddress}`);
+
     // determine the type of event it was
     const { signature, params } = reason;
     const eventName = signature.slice(0, signature.indexOf('('));
     const {
       decimals,
       symbol,
-      underlyingTokenAddress,
     } = await getTokenInfo(cTokenAddress, provider);
 
     // get the conversion rate for this token to USD
@@ -382,14 +393,6 @@ exports.handler = async function (autotaskEvent) {
       usdPerTokenBN,
       usdPerTokenDecimals,
     } = await getTokenPrice(oracleContract, cTokenAddress, decimals);
-    
-    /*
-    // get the conversion rate for this token to USD
-    const {
-      usdPerTokenBN,
-      usdPerTokenDecimals,
-    } = await getTokenPrice(underlyingTokenAddress);
-    */
 
     // craft the Discord message
     return createDiscordMessage(
@@ -403,17 +406,27 @@ exports.handler = async function (autotaskEvent) {
   });
 
   // wait for the promises to settle
+  console.log('Waiting for promises to settle');
   const messages = await Promise.all(promises);
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
+  console.log('Creating Discord promises');
   const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
 
   // wait for the promises to settle
   // we want to have as many succeed as possible, so we are using
   // .allSettled() rather than .all() here
-  await Promise.allSettled(discordPromises);
+  console.log('Waiting for Discord promises to settle');
+  let results = await Promise.allSettled(discordPromises);
+  console.log('\tDone');
+
+  results = results.filter((result) => result.status === 'rejected');
+  console.log(`Number of rejected promises: ${results.length}`);
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
+  }
 
   console.log('Messages sent to Discord webhook');
 

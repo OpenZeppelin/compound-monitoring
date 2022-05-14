@@ -181,6 +181,6 @@ exports.handler = async function (autotaskEvent) {
   if (results.length > 0) {
     throw new Error(results[0].reason);
   }
-  
+
   return {};
 };

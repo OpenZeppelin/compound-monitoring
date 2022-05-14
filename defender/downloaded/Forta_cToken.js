@@ -329,7 +329,7 @@ exports.handler = async function (autotaskEvent) {
   // wait for the promises to settle
   results = await Promise.allSettled(discordPromises);
   results = results.filter((result) => result.status === 'rejected');
-  
+
   if (results.length > 0) {
     throw new Error(results[0].reason);
   }
