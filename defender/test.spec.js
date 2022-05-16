@@ -22,9 +22,12 @@ jest.mock('axios', () => jest.fn());
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
+// eslint-disable-next-line no-unused-vars
 const axiosReal = jest.requireActual('axios');
 
 // low liquidity Bot Autotask
+// eslint-disable-next-line no-unused-vars
+const { ethers } = require('ethers');
 const { handler: fortaLowLiquidityHandler } = require('./downloaded/Forta_Low_Liquidity');
 const { createMarketAttackAlert } = require('../low-liquidity-market-attack-monitor/src/agent');
 
@@ -36,7 +39,6 @@ const {
   createGovernanceFinding,
   createComptrollerFinding,
 } = require('../multisig-transactions-monitor/src/utils');
-const { ethers } = require('ethers');
 
 const hash = '0xFAKEHASH';
 const transactionHash = '0xFAKETRANSACTIONHASH';
@@ -102,7 +104,7 @@ describe('test the Forta Low Liquidity bot alert', () => {
     );
 
     const mockResponse = createMockResponse(sampleAlert);
-    axios.mockResolvedValueOnce(mockResponse); // uncomment this to actually post to Discord .mockImplementationOnce(axiosReal);
+    axios.mockResolvedValueOnce(mockResponse); // .mockImplementationOnce(axiosReal);
     const autotaskEvent = createAutotaskEvent();
     await fortaLowLiquidityHandler(autotaskEvent);
   });
