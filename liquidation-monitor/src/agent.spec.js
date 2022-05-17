@@ -110,21 +110,20 @@ const {
 } = require('./agent');
 
 // Convert the string numbers to ethers.BigNumber
-/* eslint-disable new-cap */
-mockBtcPrice = new ethers.BigNumber.from(mockBtcPrice);
-mockEthPrice = new ethers.BigNumber.from(mockEthPrice);
-mockUsdcPrice = new ethers.BigNumber.from(mockUsdcPrice);
-mockCDecimals = new ethers.BigNumber.from(mockCDecimals);
-mockBtcDecimals = new ethers.BigNumber.from(mockBtcDecimals);
-mockEthDecimals = new ethers.BigNumber.from(mockEthDecimals);
-mockUsdcDecimals = new ethers.BigNumber.from(mockUsdcDecimals);
-mockBtcCollateralFactor = new ethers.BigNumber.from(mockBtcCollateralFactor);
-mockEthCollateralFactor = new ethers.BigNumber.from(mockEthCollateralFactor);
-mockUsdcCollateralFactor = new ethers.BigNumber.from(mockUsdcCollateralFactor);
-mockBtcCTokenRate = new ethers.BigNumber.from(mockBtcCTokenRate);
-mockEthCTokenRate = new ethers.BigNumber.from(mockEthCTokenRate);
-mockUsdcCTokenRate = new ethers.BigNumber.from(mockUsdcCTokenRate);
-const mockEthersZero = new ethers.BigNumber.from(0);
+mockBtcPrice = ethers.BigNumber.from(mockBtcPrice);
+mockEthPrice = ethers.BigNumber.from(mockEthPrice);
+mockUsdcPrice = ethers.BigNumber.from(mockUsdcPrice);
+mockCDecimals = ethers.BigNumber.from(mockCDecimals);
+mockBtcDecimals = ethers.BigNumber.from(mockBtcDecimals);
+mockEthDecimals = ethers.BigNumber.from(mockEthDecimals);
+mockUsdcDecimals = ethers.BigNumber.from(mockUsdcDecimals);
+mockBtcCollateralFactor = ethers.BigNumber.from(mockBtcCollateralFactor);
+mockEthCollateralFactor = ethers.BigNumber.from(mockEthCollateralFactor);
+mockUsdcCollateralFactor = ethers.BigNumber.from(mockUsdcCollateralFactor);
+mockBtcCTokenRate = ethers.BigNumber.from(mockBtcCTokenRate);
+mockEthCTokenRate = ethers.BigNumber.from(mockEthCTokenRate);
+mockUsdcCTokenRate = ethers.BigNumber.from(mockUsdcCTokenRate);
+const mockEthersZero = ethers.BigNumber.from(0);
 
 // check the configuration file to verify the values
 describe('check agent configuration file', () => {
@@ -261,7 +260,6 @@ function setDefaultMocks() {
   } = mockContract;
 
   // Comptroller
-  /* eslint-disable new-cap */
   getAssetsIn.mockResolvedValue(mockGetAssetsIn);
   markets.mockResolvedValue([true, mockBtcCollateralFactor, true]);
   getAccountLiquidity.mockResolvedValue([mockEthersZero, mockEthersZero, mockEthersZero]);
@@ -314,12 +312,12 @@ describe('initializeData', () => {
     await (provideInitialize(initializeData))();
   });
 
-  it('should use axios 2 times}', async () => {
+  it('should use axios 2 times', async () => {
     // Check counter from the initialize step.
     expect(axios.post).toBeCalledTimes(2);
   });
 
-  it('should use contract calls}', async () => {
+  it('should use contract calls', async () => {
     // Check counters from the initialize step.
     expect(mockContract.symbol).toBeCalledTimes(2);
     expect(mockContract.underlying).toBeCalledTimes(2);
@@ -393,12 +391,12 @@ function getShortFallUSD(borrowEth, supplyEth) {
 
   // Scale to 1e18 for mocking and convert to ethers.Bignumber
   shortfall = shortfall.times(scale).dp(0).toString(); // Scale out and remove decimals
-  const e18Multiplier = new ethers.BigNumber.from(10).pow(18);
-  shortfall = new ethers.BigNumber.from(shortfall).mul(e18Multiplier).div(scale);
+  const e18Multiplier = ethers.BigNumber.from(10).pow(18);
+  shortfall = ethers.BigNumber.from(shortfall).mul(e18Multiplier).div(scale);
 
   // Convert to USD price by dividing by the 1inch exchange rate for USDC.
   //  Also needs to be scaled my the 1inch multiplier.
-  const oneInchMult = new ethers.BigNumber.from(10).pow(36 - mockUsdcDecimals);
+  const oneInchMult = ethers.BigNumber.from(10).pow(36 - mockUsdcDecimals);
   shortfall = shortfall.mul(oneInchMult).div(mockUsdcPrice);
   return shortfall;
 }
@@ -445,7 +443,7 @@ describe('handleBlock', () => {
     const expectedBorrowBalance = '17';
     const expectedSupplyBalance = '8.5'; // Supply is unchanged
 
-    multiplier = new ethers.BigNumber.from(multiplier);
+    multiplier = ethers.BigNumber.from(multiplier);
     const newBtcPrice = mockBtcPrice.mul(multiplier).div(scale);
 
     // Mock and process new block
@@ -479,7 +477,7 @@ describe('handleBlock', () => {
     const expectedBorrowBalance = '4.25';
     const expectedSupplyBalance = '8.5'; // Supply is unchanged
 
-    multiplier = new ethers.BigNumber.from(multiplier);
+    multiplier = ethers.BigNumber.from(multiplier);
     const newBtcPrice = mockBtcPrice.mul(multiplier).div(scale);
 
     // Mock and process new block
@@ -513,7 +511,7 @@ describe('handleBlock', () => {
     const expectedBorrowBalance = '8.42';
     const expectedSupplyBalance = '8.5'; // Supply is unchanged
 
-    multiplier = new ethers.BigNumber.from(multiplier);
+    multiplier = ethers.BigNumber.from(multiplier);
     const newBtcPrice = mockBtcPrice.mul(multiplier).div(scale);
 
     const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
@@ -555,7 +553,7 @@ describe('handleBlock', () => {
     const expectedBorrowBalance = '8.59';
     const expectedSupplyBalance = '8.5'; // Supply is unchanged
 
-    multiplier = new ethers.BigNumber.from(multiplier);
+    multiplier = ethers.BigNumber.from(multiplier);
     const newBtcPrice = mockBtcPrice.mul(multiplier).div(scale);
 
     const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
@@ -598,7 +596,7 @@ describe('handleBlock', () => {
     const expectedSupplyBalance = '8.5'; // Supply is unchanged
     const expectedLiquidationAmount = '515.15';
 
-    multiplier = new ethers.BigNumber.from(multiplier);
+    multiplier = ethers.BigNumber.from(multiplier);
     const newBtcPrice = mockBtcPrice.mul(multiplier).div(scale);
 
     const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
@@ -666,7 +664,7 @@ describe('handleBlock', () => {
     const expectedBorrowBalance = '8.5'; // Borrow is unchanged
     const expectedSupplyBalance = '8.59';
 
-    multiplier = new ethers.BigNumber.from(multiplier);
+    multiplier = ethers.BigNumber.from(multiplier);
     const newEthPrice = mockEthPrice.mul(multiplier).div(scale);
 
     const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
@@ -708,7 +706,7 @@ describe('handleBlock', () => {
     const expectedBorrowBalance = '8.5'; // Borrow is unchanged
     const expectedSupplyBalance = '8.42';
 
-    multiplier = new ethers.BigNumber.from(multiplier);
+    multiplier = ethers.BigNumber.from(multiplier);
     const newEthPrice = mockEthPrice.mul(multiplier).div(scale);
 
     const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
@@ -751,7 +749,7 @@ describe('handleBlock', () => {
     const expectedSupplyBalance = '8.33';
     const expectedLiquidationAmount = '515.15';
 
-    multiplier = new ethers.BigNumber.from(multiplier);
+    multiplier = ethers.BigNumber.from(multiplier);
     const newEthPrice = mockEthPrice.mul(multiplier).div(scale);
 
     const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
@@ -895,11 +893,11 @@ describe('handleTransaction', () => {
 });
 
 function mockSnapshot(setBorrow, setSupply, setDecimals) {
-  const decimalsMultiplier = new ethers.BigNumber.from(10).pow(setDecimals);
+  const decimalsMultiplier = ethers.BigNumber.from(10).pow(setDecimals);
   // 1 cToken = 0.02 token , so 1 token = 50 cTokens
-  const tokenToCTokenMultiplier = new ethers.BigNumber.from(50);
-  setBorrow = new ethers.BigNumber.from(setBorrow).mul(decimalsMultiplier);
-  const setCSupply = new ethers.BigNumber.from(setSupply).mul(decimalsMultiplier)
+  const tokenToCTokenMultiplier = ethers.BigNumber.from(50);
+  setBorrow = ethers.BigNumber.from(setBorrow).mul(decimalsMultiplier);
+  const setCSupply = ethers.BigNumber.from(setSupply).mul(decimalsMultiplier)
     .mul(tokenToCTokenMultiplier);
 
   mockContract.getAccountSnapshot.mockResolvedValueOnce(
