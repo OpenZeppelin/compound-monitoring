@@ -369,13 +369,10 @@ function provideHandleBlock(data) {
       }
     });
 
-    // Check the Comptroller contract for actual liquidity if the health is below x
-    const lowHealthAccounts = [];
-    Object.entries(accounts).forEach(([currentAccount, entry]) => {
-      if (entry.health.isLessThan(data.lowHealthThreshold)) {
-        lowHealthAccounts.push(currentAccount);
-      }
-    });
+    const lowHealthAccounts = Object.keys(accounts).filter((key) => (
+      accounts[key].health.lt(data.lowHealthThreshold)
+    ));
+
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
       // Get Account Liquidity
 
@@ -390,7 +387,9 @@ function provideHandleBlock(data) {
       //   each USD withdrawn."
       // Ref: https://compound.finance/docs/comptroller#account-liquidity
       const liquidity = await comptrollerContract.getAccountLiquidity(currentAccount);
-      const shortfallUSD = new BigNumber(ethers.utils.formatEther(liquidity[2]).toString());
+      // Convert Ethers BigNumber to JS BigNumber and reduce integer to decimal
+      const scale = new BigNumber(10).pow(18);
+      const shortfallUSD = new BigNumber(liquidity[2].toString()).dividedBy(scale);
 
       // There are situations where the shortfall amount is greater than the supplied amount.
       //   Therefore, it is not possible to liquidate the entire amount. Example: An account
@@ -420,8 +419,6 @@ function provideHandleBlock(data) {
         );
         findings.push(newFinding);
       }
-      // Zero out the health on the low accounts so they may be re-scanned. (optional)
-      // accounts[currentAccount] = {};
     }));
     return findings;
   };

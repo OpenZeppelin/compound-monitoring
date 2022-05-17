@@ -14,7 +14,9 @@ This bot detects when an account on Compound is able to be liquidated.
 - Likewise, qty of Tokens for borrowed is preferred because borrowed tokens do not earn interest.
 ### To-Do
 - Initial import can be done from onchain activity.
-- Prioritizing only the top x worst accounts can be done with maxTrackedAccounts.
+
+### Limitations
+- The supplied tokens are tracked accurately and gain value over time. The borrowed tokens have a variable interest rate that changes per block, which is not accounted for in this bot implementation. To compensate for the borrowed skew, the `lowHealthThreshold` in the `bot-config.json` can be increased. Additionally, restarting the bot will pull the most current account balances.
 
 ## Supported Chains
 
