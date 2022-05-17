@@ -387,9 +387,9 @@ function provideHandleBlock(data) {
       //   each USD withdrawn."
       // Ref: https://compound.finance/docs/comptroller#account-liquidity
       const liquidity = await comptrollerContract.getAccountLiquidity(currentAccount);
-      // Convert Ethers BigNumber to JS BigNumber and reduce integer to decimal
-      const scale = new BigNumber(10).pow(18);
-      const shortfallUSD = new BigNumber(liquidity[2].toString()).dividedBy(scale);
+      // Convert Ethers BigNumber to JS BigNumber and reduce 1e18 integer to decimal
+      const e18Multiplier = new BigNumber(10).pow(18);
+      const shortfallUSD = new BigNumber(liquidity[2].toString()).dividedBy(e18Multiplier);
 
       // There are situations where the shortfall amount is greater than the supplied amount.
       //   Therefore, it is not possible to liquidate the entire amount. Example: An account
