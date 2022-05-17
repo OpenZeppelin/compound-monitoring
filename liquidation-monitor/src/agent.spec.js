@@ -960,7 +960,7 @@ describe('process newBorrower', () => {
     expect(initializeData.newAccounts).toStrictEqual([]);
   });
 
-  it('should add user balances to database', async () => {
+  it('should process new users', async () => {
     // Verify new account is waiting to be added
     expect(initializeData.newAccounts).toStrictEqual([newBorrower]);
 
