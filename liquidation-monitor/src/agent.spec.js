@@ -354,7 +354,7 @@ describe('initializeData', () => {
     // Check ETH stats
     const actualEthDecimals = initializeData.tokens['0x0ceth'].tokenDecimals.toString();
     const expectedEthDecimals = mockEthDecimals.toString();
-    const actualEthCDecimals = initializeData.tokens['0x0ceth'].tokenDecimals.toString();
+    const actualEthCDecimals = initializeData.tokens['0x0ceth'].cTokenDecimals.toString();
     const expectedEthCDecimals = mockCDecimals.toString();
     expect(actualEthDecimals).toBe(expectedEthDecimals);
     expect(actualEthCDecimals).toBe(expectedEthCDecimals);
