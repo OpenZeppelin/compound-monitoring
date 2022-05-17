@@ -344,7 +344,7 @@ describe('initializeData', () => {
     // Check BTC stats
     const actualBtcDecimals = initializeData.tokens['0x0cbtc'].tokenDecimals.toString();
     const expectedBtcDecimals = mockBtcDecimals.toString();
-    const actualBtcCDecimals = initializeData.tokens['0x0cbtc'].tokenDecimals.toString();
+    const actualBtcCDecimals = initializeData.tokens['0x0cbtc'].cTokenDecimals.toString();
     const expectedBtcCDecimals = mockCDecimals.toString();
     expect(actualBtcDecimals).toBe(expectedBtcDecimals);
     expect(actualBtcCDecimals).toBe(expectedBtcCDecimals);
