@@ -221,7 +221,7 @@ function createNewAdminFinding(
   const { oldAdmin, newAdmin } = log.args;
 
   const finding = Finding.fromObject({
-    name: `${protocolName} New Adimn`,
+    name: `${protocolName} New Admin`,
     description: `Governance Admin changed from ${oldAdmin} to ${newAdmin}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-NEW-ADMIN-ALERT`,
     protocol: protocolName,
@@ -280,7 +280,7 @@ function createGovernanceFinding(
     );
   }
 
-  if (log.name === 'ProposalThresHoldSet') {
+  if (log.name === 'ProposalThresholdSet') {
     finding = createProposalThresholdSetFinding(
       log,
       protocolName,
@@ -382,7 +382,7 @@ function createNewBorrowCapFinding(
   return finding;
 }
 
-function createNewBorrowCapGaurdianFinding(
+function createNewBorrowCapGuardianFinding(
   log,
   protocolName,
   protocolAbbreviation,
@@ -415,7 +415,7 @@ function createComptrollerFinding(
   let finding;
 
   if (log.name === 'NewBorrowCapGuardian') {
-    finding = createNewBorrowCapGaurdianFinding(
+    finding = createNewBorrowCapGuardianFinding(
       log,
       protocolName,
       protocolAbbreviation,
