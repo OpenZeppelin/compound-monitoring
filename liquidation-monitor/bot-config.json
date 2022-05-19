@@ -1,0 +1,21 @@
+{
+  "developerAbbreviation": "AE",
+  "protocolName": "Compound",
+  "protocolAbbreviation": "COMP",
+  "liquidationMonitor": {
+    "comptrollerAddress": "0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B",
+    "comptrollerABI": "Comptroller.json",
+    "oneInchAddress": "0x07D91f5fb9Bf7798734C3f606dB065549F6893bb",
+    "oneInchABI": "OneInch.json",
+    "triggerLevels": {
+      "maximumHealth": 100,
+      "minimumBorrowInETH": 0.1,
+      "minimumLiquidationInUSD": 400,
+      "lowHealthThreshold": 1.03
+    },
+    "alert": {
+      "type": "Info",
+      "severity": "Info"
+    }
+  }
+}
