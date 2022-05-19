@@ -807,7 +807,7 @@ function mockTransaction(mockAddress, mockTopic, mockData) {
 
   // build the mock receipt for mock txEvent, in this case the log event topics will correspond to
   // create the mock txEvent
-  const mockTxEvent = new TransactionEvent(null, null, null, [], [], [], mockLogs);
+  const mockTxEvent = new TransactionEvent(null, null, null, [], {}, null, mockLogs, null);
 
   return mockTxEvent;
 }
