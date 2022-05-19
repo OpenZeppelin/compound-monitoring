@@ -191,7 +191,7 @@ describe('monitor multisig contract transactions', () => {
       mockTxEvent = createTransactionEvent({});
     });
 
-    it('returns empty findings if multisig was not involved in a a tranasction', async () => {
+    it('returns empty findings if multisig was not involved in a a transaction', async () => {
       mockTxEvent.addresses[ethers.constants.AddressZero] = true;
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([]);
@@ -283,7 +283,7 @@ describe('monitor multisig contract transactions', () => {
 
       const findings = await handleTransaction(mockTxEvent);
       const expectedFindings = Finding.fromObject({
-        name: 'Compound New Adimn',
+        name: 'Compound New Admin',
         description: `Governance Admin changed from ${zeroAddress} to ${testArgumentAddress}`,
         alertId: 'AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT',
         protocol: 'Compound',
