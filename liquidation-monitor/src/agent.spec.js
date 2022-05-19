@@ -394,7 +394,7 @@ function getShortFallUSD(borrowEth, supplyEth) {
   shortfall = ethers.BigNumber.from(shortfall).mul(e18Multiplier).div(scale);
 
   // Convert to USD price by dividing by the 1inch exchange rate for USDC.
-  //  Also needs to be scaled my the 1inch multiplier.
+  //  Also needs to be scaled by the 1inch multiplier.
   const oneInchMult = ethers.BigNumber.from(10).pow(36 - mockUsdcDecimals);
   shortfall = shortfall.mul(oneInchMult).div(mockUsdcPrice);
   return shortfall;
