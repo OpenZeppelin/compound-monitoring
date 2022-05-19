@@ -284,7 +284,6 @@ function setDefaultMocks() {
 }
 
 function setVerifyTokenMocks(setSymbol, setUnderlying, setExchange, setDecimals) {
-  // Verify token MockOnce - BTC then ETH
   const {
     decimals,
     symbol,
