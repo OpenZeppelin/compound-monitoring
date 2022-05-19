@@ -221,7 +221,7 @@ function createNewAdminFinding(
   const { oldAdmin, newAdmin } = log.args;
 
   const finding = Finding.fromObject({
-    name: `${protocolName} New Adimn`,
+    name: `${protocolName} New Admin`,
     description: `Governance Admin changed from ${oldAdmin} to ${newAdmin}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-GOVERNANCE-NEW-ADMIN-ALERT`,
     protocol: protocolName,
