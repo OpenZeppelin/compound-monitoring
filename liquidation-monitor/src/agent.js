@@ -15,6 +15,8 @@ const {
 const initializeData = {};
 
 // Global functions
+
+// This function will also filter previously alerted addresses.
 function createAlert(
   developerAbbreviation,
   protocolName,
@@ -25,7 +27,23 @@ function createAlert(
   liquidationAmount,
   shortfallAmount,
   healthFactor,
+  currentTimestamp,
+  dataObject,
 ) {
+  // Check the alertTimer
+  if (currentTimestamp >= dataObject.nextAlertTime) {
+    // Add 1 day to the nextAlertTime and remove the previous alerted accounts.
+    const oneDay = 86400;
+    dataObject.nextAlertTime += oneDay;
+    dataObject.alertedAccounts = [];
+  }
+  // Skip if the account has already been alerted in the last 24 hours.
+  if (dataObject.alertedAccounts.includes(borrowerAddress)) {
+    return null;
+  }
+
+  // Add account to the alertedAccounts array
+  dataObject.alertedAccounts.push(borrowerAddress);
   return Finding.fromObject({
     name: `${protocolName} Liquidation Threshold Alert`,
     description: `The address ${borrowerAddress} has dropped below the liquidation threshold. `
@@ -110,6 +128,18 @@ function provideInitialize(data) {
     data.tokens = {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
     data.newAccounts = []; // New account from transaction events
     data.totalNewAccounts = 0;
+
+    // Calculate the next report time.
+    let reportingHour = 12; // reset the alerts on this UTC hour. Set to noon UTC
+    reportingHour %= 24; // Modulo to keep it within 24 hours.
+    // Convert JS time in milliseconds to UTC time in seconds.
+    const now = (new Date().getTime()) / 1000;
+    // Calculate midnight of yesterday 00:00:00
+    const oneDay = 86400;
+    const today = now - (now % oneDay); // now minus seconds elapsed since midnight.
+    const oneHour = 3600;
+    data.nextAlertTime = today + (reportingHour * oneHour);
+    data.alertedAccounts = []; // Accounts alerted in the last 24 hours.
 
     // Compound API filter and Comptroller contract
     const {
@@ -212,13 +242,24 @@ function provideHandleTransaction(data) {
       newAccounts,
     } = data;
 
+    // Any account that does a negative health operation such as reducing collateral (MarketExited)
+    // or increasing borrow (Borrow) will be tracked as a new account. All new accounts (including
+    // previously tracked accounts) will have their all of their balances and health updated from
+    // on-chain sources during the next block.
+
     // Filter all new transactions and look for new accounts to track.
     const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
     const exitMarketString = 'event MarketExited(address cToken, address account)';
 
+    // Only look at MarketExit events from the comptroller address
     const exitMarketEvents = txEvent.filterLog(exitMarketString, comptrollerAddress);
     exitMarketEvents.forEach((exitEvent) => { newAccounts.push(exitEvent.args.account); });
 
+    // Look at all Borrow events from any address, in case that a new asset is listed. This may
+    // cause false positive new accounts to be added to the list, but this will be resolved in the
+    // blockHandler phase. If the new account isn't tracked by the Comptroller, it will be removed.
+    //   Note: This approach requires less calls than querying Comptroller for allMarkets() every
+    //   block.
     const borrowEvents = txEvent.filterLog(borrowString);
     borrowEvents.forEach((borrowEvent) => { newAccounts.push(borrowEvent.args.borrower); });
 
@@ -228,7 +269,7 @@ function provideHandleTransaction(data) {
 }
 
 function provideHandleBlock(data) {
-  return async function handleBlock() {
+  return async function handleBlock(blockEvent) {
     const findings = [];
     const {
       comptrollerContract,
@@ -416,8 +457,12 @@ function provideHandleBlock(data) {
           liquidationAmount.dp(2).toString(),
           shortfallUSD.dp(2).toString(),
           accounts[currentAccount].health.dp(2).toString(),
+          blockEvent.block.timestamp,
+          data,
         );
-        findings.push(newFinding);
+        if (newFinding != null) {
+          findings.push(newFinding);
+        }
       }
     }));
     return findings;
