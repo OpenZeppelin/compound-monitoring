@@ -36,24 +36,24 @@ Alert type is set to Degraded and severity is set to High.
 
 ### Underlying Asset Autotask
 
-This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the COMP Underlying Asset bot.
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the COMP Underlying Asset bot.
 
 ### cToken Transaction Autotask
 
-This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the cToken Transaction bot.
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the cToken Transaction bot.
 
 ### Compound Distribution Autotask
 
-This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the Compound Distribution bot.
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the Compound Governance bot.
 
 ### Compound Governance Autotask
 
-This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the Compound Governance bot.
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the Compound Governance bot.
 
 ### Compound Large Borrows Governance Autotask
 
-This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the Compound Large Borrows bot.
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the Compound Large Borrows bot.
 
 ### Oracle Price Autotask
 
-This autotask sends alerts to Compound's discord channel when Openzepplin's Defender Forta Sentinel picks up on an alert for the Compound Price Oracle bot.
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the Compound Price Oracle bot.

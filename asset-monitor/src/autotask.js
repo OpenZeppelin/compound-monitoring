@@ -1,5 +1,4 @@
 //  CTOKEN UNDERLYING ASSET MONITOR AGENT ALERT - note there's never been an alert to this agent yet
-// agent id - 0x3f02bee8b17edc945c5c1438015aede79225ac69c46e9cd6cff679bb71f35576
 
 const axios = require('axios');
 const needle = require('needle');

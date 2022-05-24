@@ -8,7 +8,7 @@ const existingKeys = Object.keys(process.env);
 require('dotenv').config();
 
 // now filter out all of the existing keys from what is currently in the process.env Object
-const newKeys = Object.keys(process.env).filter((key) => existingKeys.indexOf(key) === -1);
+const newKeys = Object.keys(process.env).filter((key) => !existingKeys.includes(key));
 const secrets = {};
 newKeys.forEach((key) => {
   secrets[key] = process.env[key];

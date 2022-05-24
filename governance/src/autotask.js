@@ -1,5 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-// agentID - 0xc6c224fb57f6bf4c14b88afc1b3e8ec44522363abb740d3d19915837bc57d605
 const axios = require('axios');
 
 const fortaApiEndpoint = 'https://api.forta.network/graphql';
@@ -216,7 +214,7 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED':
       ({ id } = metadata);
       proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposa**l ${proposalName} ${noEntryEmoji}`;
+      message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED':
       ({ id } = metadata);
@@ -252,7 +250,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { TestingDiscordUrl: discordUrl } = secrets;
+  const { FortaSentinelTestingDiscord: discordUrl } = secrets;
   if (discordUrl === undefined) {
     return {};
   }
@@ -277,7 +275,6 @@ exports.handler = async function (autotaskEvent) {
 
   // extract the transaction hash and agent ID from the alert Object
   const {
-    hash,
     source: {
       transactionHash,
       agent: {
@@ -287,8 +284,7 @@ exports.handler = async function (autotaskEvent) {
   } = alert;
 
   // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(agentId, transactionHash);
-  alerts = alerts.filter((alertObject) => alertObject.hash === hash);
+  const alerts = await getFortaAlerts(agentId, transactionHash);
   console.log('Alerts');
   console.log(JSON.stringify(alerts, null, 2));
 

@@ -7,7 +7,7 @@ const existingKeys = Object.keys(process.env);
 require('dotenv').config();
 
 // now filter out all of the existing keys from what is currently in the process.env Object
-const newKeys = Object.keys(process.env).filter((key) => existingKeys.indexOf(key) === -1);
+const newKeys = Object.keys(process.env).filter((key) => !existingKeys.includes(key));
 const secrets = {};
 newKeys.forEach((key) => {
   secrets[key] = process.env[key];
@@ -44,7 +44,7 @@ const mockFortaAlert = {
                 chainId: 1,
               },
               agent: {
-                id: '0x3f02bee8b17edc945c5c1438015aede79225ac69c46e9cd6cff679bb71f35576'
+                id: '0x3f02bee8b17edc945c5c1438015aede79225ac69c46e9cd6cff679bb71f35576',
               },
             },
             severity: 'HIGH',
@@ -52,16 +52,16 @@ const mockFortaAlert = {
               borrowerAddress: '0xF56df8FEbc5dB60433516539F50231FF7242AC87',
               governanceLevel: 'proposal', // this is really governance event, but names governanceLevel in the agent
               minCOMPNeeded: '10',
-              currCOMPOwned: "100"
+              currCOMPOwned: '100',
             },
-            description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`
+            description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
           },
         ],
       },
     },
   },
 };
-  
+
 // create a provider that will be injected as the Defender Relayer provider
 const mockProvider = new ethers.providers.JsonRpcBatchProvider(jsonRpcUrl);
 jest.mock('defender-relay-client/lib/ethers', () => ({

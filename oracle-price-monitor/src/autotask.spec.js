@@ -7,7 +7,7 @@ const existingKeys = Object.keys(process.env);
 require('dotenv').config();
 
 // now filter out all of the existing keys from what is currently in the process.env Object
-const newKeys = Object.keys(process.env).filter((key) => existingKeys.indexOf(key) === -1);
+const newKeys = Object.keys(process.env).filter((key) => !existingKeys.includes(key));
 const secrets = {};
 newKeys.forEach((key) => {
   secrets[key] = process.env[key];
@@ -44,7 +44,7 @@ const mockFortaAlert = {
                 chainId: 1,
               },
               agent: {
-                id: '0x3f02bee8b17edc945c5c1438015aede79225ac69c46e9cd6cff679bb71f35576'
+                id: '0x3f02bee8b17edc945c5c1438015aede79225ac69c46e9cd6cff679bb71f35576',
               },
             },
             severity: 'High',
@@ -52,14 +52,14 @@ const mockFortaAlert = {
               reporterPrice: '100000000000000000000',
               cTokenAddress: '0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c', // this is the ctoken address for AAVE
             },
-            description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`
+            description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
           },
         ],
       },
     },
   },
 };
-  
+
 // create a provider that will be injected as the Defender Relayer provider
 const mockProvider = new ethers.providers.JsonRpcBatchProvider(jsonRpcUrl);
 jest.mock('defender-relay-client/lib/ethers', () => ({
@@ -142,11 +142,9 @@ async function createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumb
 it('Runs autotask against blocks in configuration file', async () => {
   // get the development configuration values
   const { agentId, startBlockNumber, endBlockNumber } = autotaskConfig;
-  console.log("agent id", agentId)
 
   // grab Forta Agent alerts from the Forta Public API and create autotaskEvents
   const autotaskEvents = await createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumber);
-  console.log("hits here")
 
   // run the autotask on the events
   const promises = autotaskEvents.map((autotaskEvent) => handler(autotaskEvent));

@@ -91,7 +91,7 @@ To run, use:
 
 ## Autotask
 
-This autotask sends alerts from Openzepplin's Defender Forta Sentinel's to Compound's Disord channel. 
+This Autotask sends alerts from Openzeppelin's Defender Forta Sentinels to Compound's Discord channel.
 
 ### Testing
 
@@ -120,5 +120,5 @@ The use of `describe` and `it` is currently only necessary because we are using 
   "endBlockNumber": <integer_for_ending_block_number>
 }
 ```
-- Create a .env file that contains the name of your discord webook and the url for it:
+- Create a .env file that contains the name of your discord webhook and the URL for it:
   - ex.) `FortaSentinelTestingDiscord = "discord_webhook_url"`
