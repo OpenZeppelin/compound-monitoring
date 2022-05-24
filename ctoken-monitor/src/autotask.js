@@ -1,5 +1,4 @@
 /* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
-// agentID - 0xaa38a409ae01559bb1ebc34e3d7a2ecfc0250126908f4cb097829000a5ca791b
 const axios = require('axios');
 const ethers = require('ethers');
 
@@ -54,6 +53,13 @@ const eventMapping = {
 };
 
 async function getDecimalsAndSymbol(cTokenAddress, provider) {
+  // Special cETH / ETH  case
+  if (cTokenAddress.toLowerCase() === '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'.toLowerCase()) {
+    const decimals = 18;
+    const symbol = 'ETH';
+    return { decimals, symbol };
+  }
+  
   const cTokenContract = new ethers.Contract(
     cTokenAddress,
     CTOKEN_ABI,
@@ -63,7 +69,7 @@ async function getDecimalsAndSymbol(cTokenAddress, provider) {
 
   let decimals;
   let symbol;
-  if (oddTokens.indexOf(underlyingTokenAddress.toLowerCase()) !== -1) {
+  if (oddTokens.includes(underlyingTokenAddress.toLowerCase())) {
     const underlyingTokenContract = new ethers.Contract(
       underlyingTokenAddress,
       MAKER_TOKEN_ABI,
@@ -304,12 +310,7 @@ exports.handler = async function (autotaskEvent) {
     const { eventName, contractAddress, cTokenSymbol } = metadata;
     let decimals;
     let symbol;
-    if (cTokenSymbol === 'cETH') {
-      decimals = 18;
-      symbol = 'ETH';
-    } else {
-      ({ decimals, symbol } = await getDecimalsAndSymbol(contractAddress, provider));
-    }
+    ({ decimals, symbol } = await getDecimalsAndSymbol(contractAddress, provider));
     // craft the Discord message
     return createDiscordMessage(eventName, metadata, decimals, symbol, description);
   });

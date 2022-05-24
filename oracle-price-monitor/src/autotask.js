@@ -1,5 +1,4 @@
 // ORACLE PRICE ALERT - note there's never been an alert to this agent yet
-// agent id - 0x8a6e2ae3b279c561f7ba64e5011313df19e08b1f398d59d94dfbd4148e6cafce
 
 const axios = require('axios');
 const ethers = require('ethers');
@@ -25,6 +24,13 @@ const oddTokens = [makerTokenAddress, saiTokenAddress];
 const fortaApiEndpoint = 'https://api.forta.network/graphql';
 
 async function getDecimalsAndSymbol(cTokenAddress, provider) {
+  // Special cETH / ETH  case
+  if (cTokenAddress.toLowerCase() === '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'.toLowerCase()) {
+    const decimals = 18;
+    const symbol = 'ETH';
+    return { decimals, symbol };
+  }
+
   const cTokenContract = new ethers.Contract(
     cTokenAddress,
     CTOKEN_ABI,
@@ -34,7 +40,7 @@ async function getDecimalsAndSymbol(cTokenAddress, provider) {
 
   let decimals;
   let symbol;
-  if (oddTokens.indexOf(underlyingTokenAddress.toLowerCase()) !== -1) {
+  if (oddTokens.includes(underlyingTokenAddress.toLowerCase())) {
     const underlyingTokenContract = new ethers.Contract(
       underlyingTokenAddress,
       MAKER_TOKEN_ABI,
@@ -61,7 +67,6 @@ async function getDecimalsAndSymbol(cTokenAddress, provider) {
 }
 
 function formatAmountString(amount, decimals) {
-  console.log("amount here", amount)
   const amountBN = ethers.BigNumber.from(amount);
   const divisorBN = ethers.BigNumber.from(10).pow(decimals);
 
@@ -84,8 +89,6 @@ async function createDiscordMessage(reporterPrice, cTokenAddress, transactionHas
 
   const amountString = formatAmountString(reporterPrice, decimals);
 
-  console.log("amount string here", amountString)
-
   // // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
@@ -97,7 +100,7 @@ async function postToDiscord(url, message) {
   let response;
   try {
     // perform the POST request
-    response = needle.post(url, {content: message}, {json: true} )
+    response = needle.post(url, { content: message }, { json: true });
   } catch (error) {
     // is this a "too many requests" error (HTTP status 429)
     if (error.response && error.response.status === 429) {
@@ -106,7 +109,7 @@ async function postToDiscord(url, message) {
       // eslint-disable-next-line no-promise-executor-return
       const promise = new Promise((resolve) => setTimeout(resolve, 5000));
       await promise;
-      response = needle.post(url, {content: message}, {json: true} )
+      response = needle.post(url, { content: message }, { json: true });
     } else {
       // re-throw the error if it's not from a 429 status
       throw error;
@@ -149,8 +152,8 @@ async function getFortaAlerts(agentId, transactionHash) {
             }
           }
           severity
-		  metadata
-		  description
+      metadata
+      description
         }
       }
     }`,
@@ -226,7 +229,6 @@ exports.handler = async function (autotaskEvent) {
 
   // extract the transaction hash and agent ID from the alert Object
   const {
-    hash,
     source: {
       transactionHash,
       agent: {
@@ -236,9 +238,8 @@ exports.handler = async function (autotaskEvent) {
   } = alert;
 
   // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(agentId, transactionHash);
-  // alerts = alerts.filter((alertObject) => alertObject.hash === hash);
-  console.log('Alerts')
+  const alerts = await getFortaAlerts(agentId, transactionHash);
+  console.log('Alerts');
   console.log(JSON.stringify(alerts, null, 2));
 
   // use the relayer provider for JSON-RPC requests
@@ -261,7 +262,6 @@ exports.handler = async function (autotaskEvent) {
 
   // create promises for posting messages to Discord webhook
   const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${message}`));
-
 
   // wait for the promises to settle
   await Promise.all(discordPromises);

@@ -1,10 +1,9 @@
 // LARGE BORROWS GOVERNANCE AGENT ALERT - note there's never been an alert to this agent yet
-// agent id - 0x704a35d97dfae2caf3b409206f1bc4c8a06671170108d07f9b3c7ea5026916fc
 
 const axios = require('axios');
 
 const fortaApiEndpoint = 'https://api.forta.network/graphql';
-const needle = require('needle')
+const needle = require('needle');
 
 function createDiscordMessage(borrowerAddress, governanceEvent, transactionHash) {
   const borrowerFormatted = borrowerAddress.slice(0, 6);
@@ -17,16 +16,10 @@ function createDiscordMessage(borrowerAddress, governanceEvent, transactionHash)
 
 // post to discord
 async function postToDiscord(url, message) {
-  const method = 'post';
-  const headers = {
-    'Content-Type': 'application/json',
-  };
-  const data = JSON.stringify({ content: message });
-
   let response;
   try {
     // perform the POST request
-    response = needle.post(url, {content: message}, {json: true} )
+    response = needle.post(url, { content: message }, { json: true });
   } catch (error) {
     // is this a "too many requests" error (HTTP status 429)
     if (error.response && error.response.status === 429) {
@@ -35,7 +28,7 @@ async function postToDiscord(url, message) {
       // eslint-disable-next-line no-promise-executor-return
       const promise = new Promise((resolve) => setTimeout(resolve, 5000));
       await promise;
-      response = needle.post(url, {content: message}, {json: true} )
+      response = needle.post(url, { content: message }, { json: true });
     } else {
       // re-throw the error if it's not from a 429 status
       throw error;
@@ -79,8 +72,8 @@ async function getFortaAlerts(agentId, transactionHash) {
             }
           }
           severity
-		  metadata
-		  description
+      metadata
+      description
         }
       }
     }`,

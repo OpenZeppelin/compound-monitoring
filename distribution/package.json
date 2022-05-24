@@ -19,7 +19,9 @@
   },
   "dependencies": {
     "bignumber.js": "^9.0.1",
-    "forta-agent": "^0.0.39"
+    "forta-agent": "^0.0.39",
+    "dotenv": "^16.0.0",
+    "defender-relay-client": "^1.19.0"
   },
   "devDependencies": {
     "eslint": "^7.32.0",

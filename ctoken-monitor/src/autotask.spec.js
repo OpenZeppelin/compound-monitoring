@@ -163,10 +163,8 @@ it('Runs autotask against blocks in configuration file', async () => {
   // get the development configuration values
   const { agentId, startBlockNumber, endBlockNumber } = config;
 
-
   // grab Forta Agent alerts from the Forta Public API and create autotaskEvents
   const autotaskEvents = await createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumber);
-  console.log("autotask event here", autotaskEvents)
 
   // run the autotask on the events
   const promises = autotaskEvents.map((autotaskEvent) => handler(autotaskEvent));
