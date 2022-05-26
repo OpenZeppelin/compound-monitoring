@@ -80,10 +80,15 @@ to Proposals and Voting.  All alert types and severities are set to Info.
 The following transactions can be used to test the operation of this bot.
 
 ProposalCanceled - 0x30e5bc0fc04394f505f7edf782bf6a7d5595c2e4c15106358847d24cb9d37a4d
+
 ProposalCreated - 0xb8128ed644be6448123acd0dcc082c8c54d4c999ed1561b82aa405dbd19c84b1
+
 ProposalExecuted - 0x00e6174a179bb8e34d8835a8f4111d659e3b40ab73ee1c073c7917156b0eeff6
+
 ProposalQueued - 0xfd2ccca6807f3a8fd5cd63d62a760759cc7496238255b6f0f2bb2bde68d63f16
+
 ProposalThresholdSet - 0x849061327963a1de927a1cccffaed34631a3962b272a7efbf0caef945fb4e7d3
+
 VoteCast - 0xd3b303df1c7cd21bc8442f436cda91a1ee00872eab212d74ba5ccd8ea067c760
 
 To run, use:
