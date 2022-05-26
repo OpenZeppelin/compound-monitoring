@@ -107,6 +107,7 @@ describe('test createMarketAttackAlert', () => {
   let mintTokens;
   let maliciousAddress;
   let maliciousAmount;
+  let totalSupply;
 
   beforeAll(async () => {
     protocolName = config.protocolName;
@@ -132,6 +133,7 @@ describe('test createMarketAttackAlert', () => {
         mintTokens,
         maliciousAddress,
         maliciousAmount,
+        totalSupply,
       },
     });
 
@@ -145,6 +147,7 @@ describe('test createMarketAttackAlert', () => {
       mintTokens,
       maliciousAddress,
       maliciousAmount,
+      totalSupply,
     );
 
     expect(finding).toStrictEqual(expectedFinding);
@@ -296,6 +299,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         mintTokens,
         validAttackAddress,
         maliciousAmount,
+        validTotalSupply.toString(),
       );
 
       expect(findings).toStrictEqual([expectedFinding]);
@@ -369,6 +373,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         mintTokens,
         validAttackAddress,
         maliciousAmount,
+        validTotalSupply.toString(),
       );
 
       expect(findings).toStrictEqual([expectedFinding]);
