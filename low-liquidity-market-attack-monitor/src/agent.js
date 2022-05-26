@@ -191,7 +191,6 @@ function provideHandleTransaction(data) {
 
           // check that the amount being minted is significant compared to the current total supply
           // total supply is the number of tokens in circulation for the market
-          console.log(contract);
           const totalSupply = await contract.totalSupply();
           const { mintTokens } = mintEvent.args;
 
