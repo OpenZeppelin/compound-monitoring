@@ -54,6 +54,7 @@ function createMarketAttackAlert(
   mintTokens,
   maliciousAddress,
   maliciousAmount,
+  totalSupply,
 ) {
   const finding = Finding.fromObject({
     name: `${protocolName} cToken Market Attack Event`,
@@ -69,6 +70,7 @@ function createMarketAttackAlert(
       mintTokens,
       maliciousAddress,
       maliciousAmount,
+      totalSupply,
     },
   });
   return finding;
@@ -210,6 +212,7 @@ function provideHandleTransaction(data) {
                 mintEvent.args.mintTokens.toString(),
                 transferEvent.args.from,
                 transferEvent.args.amount.toString(),
+                totalSupply.toString(),
               ),
             ];
           }
