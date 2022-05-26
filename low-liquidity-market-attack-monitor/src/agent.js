@@ -49,11 +49,12 @@ function createMarketAttackAlert(
   protocolAbbreviation,
   developerAbbreviation,
   compTokenSymbol,
-  compTokenAddress,
+  cTokenAddress,
   mintAmount,
   mintTokens,
   maliciousAddress,
   maliciousAmount,
+  totalSupply,
 ) {
   const finding = Finding.fromObject({
     name: `${protocolName} cToken Market Attack Event`,
@@ -64,11 +65,12 @@ function createMarketAttackAlert(
     protocol: protocolName,
     metadata: {
       compTokenSymbol,
-      compTokenAddress,
+      cTokenAddress,
       mintAmount,
       mintTokens,
       maliciousAddress,
       maliciousAmount,
+      totalSupply,
     },
   });
   return finding;
@@ -81,13 +83,13 @@ async function getCompoundTokens(
   excludeAddresses,
   compTokens,
 ) {
-  let compTokenAddresses = await comptrollerContract.getAllMarkets();
-  compTokenAddresses = compTokenAddresses
+  let cTokenAddresses = await comptrollerContract.getAllMarkets();
+  cTokenAddresses = cTokenAddresses
     .map((addr) => addr.toLowerCase())
     .filter((addr) => excludeAddresses.indexOf(addr) === -1)
     .filter((addr) => !Object.keys(compTokens).includes(addr));
 
-  await Promise.all(compTokenAddresses.map(async (tokenAddress) => {
+  await Promise.all(cTokenAddresses.map(async (tokenAddress) => {
     const contract = new ethers.Contract(tokenAddress, compTokenAbi, provider);
     const symbol = await contract.symbol();
     const underlying = await contract.underlying();
@@ -96,6 +98,7 @@ async function getCompoundTokens(
     compTokens[tokenAddress] = {
       symbol,
       underlying: underlying.toLowerCase(),
+      contract,
     };
   }));
 }
@@ -152,7 +155,6 @@ function provideHandleTransaction(data) {
       compTokenAbi,
       comptrollerContract,
     } = data;
-    const findings = [];
 
     await getCompoundTokens(
       provider,
@@ -170,31 +172,63 @@ function provideHandleTransaction(data) {
     // - The Transfer event was emitted by the underlying token contract
     //    corresponding to that Compound cToken contract and
     //    was being transferred directly to said Compound cToken contract
-    transferEvents.forEach((transferEvent) => {
-      Object.entries(compTokens).forEach(([compTokenAddress, compToken]) => {
-        if (transferEvent.address === compToken.underlying
-          && transferEvent.args.to.toLowerCase() === compTokenAddress) {
-          filterLog(txEvent.logs, CERC20_MINT_EVENT, compTokenAddress)
-            .forEach((mintEvent) => {
-              if (transferEvent.logIndex > mintEvent.logIndex) {
-                findings.push(createMarketAttackAlert(
-                  protocolName,
-                  protocolAbbreviation,
-                  developerAbbreviation,
-                  compToken.symbol,
-                  transferEvent.args.to,
-                  mintEvent.args.mintAmount.toString(),
-                  mintEvent.args.mintTokens.toString(),
-                  transferEvent.args.from,
-                  transferEvent.args.amount.toString(),
-                ));
-              }
-            });
+    // - The amount being minted is significant compared to the current total supply
+    const transferPromises = transferEvents.map(async (transferEvent) => {
+      const tokenPromises = Object.entries(compTokens).map(async ([cTokenAddress, compToken]) => {
+        const { symbol, underlying, contract } = compToken;
+
+        if (transferEvent.address.toLowerCase() !== underlying.toLowerCase()) {
+          return [];
         }
+
+        if (transferEvent.args.to.toLowerCase() !== cTokenAddress.toLowerCase()) {
+          return [];
+        }
+
+        const mintEvents = txEvent.filterLog(CERC20_MINT_EVENT, cTokenAddress);
+        const mintPromises = mintEvents.map(async (mintEvent) => {
+          if (transferEvent.logIndex < mintEvent.logIndex) {
+            return [];
+          }
+
+          // check that the amount being minted is significant compared to the current total supply
+          // total supply is the number of tokens in circulation for the market
+          const totalSupply = await contract.totalSupply();
+          const { mintTokens } = mintEvent.args;
+
+          // if the market has a significant amount of liquidity, the attacker would need to
+          // mint a considerable number of cTokens to make the attack worthwhile
+          // threshold: if the number of minted tokens is greater than 10% of the total supply
+          if (mintTokens.mul(10).gt(totalSupply)) {
+            // create finding
+            return [
+              createMarketAttackAlert(
+                protocolName,
+                protocolAbbreviation,
+                developerAbbreviation,
+                symbol,
+                transferEvent.args.to,
+                mintEvent.args.mintAmount.toString(),
+                mintEvent.args.mintTokens.toString(),
+                transferEvent.args.from,
+                transferEvent.args.amount.toString(),
+                totalSupply.toString(),
+              ),
+            ];
+          }
+          return [];
+        });
+
+        const mintResults = await Promise.all(mintPromises);
+        return mintResults.flat();
       });
+
+      const tokenResults = await Promise.all(tokenPromises);
+      return tokenResults.flat();
     });
 
-    return findings;
+    const transferResults = await Promise.all(transferPromises);
+    return transferResults.flat();
   };
 }
 
