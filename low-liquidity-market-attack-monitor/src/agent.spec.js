@@ -102,7 +102,7 @@ describe('test createMarketAttackAlert', () => {
   let protocolAbbreviation;
   let developerAbbreviation;
   let compTokenSymbol;
-  let compTokenAddress;
+  let cTokenAddress;
   let mintAmount;
   let mintTokens;
   let maliciousAddress;
@@ -116,7 +116,7 @@ describe('test createMarketAttackAlert', () => {
 
   it('returns a proper finding', () => {
     compTokenSymbol = 'TEST';
-    compTokenAddress = '0x1234';
+    cTokenAddress = '0x1234';
 
     const expectedFinding = Finding.fromObject({
       name: `${protocolName} cToken Market Attack Event`,
@@ -127,7 +127,7 @@ describe('test createMarketAttackAlert', () => {
       protocol: protocolName,
       metadata: {
         compTokenSymbol,
-        compTokenAddress,
+        cTokenAddress,
         mintAmount,
         mintTokens,
         maliciousAddress,
@@ -140,7 +140,7 @@ describe('test createMarketAttackAlert', () => {
       protocolAbbreviation,
       developerAbbreviation,
       compTokenSymbol,
-      compTokenAddress,
+      cTokenAddress,
       mintAmount,
       mintTokens,
       maliciousAddress,
@@ -171,6 +171,7 @@ describe('monitor compound for attacks on cToken markets', () => {
     let validCompTokenAddress = `0x1${'0'.repeat(39)}`;
     let validCompTokenSymbol = 'TEST';
     let validAttackAddress = `0x9${'0'.repeat(39)}`;
+    let validTotalSupply = ethers.BigNumber.from(100);
     /* eslint-enable prefer-const */
 
     beforeEach(async () => {
@@ -185,6 +186,7 @@ describe('monitor compound for attacks on cToken markets', () => {
       mockedCompTokenContract = {
         symbol: jest.fn().mockResolvedValueOnce(validCompTokenSymbol),
         underlying: jest.fn().mockResolvedValueOnce(validUnderlyingAddress),
+        totalSupply: jest.fn().mockResolvedValueOnce(validTotalSupply),
       };
 
       mockedGetContract.mockReturnValueOnce(mockedCompTokenContract);
@@ -309,6 +311,7 @@ describe('monitor compound for attacks on cToken markets', () => {
       mockedCompTokenContract = {
         symbol: jest.fn().mockResolvedValueOnce(newCompSymbol),
         underlying: jest.fn().mockResolvedValueOnce(newUnderlyingAddress),
+        totalSupply: jest.fn().mockResolvedValueOnce(validTotalSupply),
       };
 
       mockedGetContract.mockReturnValueOnce(mockedCompTokenContract);
@@ -369,6 +372,67 @@ describe('monitor compound for attacks on cToken markets', () => {
       );
 
       expect(findings).toStrictEqual([expectedFinding]);
+    });
+
+    it('returns empty findings if mint amount was low compared to total supply in market', async () => {
+      const newUnderlyingAddress = `0x6${'0'.repeat(39)}`;
+      const newCompTokenAddress = `0x2${'0'.repeat(39)}`;
+      const newCompSymbol = 'NEWTEST';
+
+      mockComptrollerContract.getAllMarkets.mockResolvedValueOnce([newCompTokenAddress]);
+
+      const mintAmount = '1';
+      const mintTokens = '100';
+      const largeTotalSupply = ethers.BigNumber.from(1001);
+
+      mockedCompTokenContract = {
+        symbol: jest.fn().mockResolvedValueOnce(newCompSymbol),
+        underlying: jest.fn().mockResolvedValueOnce(newUnderlyingAddress),
+        totalSupply: jest.fn().mockResolvedValueOnce(largeTotalSupply),
+      };
+
+      mockedGetContract.mockReturnValueOnce(mockedCompTokenContract);
+
+      const maliciousAmount = '10000';
+
+      override = {
+        from: validAttackAddress,
+        to: newCompTokenAddress,
+        amount: maliciousAmount.toString(),
+      };
+
+      const transferEventAbi = compTokenInterface.getEvent('Transfer');
+      const transferEvent = createMockEventLogs(transferEventAbi, compTokenInterface, override);
+
+      const transferLog = {
+        logIndex: 10,
+        address: newUnderlyingAddress,
+        topics: transferEvent.mockTopics,
+        data: transferEvent.data,
+      };
+
+      mockTxEvent.logs.push(transferLog);
+
+      override = {
+        minter: validAttackAddress,
+        mintAmount,
+        mintTokens,
+      };
+
+      const mintEventAbi = compTokenInterface.getEvent('Mint');
+      const mintEvent = createMockEventLogs(mintEventAbi, compTokenInterface, override);
+
+      const mintLog = {
+        logIndex: 5,
+        address: newCompTokenAddress,
+        topics: mintEvent.mockTopics,
+        data: mintEvent.data,
+      };
+
+      mockTxEvent.logs.push(mintLog);
+
+      const findings = await handleTransaction(mockTxEvent);
+      expect(findings).toStrictEqual([]);
     });
   });
 });
