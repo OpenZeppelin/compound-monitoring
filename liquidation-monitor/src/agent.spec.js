@@ -25,12 +25,10 @@ const mockGetAssetsIn = ['0x0cbtc', '0x0ceth'];
 // Ref https://compound.finance/docs/comptroller#collateral-factor
 let mockBtcCollateralFactor = '700000000000000000'; // 70%
 let mockEthCollateralFactor = '850000000000000000'; // 85%
-let mockUsdcCollateralFactor = '800000000000000000'; // 80%
 
 // Ref: https://compound.finance/docs/ctokens#exchange-rate
 let mockBtcCTokenRate = '20000000000000000'; // 1 cBTC = 0.02 BTC
 let mockEthCTokenRate = '20000000000000000'; // 1 cETH = 0.02 ETH
-let mockUsdcCTokenRate = '20000000000000000'; // 1 cUSDC = 0.02 USDC
 
 // In this mock, ETH Collateral Factor is 0.85 and 1 BTC = 10 ETH.
 // Starting data with a user that supplied 10 ETH and borrowed 0.85 BTC.
@@ -119,10 +117,8 @@ mockEthDecimals = ethers.BigNumber.from(mockEthDecimals);
 mockUsdcDecimals = ethers.BigNumber.from(mockUsdcDecimals);
 mockBtcCollateralFactor = ethers.BigNumber.from(mockBtcCollateralFactor);
 mockEthCollateralFactor = ethers.BigNumber.from(mockEthCollateralFactor);
-mockUsdcCollateralFactor = ethers.BigNumber.from(mockUsdcCollateralFactor);
 mockBtcCTokenRate = ethers.BigNumber.from(mockBtcCTokenRate);
 mockEthCTokenRate = ethers.BigNumber.from(mockEthCTokenRate);
-mockUsdcCTokenRate = ethers.BigNumber.from(mockUsdcCTokenRate);
 const mockEthersZero = ethers.BigNumber.from(0);
 
 // check the configuration file to verify the values
