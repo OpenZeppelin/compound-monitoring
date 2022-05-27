@@ -130,7 +130,7 @@ function provideInitialize(data) {
     data.totalNewAccounts = 0;
 
     // Calculate the next report time.
-    const latestBlockTimestamp = (await data.provider.getBlock('latest')).timestamp.toString();
+    const latestBlockTimestamp = (await data.provider.getBlock('latest')).timestamp;
     //   Now minus seconds elapsed since midnight plus 1 day.
     data.nextAlertTime = latestBlockTimestamp - (latestBlockTimestamp % 86400) + 86400;
     data.alertedAccounts = []; // Accounts alerted in the last 24 hours.
