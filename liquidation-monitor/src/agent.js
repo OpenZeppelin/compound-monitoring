@@ -454,7 +454,8 @@ function provideHandleBlock(data) {
           blockEvent.block.timestamp,
           data,
         );
-        if (newFinding != null) {
+        // Check against no finding (undefined) and against filtered findings (null)
+        if (newFinding !== undefined && newFinding !== null) {
           findings.push(newFinding);
         }
       }
