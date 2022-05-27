@@ -130,15 +130,9 @@ function provideInitialize(data) {
     data.totalNewAccounts = 0;
 
     // Calculate the next report time.
-    let reportingHour = 12; // reset the alerts on this UTC hour. Set to noon UTC
-    reportingHour %= 24; // Modulo to keep it within 24 hours.
-    // Convert JS time in milliseconds to UTC time in seconds.
-    const now = (new Date().getTime()) / 1000;
-    // Calculate midnight of yesterday 00:00:00
-    const oneDay = 86400;
-    const today = now - (now % oneDay); // now minus seconds elapsed since midnight.
-    const oneHour = 3600;
-    data.nextAlertTime = today + (reportingHour * oneHour);
+    const latestBlockTimestamp = (await data.provider.getBlock('latest')).timestamp.toString();
+    //   Now minus seconds elapsed since midnight plus 1 day.
+    data.nextAlertTime = latestBlockTimestamp - (latestBlockTimestamp % 86400) + 86400;
     data.alertedAccounts = []; // Accounts alerted in the last 24 hours.
 
     // Compound API filter and Comptroller contract
