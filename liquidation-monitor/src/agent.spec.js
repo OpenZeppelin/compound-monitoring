@@ -983,7 +983,7 @@ describe('handleBlock', () => {
     // New finding should be empty because it was the same alert within 24 hours.
     expect(findings).toStrictEqual([]);
 
-    // Next let 24 pass and process a new block
+    // Next let 24 hours pass and process a new block
     // Start the block with a block timestamp of 1 day + 45 seconds
     // Price and liquidity checks still happen every block, so mock them.
     const oneDay = 86400;
