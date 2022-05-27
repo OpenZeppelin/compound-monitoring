@@ -73,6 +73,10 @@ jest.mock('axios', () => ({
 }));
 const axios = require('axios');
 
+const mockProvider = {
+  getBlock: jest.fn(),
+};
+
 const mockContract = {
   // Comptroller
   getAssetsIn: jest.fn(),
@@ -91,7 +95,7 @@ const mockContract = {
 // combine the mocked provider and contracts into the ethers import mock
 jest.mock('forta-agent', () => ({
   ...jest.requireActual('forta-agent'),
-  getEthersProvider: jest.fn(),
+  getEthersProvider: jest.fn().mockReturnValue(mockProvider),
   ethers: {
     ...jest.requireActual('ethers'),
     Contract: jest.fn().mockReturnValue(mockContract),
@@ -270,6 +274,9 @@ function setDefaultMocks() {
   underlying.mockResolvedValue('0x0');
   exchangeRateStored.mockResolvedValue(mockBtcCTokenRate);
 
+  // Used in getBlock.timestamp for the initial alert timer
+  mockProvider.getBlock.mockResolvedValue({ timestamp: 1 });
+
   // Clear Mock counters before calling initialize
   axios.post.mockClear();
   symbol.mockClear();
@@ -277,6 +284,7 @@ function setDefaultMocks() {
   exchangeRateStored.mockClear();
   decimals.mockClear();
   getAssetsIn.mockClear();
+  mockProvider.getBlock.mockClear();
 }
 
 function setVerifyTokenMocks(setSymbol, setUnderlying, setExchange, setDecimals) {
@@ -314,6 +322,10 @@ describe('initializeData', () => {
 
   it('should use contract calls', async () => {
     // Check counters from the initialize step.
+    //   Should setup the initial alert time
+    expect(mockProvider.getBlock).toBeCalledTimes(1);
+    expect(initializeData.nextAlertTime).toBe(86400);
+    // Should check BTC and ETH symbol, underlying, rates, and decimals
     expect(mockContract.symbol).toBeCalledTimes(2);
     expect(mockContract.underlying).toBeCalledTimes(2);
     expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
@@ -425,8 +437,7 @@ describe('handleBlock', () => {
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
 
-    // Set the initial alert to 0 seconds and the first block time to 15 seconds
-    initializeData.nextAlertTime = 0;
+    // Initialize block time is 1 second since epoch. Then the next block is set for 15 seconds
     blockEvent = mockBlock(15);
     await handleBlock(blockEvent);
   });
@@ -1042,8 +1053,7 @@ describe('handleTransaction', () => {
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
 
-    // Set the initial alert to 0 seconds and the first block time to 15 seconds
-    initializeData.nextAlertTime = 0;
+    // Initialize block time is 1 second since epoch. Then the next block is set for 15 seconds
     blockEvent = mockBlock(15);
     await handleBlock(blockEvent);
     // Same beforeEach as handleBlock
@@ -1136,8 +1146,7 @@ describe('process newBorrower', () => {
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
 
-    // Set the initial alert to 0 seconds and the first block time to 15 seconds
-    initializeData.nextAlertTime = 0;
+    // Initialize block time is 1 second since epoch. Then the next block is set for 15 seconds
     blockEvent = mockBlock(15);
     await handleBlock(blockEvent);
     // Same beforeEach as handleBlock
