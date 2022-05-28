@@ -25,12 +25,10 @@ const mockGetAssetsIn = ['0x0cbtc', '0x0ceth'];
 // Ref https://compound.finance/docs/comptroller#collateral-factor
 let mockBtcCollateralFactor = '700000000000000000'; // 70%
 let mockEthCollateralFactor = '850000000000000000'; // 85%
-let mockUsdcCollateralFactor = '800000000000000000'; // 80%
 
 // Ref: https://compound.finance/docs/ctokens#exchange-rate
 let mockBtcCTokenRate = '20000000000000000'; // 1 cBTC = 0.02 BTC
 let mockEthCTokenRate = '20000000000000000'; // 1 cETH = 0.02 ETH
-let mockUsdcCTokenRate = '20000000000000000'; // 1 cUSDC = 0.02 USDC
 
 // In this mock, ETH Collateral Factor is 0.85 and 1 BTC = 10 ETH.
 // Starting data with a user that supplied 10 ETH and borrowed 0.85 BTC.
@@ -75,6 +73,10 @@ jest.mock('axios', () => ({
 }));
 const axios = require('axios');
 
+const mockProvider = {
+  getBlock: jest.fn(),
+};
+
 const mockContract = {
   // Comptroller
   getAssetsIn: jest.fn(),
@@ -93,7 +95,7 @@ const mockContract = {
 // combine the mocked provider and contracts into the ethers import mock
 jest.mock('forta-agent', () => ({
   ...jest.requireActual('forta-agent'),
-  getEthersProvider: jest.fn(),
+  getEthersProvider: jest.fn().mockReturnValue(mockProvider),
   ethers: {
     ...jest.requireActual('ethers'),
     Contract: jest.fn().mockReturnValue(mockContract),
@@ -101,7 +103,7 @@ jest.mock('forta-agent', () => ({
 }));
 
 const {
-  ethers, Finding, FindingType, FindingSeverity, TransactionEvent,
+  ethers, Finding, FindingType, FindingSeverity, TransactionEvent, BlockEvent,
 } = require('forta-agent');
 const config = require('../bot-config.json');
 
@@ -119,10 +121,8 @@ mockEthDecimals = ethers.BigNumber.from(mockEthDecimals);
 mockUsdcDecimals = ethers.BigNumber.from(mockUsdcDecimals);
 mockBtcCollateralFactor = ethers.BigNumber.from(mockBtcCollateralFactor);
 mockEthCollateralFactor = ethers.BigNumber.from(mockEthCollateralFactor);
-mockUsdcCollateralFactor = ethers.BigNumber.from(mockUsdcCollateralFactor);
 mockBtcCTokenRate = ethers.BigNumber.from(mockBtcCTokenRate);
 mockEthCTokenRate = ethers.BigNumber.from(mockEthCTokenRate);
-mockUsdcCTokenRate = ethers.BigNumber.from(mockUsdcCTokenRate);
 const mockEthersZero = ethers.BigNumber.from(0);
 
 // check the configuration file to verify the values
@@ -274,6 +274,9 @@ function setDefaultMocks() {
   underlying.mockResolvedValue('0x0');
   exchangeRateStored.mockResolvedValue(mockBtcCTokenRate);
 
+  // Used in getBlock.timestamp for the initial alert timer
+  mockProvider.getBlock.mockResolvedValue({ timestamp: 1 });
+
   // Clear Mock counters before calling initialize
   axios.post.mockClear();
   symbol.mockClear();
@@ -281,6 +284,7 @@ function setDefaultMocks() {
   exchangeRateStored.mockClear();
   decimals.mockClear();
   getAssetsIn.mockClear();
+  mockProvider.getBlock.mockClear();
 }
 
 function setVerifyTokenMocks(setSymbol, setUnderlying, setExchange, setDecimals) {
@@ -318,6 +322,10 @@ describe('initializeData', () => {
 
   it('should use contract calls', async () => {
     // Check counters from the initialize step.
+    //   Should setup the initial alert time
+    expect(mockProvider.getBlock).toBeCalledTimes(1);
+    expect(initializeData.nextAlertTime).toBe(86400);
+    // Should check BTC and ETH symbol, underlying, rates, and decimals
     expect(mockContract.symbol).toBeCalledTimes(2);
     expect(mockContract.underlying).toBeCalledTimes(2);
     expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
@@ -400,12 +408,23 @@ function getShortFallUSD(borrowEth, supplyEth) {
   return shortfall;
 }
 
+function mockBlock(mockTimestamp) {
+  // create the mock blockEvent
+  const block = { timestamp: mockTimestamp };
+  const mockBlockEvent = new BlockEvent(null, null, block);
+  return mockBlockEvent;
+}
+
 describe('handleBlock', () => {
   let initializeData;
+  let handleBlock;
+  let blockEvent;
 
   beforeEach(async () => {
     // Initialize
     initializeData = {};
+    handleBlock = provideHandleBlock(initializeData);
+
     setDefaultMocks();
     setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
     setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
@@ -417,7 +436,10 @@ describe('handleBlock', () => {
 
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
-    await (provideHandleBlock(initializeData))();
+
+    // Initialize block time is 1 second since epoch. Then the next block is set for 15 seconds
+    blockEvent = mockBlock(15);
+    await handleBlock(blockEvent);
   });
 
   it('should use contract calls', async () => {
@@ -448,7 +470,9 @@ describe('handleBlock', () => {
     // Mock and process new block
     setPriceMocks(newBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
-    await (provideHandleBlock(initializeData))();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    await handleBlock(blockEvent);
 
     const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
     const actualBtcPrice = initializeData.tokens['0x0cbtc'].price.dp(2).toString();
@@ -482,7 +506,9 @@ describe('handleBlock', () => {
     // Mock and process new block
     setPriceMocks(newBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
-    await (provideHandleBlock(initializeData))();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    await handleBlock(blockEvent);
 
     const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
     const actualBtcPrice = initializeData.tokens['0x0cbtc'].price.dp(2).toString();
@@ -522,7 +548,9 @@ describe('handleBlock', () => {
       [mockEthersZero, mockEthersZero, shortfallUSD],
     );
     mockContract.getAccountLiquidity.mockClear();
-    const findings = await (provideHandleBlock(initializeData))();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    const findings = await handleBlock(blockEvent);
 
     const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
     const actualBtcPrice = initializeData.tokens['0x0cbtc'].price.dp(2).toString();
@@ -564,7 +592,9 @@ describe('handleBlock', () => {
       [mockEthersZero, mockEthersZero, shortfallUSD],
     );
     mockContract.getAccountLiquidity.mockClear();
-    const findings = await (provideHandleBlock(initializeData))();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    const findings = await handleBlock(blockEvent);
 
     const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
     const actualBtcPrice = initializeData.tokens['0x0cbtc'].price.dp(2).toString();
@@ -607,7 +637,9 @@ describe('handleBlock', () => {
       [mockEthersZero, mockEthersZero, shortfallUSD],
     );
     mockContract.getAccountLiquidity.mockClear();
-    const findings = await (provideHandleBlock(initializeData))();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    const findings = await handleBlock(blockEvent);
 
     // Expected finding
     const borrowerAddress = mockBorrower;
@@ -675,7 +707,9 @@ describe('handleBlock', () => {
       [mockEthersZero, mockEthersZero, shortfallUSD],
     );
     mockContract.getAccountLiquidity.mockClear();
-    const findings = await (provideHandleBlock(initializeData))();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    const findings = await handleBlock(blockEvent);
 
     const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
     const actualEthPrice = initializeData.tokens['0x0ceth'].price.dp(2).toString();
@@ -717,7 +751,9 @@ describe('handleBlock', () => {
       [mockEthersZero, mockEthersZero, shortfallUSD],
     );
     mockContract.getAccountLiquidity.mockClear();
-    const findings = await (provideHandleBlock(initializeData))();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    const findings = await handleBlock(blockEvent);
 
     const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
     const actualEthPrice = initializeData.tokens['0x0ceth'].price.dp(2).toString();
@@ -760,7 +796,9 @@ describe('handleBlock', () => {
       [mockEthersZero, mockEthersZero, shortfallUSD],
     );
     mockContract.getAccountLiquidity.mockClear();
-    const findings = await (provideHandleBlock(initializeData))();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    const findings = await handleBlock(blockEvent);
 
     // Expected finding
     const borrowerAddress = mockBorrower;
@@ -796,6 +834,181 @@ describe('handleBlock', () => {
     expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
     expect(findings).toStrictEqual([expectedFinding]);
   });
+
+  it('returns no findings if the same account is alerted on in the following blocks within 24 hours', async () => {
+    // Supplied ETH decreases 2% in value
+    // Scaled to integer, because ethers.BigNumbers doesn't accept floats
+    let multiplier = 98;
+    const scale = 100;
+
+    // Starting values are BtcPrice = 10, UserBalance = 8.5 and health = 1
+    // All expected are rounded to 2 decimal points
+    const expectedEthPrice = '0.98'; // In ETH value
+    // User supplied ETH, so health is inversely affected by its price.
+    const expectedUserHealth = '0.98';
+    const expectedBorrowBalance = '8.5'; // Borrow is unchanged
+    const expectedSupplyBalance = '8.33';
+    const expectedLiquidationAmount = '515.15';
+
+    multiplier = ethers.BigNumber.from(multiplier);
+    const newEthPrice = mockEthPrice.mul(multiplier).div(scale);
+
+    const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
+
+    // Mock and process 2 new blocks
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(newEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    mockContract.getAccountLiquidity.mockResolvedValueOnce(
+      [mockEthersZero, mockEthersZero, shortfallUSD],
+    );
+    mockContract.getAccountLiquidity.mockClear();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    // This block should alert
+    let findings = await handleBlock(blockEvent);
+
+    // Expected finding
+    const borrowerAddress = mockBorrower;
+    const liquidationAmount = expectedLiquidationAmount;
+    const shortfallAmount = expectedLiquidationAmount;
+    const healthFactor = expectedUserHealth;
+    const expectedFinding = Finding.fromObject({
+      name: `${initializeData.protocolName} Liquidation Threshold Alert`,
+      description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
+        + `The account may be liquidated for: $${liquidationAmount} USD`,
+      alertId: `${initializeData.developerAbbreviation}-${initializeData.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+      type: FindingType[initializeData.alert.type],
+      severity: FindingSeverity[initializeData.alert.severity],
+      protocol: initializeData.protocolName,
+      metadata: {
+        borrowerAddress,
+        liquidationAmount,
+        shortfallAmount,
+        healthFactor,
+      },
+    });
+
+    const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
+    const actualEthPrice = initializeData.tokens['0x0ceth'].price.dp(2).toString();
+    const actualBorrowBalance = borrowBalance.dp(2).toString();
+    const actualSupplyBalance = supplyBalance.dp(2).toString();
+    const actualUserHealth = health.dp(2).toString();
+
+    expect(actualEthPrice).toBe(expectedEthPrice);
+    expect(actualUserHealth).toBe(expectedUserHealth);
+    expect(actualBorrowBalance).toBe(expectedBorrowBalance);
+    expect(actualSupplyBalance).toBe(expectedSupplyBalance);
+    expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
+    expect(findings).toStrictEqual([expectedFinding]);
+
+    // After that is all verified, process a new block without changing anything.
+    // Start the block with a block timestamp of 45 seconds
+    // Price and liquidity checks still happen every block, so mock them.
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(newEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    mockContract.getAccountLiquidity.mockResolvedValueOnce(
+      [mockEthersZero, mockEthersZero, shortfallUSD],
+    );
+    blockEvent = mockBlock(45);
+    findings = await handleBlock(blockEvent);
+    // New finding should be empty because it was the same alert within 24 hours.
+    expect(findings).toStrictEqual([]);
+  });
+
+  it('returns findings if the same account is alerted on in the following blocks after 24 hours', async () => {
+    // Supplied ETH decreases 2% in value
+    // Scaled to integer, because ethers.BigNumbers doesn't accept floats
+    let multiplier = 98;
+    const scale = 100;
+
+    // Starting values are BtcPrice = 10, UserBalance = 8.5 and health = 1
+    // All expected are rounded to 2 decimal points
+    const expectedEthPrice = '0.98'; // In ETH value
+    // User supplied ETH, so health is inversely affected by its price.
+    const expectedUserHealth = '0.98';
+    const expectedBorrowBalance = '8.5'; // Borrow is unchanged
+    const expectedSupplyBalance = '8.33';
+    const expectedLiquidationAmount = '515.15';
+
+    multiplier = ethers.BigNumber.from(multiplier);
+    const newEthPrice = mockEthPrice.mul(multiplier).div(scale);
+
+    const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
+
+    // Mock and process 2 new blocks
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(newEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    mockContract.getAccountLiquidity.mockResolvedValueOnce(
+      [mockEthersZero, mockEthersZero, shortfallUSD],
+    );
+    mockContract.getAccountLiquidity.mockClear();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    // This block should alert
+    let findings = await handleBlock(blockEvent);
+
+    // Expected finding
+    const borrowerAddress = mockBorrower;
+    const liquidationAmount = expectedLiquidationAmount;
+    const shortfallAmount = expectedLiquidationAmount;
+    const healthFactor = expectedUserHealth;
+    const expectedFinding = Finding.fromObject({
+      name: `${initializeData.protocolName} Liquidation Threshold Alert`,
+      description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
+        + `The account may be liquidated for: $${liquidationAmount} USD`,
+      alertId: `${initializeData.developerAbbreviation}-${initializeData.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+      type: FindingType[initializeData.alert.type],
+      severity: FindingSeverity[initializeData.alert.severity],
+      protocol: initializeData.protocolName,
+      metadata: {
+        borrowerAddress,
+        liquidationAmount,
+        shortfallAmount,
+        healthFactor,
+      },
+    });
+
+    const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
+    const actualEthPrice = initializeData.tokens['0x0ceth'].price.dp(2).toString();
+    const actualBorrowBalance = borrowBalance.dp(2).toString();
+    const actualSupplyBalance = supplyBalance.dp(2).toString();
+    const actualUserHealth = health.dp(2).toString();
+
+    expect(actualEthPrice).toBe(expectedEthPrice);
+    expect(actualUserHealth).toBe(expectedUserHealth);
+    expect(actualBorrowBalance).toBe(expectedBorrowBalance);
+    expect(actualSupplyBalance).toBe(expectedSupplyBalance);
+    expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
+    expect(findings).toStrictEqual([expectedFinding]);
+
+    // After that is all verified, process a new block without changing anythings.
+    // Start the block with a block timestamp of 45 seconds
+    // Price and liquidity checks still happen every block, so mock them.
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(newEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    mockContract.getAccountLiquidity.mockResolvedValueOnce(
+      [mockEthersZero, mockEthersZero, shortfallUSD],
+    );
+    blockEvent = mockBlock(45);
+    findings = await handleBlock(blockEvent);
+    // New finding should be empty because it was the same alert within 24 hours.
+    expect(findings).toStrictEqual([]);
+
+    // Next let 24 hours pass and process a new block
+    // Start the block with a block timestamp of 1 day + 45 seconds
+    // Price and liquidity checks still happen every block, so mock them.
+    const oneDay = 86400;
+    blockEvent = mockBlock(oneDay + 45);
+    setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
+    setPriceMocks(newEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    mockContract.getAccountLiquidity.mockResolvedValueOnce(
+      [mockEthersZero, mockEthersZero, shortfallUSD],
+    );
+    findings = await handleBlock(blockEvent);
+
+    // New finding should return after the 24 hours.
+    expect(findings).toStrictEqual([expectedFinding]);
+  });
 });
 
 function mockTransaction(mockAddress, mockTopic, mockData) {
@@ -814,6 +1027,8 @@ function mockTransaction(mockAddress, mockTopic, mockData) {
 
 describe('handleTransaction', () => {
   let initializeData;
+  let blockEvent;
+  let handleBlock = provideHandleBlock(initializeData);
   let handleTransaction;
   let cErcIface;
   let comptrollerIface;
@@ -822,6 +1037,7 @@ describe('handleTransaction', () => {
     // Initialize
     initializeData = {};
     handleTransaction = provideHandleTransaction(initializeData);
+    handleBlock = provideHandleBlock(initializeData);
 
     setDefaultMocks();
     setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
@@ -836,7 +1052,10 @@ describe('handleTransaction', () => {
 
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
-    await (provideHandleBlock(initializeData))();
+
+    // Initialize block time is 1 second since epoch. Then the next block is set for 15 seconds
+    blockEvent = mockBlock(15);
+    await handleBlock(blockEvent);
     // Same beforeEach as handleBlock
   });
 
@@ -907,10 +1126,14 @@ function mockSnapshot(setBorrow, setSupply, setDecimals) {
 
 describe('process newBorrower', () => {
   let initializeData;
+  let handleBlock;
+  let blockEvent;
 
   beforeEach(async () => {
     // Initialize
     initializeData = {};
+    handleBlock = provideHandleBlock(initializeData);
+
     setDefaultMocks();
     setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
     setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
@@ -922,7 +1145,10 @@ describe('process newBorrower', () => {
 
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
-    await (provideHandleBlock(initializeData))();
+
+    // Initialize block time is 1 second since epoch. Then the next block is set for 15 seconds
+    blockEvent = mockBlock(15);
+    await handleBlock(blockEvent);
     // Same beforeEach as handleBlock
 
     // handleTransaction already verified the newBorrower addition process. The result
@@ -939,8 +1165,9 @@ describe('process newBorrower', () => {
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
     setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
 
-    // Start the block
-    await (provideHandleBlock(initializeData))();
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    await handleBlock(blockEvent);
 
     // Should check which tokens this account has.
     expect(mockContract.getAssetsIn).toBeCalledTimes(1);
@@ -981,7 +1208,10 @@ describe('process newBorrower', () => {
     mockContract.getAssetsIn.mockClear();
     mockContract.getAccountSnapshot.mockClear();
     mockContract.getAccountSnapshot.mockClear();
-    await (provideHandleBlock(initializeData))();
+
+    // Start the block with a block timestamp of 30 seconds
+    blockEvent = mockBlock(30);
+    await handleBlock(blockEvent);
 
     // Should check which tokens this account has.
     expect(mockContract.getAssetsIn).toBeCalledTimes(1);
