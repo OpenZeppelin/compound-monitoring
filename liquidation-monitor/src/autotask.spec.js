@@ -4,11 +4,14 @@ const {
 
 // Mock the data from the Bot finding
 const mockMetadata = {
-  borrowerAddress: '0xBORROWERxADDRESS',
+  borrowerAddress: '0x0000000000000000000000000000000000000000',
   liquidationAmount: '1000.00',
   shortfallAmount: '1000.00',
   healthFactor: '0.80',
 };
+const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
+const mockTxHash = '0xb85bbcdfd06edf6bcaa3271e49a339cc878daa30ec5f987a43a4d11d925ba751';
+
 const mockFinding = Finding.fromObject({
   name: 'Placeholder Alert',
   description: 'Placeholder description',
@@ -97,7 +100,7 @@ function createFortaSentinelEvent(finding, blockHash, txHash) {
 
 describe('check autotask', () => {
   it('Runs autotask against mock data and posts in Discord (manual-check)', async () => {
-    const autotaskEvent = createFortaSentinelEvent(mockFinding, '0x0', '0x0');
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockTxHash);
 
     // run the autotask on the events
     await handler(autotaskEvent);
