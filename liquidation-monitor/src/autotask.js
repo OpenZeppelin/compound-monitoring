@@ -79,7 +79,6 @@ exports.handler = async function (autotaskEvent) {
     return {};
   }
 
-  console.log(alert);
   // extract the metadata from the alert Object
   const {
     metadata,
@@ -98,7 +97,7 @@ exports.handler = async function (autotaskEvent) {
     liquidationAmount,
   } = metadata;
 
-  const message = `📉💵🔥 **Liquidatable account detected** account ${borrowerAddress} `
+  const message = `📉💵🔥 **Liquidatable account detected** account ${borrowerAddress.slice(0, 6)} `
     + `is liquidatable for $${liquidationAmount}`;
 
   // construct the Etherscan transaction link
