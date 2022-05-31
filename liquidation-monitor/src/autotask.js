@@ -1,21 +1,4 @@
-//////////////////////
-// Work in Progress //
-//////////////////////
-
-
-/* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
 const axios = require('axios');
-const ethers = require('ethers');
-
-// import the DefenderRelayProvider to interact with its JSON-RPC endpoint
-const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
-/* eslint-enable import/no-extraneous-dependencies,import/no-unresolved */
-
-function createDiscordMessage(metadata, description) {
-  let message = `[Account](https://etherscan.com/address/${address})📉💵🔥 **Liquidatable account detected** `;
-
-  return message;
-}
 
 async function post(url, method, headers, data) {
   return axios({
@@ -51,7 +34,6 @@ async function postToDiscord(url, message) {
       throw error;
     }
   }
-
   return response;
 }
 
@@ -61,8 +43,6 @@ exports.handler = async function (autotaskEvent) {
   if (autotaskEvent === undefined) {
     return {};
   }
-  console.log('Autotask Event');
-  console.log(JSON.stringify(autotaskEvent, null, 2));
 
   const { secrets } = autotaskEvent;
   if (secrets === undefined) {
@@ -86,47 +66,47 @@ exports.handler = async function (autotaskEvent) {
   if (body === undefined) {
     return {};
   }
-  console.log('Body');
-  console.log(JSON.stringify(body, null, 2));
 
   // ensure that the alert key exists within the body Object
-  const { events } = body;
-  if (events === undefined) {
+  const { alert } = body;
+  if (alert === undefined) {
     return {};
   }
 
-  // extract the transaction hash and agent ID from the alert Object
-  events.map((event) => {
-    const {
+  // ensure that the alert key exists within the body Object
+  const { source } = body;
+  if (source === undefined) {
+    return {};
+  }
+
+  console.log(alert);
+  // extract the metadata from the alert Object
+  const {
+    metadata,
+  } = alert;
+
+  // extract the hashes from the source Object
+  const {
+    // transactionHash,
+    block: {
       hash,
-      source: {
-        transactionHash,
-        agent: { id: agentId },
-      },
-    } = alert;
-  });
+    },
+  } = source;
 
-    // craft the Discord message
-    return createDiscordMessage(
-      eventName,
-      metadata,
-      decimals,
-      symbol,
-      description,
-    );
-  });
+  const {
+    borrowerAddress,
+    liquidationAmount,
+  } = metadata;
 
-  // wait for the promises to settle
-  const messages = await Promise.all(promises);
+  const message = `📉💵🔥 **Liquidatable account detected** account ${borrowerAddress} `
+    + `is liquidatable for $${liquidationAmount}`;
 
   // construct the Etherscan transaction link
-  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-
+  // const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
+  let etherscanLink = `[BLOCK](<https://etherscan.io/block/${hash}>)`;
+  etherscanLink += ` - [ACCT](<https://etherscan.io/address/${borrowerAddress}>)`;
   // create promises for posting messages to Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
-
-  // wait for the promises to settle
-  await Promise.all(discordPromises);
+  await postToDiscord(discordUrl, `${etherscanLink} ${message}`);
 
   return {};
 };

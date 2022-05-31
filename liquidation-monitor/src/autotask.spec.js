@@ -1,9 +1,23 @@
-//////////////////////
-// Work in Progress //
-//////////////////////
+const {
+  Finding, FindingType, FindingSeverity,
+} = require('forta-agent');
 
-const ethers = require('ethers');
-const axios = require('axios');
+// Mock the data from the Bot finding
+const mockMetadata = {
+  borrowerAddress: '0xBORROWERxADDRESS',
+  liquidationAmount: '1000.00',
+  shortfallAmount: '1000.00',
+  healthFactor: '0.80',
+};
+const mockFinding = Finding.fromObject({
+  name: 'Placeholder Alert',
+  description: 'Placeholder description',
+  alertId: 'AE-ALERT-ID',
+  type: FindingType.Info,
+  severity: FindingSeverity.Info,
+  protocol: 'Protocol',
+  metadata: mockMetadata,
+});
 
 // grab the existing keys before loading new content from the .env file
 const existingKeys = Object.keys(process.env);
@@ -16,162 +30,76 @@ newKeys.forEach((key) => {
   secrets[key] = process.env[key];
 });
 
-const config = require('../autotask-config.json');
-
-const { jsonRpcUrl } = config;
-
-// create a provider that will be injected as the Defender Relayer provider
-const mockProvider = new ethers.providers.JsonRpcBatchProvider(jsonRpcUrl);
-jest.mock('defender-relay-client/lib/ethers', () => ({
-  DefenderRelayProvider: jest.fn().mockReturnValue(mockProvider),
-}));
-
 const { handler } = require('./autotask');
 
-const fortaApiEndpoint = 'https://api.forta.network/graphql';
+function createFortaSentinelEvent(finding, blockHash, txHash) {
+  // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
+  //  with some metadata being added and removed along the way. This function will mimic
+  // the Sentinel output with only Finding, block and transaction data.
 
-async function getFortaAlerts(agentId, startBlockNumber, endBlockNumber) {
-  const headers = {
-    'content-type': 'application/json',
+  // Note: Much of the extra data here is superfluous but is left here just in case future bots
+  // want to reference any of the Sentinel data in the Discord output. It also mimics sentinel
+  // output more accurately.
+
+  // On block events, the txHash does not exist
+  if (txHash === undefined || txHash === null) {
+    txHash = '';
+  }
+
+  // populate the matchReasons Array with placeholders
+  const matchReasons = [
+    {
+      type: 'alert-id',
+      value: 'ALERT_ID_PLACEHOLDER',
+    },
+    {
+      type: 'severity',
+      value: 'INFO',
+    },
+  ];
+
+  // populate the sentinel Object with placeholders
+  const sentinel = {
+    id: '8fe3d50b-9b52-44ff-b3fd-a304c66e1e56',
+    name: 'Sentinel Name Placeholder',
+    addresses: [],
+    agents: [],
+    network: 'mainnet',
+    chainId: 1,
   };
 
-  const graphqlQuery = {
-    operationName: 'recentAlerts',
-    query: `query recentAlerts($input: AlertsInput) {
-        alerts(input: $input) {
-          pageInfo {
-            hasNextPage
-            endCursor {
-              alertId
-              blockNumber
-            }
-          }
-          alerts {
-            addresses
-            alertId
-            description
-            hash
-            name
-            protocol
-            scanNodeCount
-            severity
-            source {
-                transactionHash
-                agent {
-                    id
-                }
-                block {
-                    chainId
-                    hash
-                }
-            }
-            findingType
-          }
-        }
-      }`,
-    variables: {
-      input: {
-        first: 100,
-        agents: [agentId],
-        blockNumberRange: {
-          startBlockNumber,
-          endBlockNumber,
+  const autotaskEvent = {
+    relayerARN: undefined,
+    kvstoreARN: undefined,
+    credentials: undefined,
+    tenantId: undefined,
+    secrets,
+    request: {
+      body: {
+        hash: '0xAGENT-HASH', // forta Agent hash
+        alert: {
+          metadata: finding.metadata,
         },
-        createdSince: 0,
-        chainId: 1,
+        source: {
+          transactionHash: txHash,
+          block: {
+            hash: blockHash,
+          },
+        },
+        matchReasons,
+        sentinel,
+        type: 'FORTA',
       },
     },
   };
-
-  // perform the POST request
-  const response = await axios({
-    url: fortaApiEndpoint,
-    method: 'post',
-    headers,
-    data: graphqlQuery,
-  });
-
-  const { data } = response;
-  if (data === undefined) {
-    return undefined;
-  }
-
-  const { data: { alerts: { alerts } } } = data;
-  return alerts;
+  return autotaskEvent;
 }
 
-async function createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumber) {
-  const alerts = await getFortaAlerts(agentId, startBlockNumber, endBlockNumber);
-  const autotaskEvents = alerts.map((alert) => {
-    // augment the alert Object with additional fields
-    // admittedly, there is some hand-waving here because we have to mock some of the Sentinel
-    // fields that don't originate from the Forta Public API
-    // e.g. We have to specify the alertId in the Sentinel to perform filtering on what we get from
-    // the Forta Agent in the first place.
-    /* eslint-disable no-param-reassign */
-    alert.source.agent.name = 'N/A';
-    alert.source.block.chain_id = alert.source.block.chainId;
-    alert.source.tx_hash = alert.source.transactionHash;
-    alert.alertType = 'TX';
-    alert.alert_id = 'ALERT_ID_PLACEHOLDER';
-    alert.type = 'INFORMATION';
-    alert.scanner_count = 1;
-    /* eslint-enable no-param-reassign */
+describe('check autotask', () => {
+  it('Runs autotask against mock data and posts in Discord (manual-check)', async () => {
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, '0x0', '0x0');
 
-    // populate the matchReasons Array with placeholders
-    const matchReasons = [
-      {
-        type: 'alert-id',
-        value: 'ALERT_ID_PLACEHOLDER',
-      },
-      {
-        type: 'severity',
-        value: 'INFO',
-      },
-    ];
-
-    // populate the sentinel Object with placeholders
-    // none of these are currently checked by any Autotasks in use
-    const sentinel = {
-      id: '8fe3d50b-9b52-44ff-b3fd-a304c66e1e56',
-      name: 'Sentinel Name Placeholder',
-      addresses: [],
-      agents: [agentId],
-      network: 'mainnet',
-      chainId: 1,
-    };
-
-    const autotaskEvent = {
-      relayerARN: undefined,
-      kvstoreARN: undefined,
-      credentials: undefined,
-      tenantId: undefined,
-      secrets,
-      request: {
-        body: {
-          hash: alert.hash, // forta Agent hash
-          alert,
-          matchReasons,
-          sentinel,
-          type: 'FORTA',
-        },
-      },
-    };
-    return autotaskEvent;
+    // run the autotask on the events
+    await handler(autotaskEvent);
   });
-
-  return autotaskEvents;
-}
-
-it('Runs autotask against blocks in configuration file', async () => {
-  // get the development configuration values
-  const { agentId, startBlockNumber, endBlockNumber } = config;
-
-  // grab Forta Agent alerts from the Forta Public API and create autotaskEvents
-  const autotaskEvents = await createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumber);
-
-  // run the autotask on the events
-  const promises = autotaskEvents.map((autotaskEvent) => handler(autotaskEvent));
-
-  await Promise.all(promises);
 });
