@@ -25,7 +25,7 @@ const {
 const { getAbi } = require('./utils');
 
 const config = require('../bot-config.json');
-const web3 = require('web3-Eth');
+const web3 = require('web3-eth');
 const web3Eth = new web3();
 
 // utility function specific for this test module
