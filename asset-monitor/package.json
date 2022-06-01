@@ -15,18 +15,25 @@
     "disable": "forta-agent disable",
     "enable": "forta-agent enable",
     "keyfile": "forta-agent keyfile",
-    "test": "jest"
+    "test": "jest",
+    "build": "rollup -c"
   },
   "dependencies": {
     "axios": "^0.26.1",
     "bignumber.js": "^9.0.2",
     "forta-agent": "^0.0.39",
+    "needle": "^3.1.0",
     "web3": "^1.7.1",
     "web3-eth": "^1.7.1",
     "defender-relay-client": "^1.19.0",
     "dotenv": "^16.0.0"
   },
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^16.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "builtin-modules": "^3.1.0",
+    "rollup": "^2.33.3",
     "eslint": "^7.32.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.25.1",
