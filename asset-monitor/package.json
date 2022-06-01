@@ -21,7 +21,7 @@
     "axios": "^0.26.1",
     "bignumber.js": "^9.0.2",
     "forta-agent": "^0.0.39",
-    "web3": "^1.7.1",
+    "web3": "^1.7.3",
     "web3-eth": "^1.7.1"
   },
   "devDependencies": {
