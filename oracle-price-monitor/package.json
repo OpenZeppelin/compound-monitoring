@@ -1,7 +1,9 @@
 {
   "name": "forta-ae-oracle-price-monitor",
   "version": "0.0.2",
-  "chainIds": [1],
+  "chainIds": [
+    1
+  ],
   "description": "This bot monitors the UniswapAnchoredView contract to see if any price updates have been rejected.",
   "scripts": {
     "start": "npm run start:dev",
@@ -22,10 +24,10 @@
     "forta-agent": "^0.0.38"
   },
   "devDependencies": {
-    "eslint": "^7.32.0",
-    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint": "^8.16.0",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.25.1",
-    "jest": "^27.2.5",
+    "jest": "^28.1.0",
     "nodemon": "^2.0.8"
   }
 }
