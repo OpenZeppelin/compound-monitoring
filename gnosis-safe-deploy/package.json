@@ -13,7 +13,7 @@
     "file": "forta-agent run --file",
     "test": "jest",
     "deploy": "node scripts/deploySafe.js",
-    "propose": "node scripts/proposeFortaAgent.js",
+    "propose": "node scripts/proposeFortaBot.js",
     "approve": "node scripts/approveTransaction.js",
     "execute": "node scripts/executeTransaction.js",
     "reject": "node scripts/rejectTransaction.js"

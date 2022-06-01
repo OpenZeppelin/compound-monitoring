@@ -254,13 +254,6 @@
     "signature": "0x741b2525"
   },
   {
-    "inputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "constructor",
-    "signature": "constructor"
-  },
-  {
     "anonymous": false,
     "inputs": [
       {
@@ -501,32 +494,6 @@
     "name": "DistributedSupplierComp",
     "type": "event",
     "signature": "0x2caecd17d02f56fa897705dcc740da2d237c373f70686f4e0d9bd3bf0400ea7a"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "error",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "info",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "detail",
-        "type": "uint256"
-      }
-    ],
-    "name": "Failure",
-    "type": "event",
-    "signature": "0x45b96fe442630264581b197e84bbada861235052c5a1aadfff9ea4e40a969aa0"
   },
   {
     "anonymous": false,
@@ -1145,22 +1112,6 @@
   },
   {
     "constant": true,
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function",
-    "signature": "0xf851a440"
-  },
-  {
-    "constant": true,
     "inputs": [
       {
         "internalType": "uint256",
@@ -1681,22 +1632,6 @@
     "stateMutability": "view",
     "type": "function",
     "signature": "0x6b79c38d"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "comptrollerImplementation",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function",
-    "signature": "0xbb82aa5e"
   },
   {
     "constant": false,
@@ -2276,38 +2211,6 @@
   {
     "constant": true,
     "inputs": [],
-    "name": "pendingAdmin",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function",
-    "signature": "0x26782247"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "pendingComptrollerImplementation",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function",
-    "signature": "0xdcfbc0c7"
-  },
-  {
-    "constant": true,
-    "inputs": [],
     "name": "proposal65FixExecuted",
     "outputs": [
       {
@@ -2634,22 +2537,6 @@
     "stateMutability": "nonpayable",
     "type": "function",
     "signature": "0x6a56947e"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "contributor",
-        "type": "address"
-      }
-    ],
-    "name": "updateContributorRewards",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function",
-    "signature": "0x741b2525"
   }
 ]
 }

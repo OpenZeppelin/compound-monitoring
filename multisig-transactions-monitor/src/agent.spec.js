@@ -6,15 +6,15 @@ const {
   ethers,
 } = require('forta-agent');
 
-// require the agent
+// require the bot
 const { provideHandleTransaction, provideInitialize } = require('./agent');
 
-const config = require('../agent-config.json');
+const config = require('../bot-config.json');
 
 const utils = require('./utils');
 
 // check config file
-describe('check agent configuration file', () => {
+describe('check bot configuration file', () => {
   it('has a protocolName', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');
@@ -191,7 +191,7 @@ describe('monitor multisig contract transactions', () => {
       mockTxEvent = createTransactionEvent({});
     });
 
-    it('returns empty findings if multisig was not involved in a a tranasction', async () => {
+    it('returns empty findings if multisig was not involved in a a transaction', async () => {
       mockTxEvent.addresses[ethers.constants.AddressZero] = true;
       const findings = await handleTransaction(mockTxEvent);
       expect(findings).toStrictEqual([]);
@@ -214,7 +214,7 @@ describe('monitor multisig contract transactions', () => {
       );
       mockTxEvent.logs = [log];
 
-      // run agent with mock transaction event
+      // run bot with mock transaction event
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([]);
@@ -232,7 +232,7 @@ describe('monitor multisig contract transactions', () => {
       );
       mockTxEvent.logs = [log];
 
-      // run agent with mock transaction event
+      // run bot with mock transaction event
       const findings = await handleTransaction(mockTxEvent);
 
       const expectedFindings = Finding.fromObject({
@@ -262,7 +262,7 @@ describe('monitor multisig contract transactions', () => {
       );
       mockTxEvent.logs = [log];
 
-      // run agent with mock transaction event
+      // run bot with mock transaction event
       const findings = await handleTransaction(mockTxEvent);
 
       expect(findings).toStrictEqual([]);
@@ -283,7 +283,7 @@ describe('monitor multisig contract transactions', () => {
 
       const findings = await handleTransaction(mockTxEvent);
       const expectedFindings = Finding.fromObject({
-        name: 'Compound New Adimn',
+        name: 'Compound New Admin',
         description: `Governance Admin changed from ${zeroAddress} to ${testArgumentAddress}`,
         alertId: 'AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT',
         protocol: 'Compound',

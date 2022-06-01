@@ -1,8 +1,8 @@
-# Compound Multisig Transaction Monitor Agent
+# Compound Multisig Transaction Monitor Bot
 
 ## Description
 
-This agent detects specific transactions originating from and/or interacting with the Compound Community Multisig wallet.
+This bot detects specific transactions originating from and/or interacting with the Compound Community Multisig wallet.
 
 ## Supported Chains
 
