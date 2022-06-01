@@ -1,8 +1,8 @@
-# Compound Large Borrows Governance Agent
+# Compound Large Borrows Governance Bot
 
 ## Description
 
-This agent monitors all borrow events of COMP to see if the borrower address has accrued enough COMP
+This bot monitors all borrow events of COMP to see if the borrower address has accrued enough COMP
 to pass significant governance thresholds. This can be an early indication of governance attacks.
 
 ## Alerts
