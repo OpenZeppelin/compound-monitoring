@@ -215,7 +215,7 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED':
       ({ id } = metadata);
       proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposa**l ${proposalName} ${noEntryEmoji}`;
+      message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED':
       ({ id } = metadata);
