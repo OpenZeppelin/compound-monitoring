@@ -63,12 +63,10 @@ async function getAccountDisplayName(voter) {
   try {
     const result = await axios.get(baseUrl + queryUrl);
     displayName = result.data.proposal_vote_receipts[0].voter.display_name;
-    console.log(`Display name successfully retrieved: ${displayName}`);
     if (displayName === null) {
       displayName = '';
     }
   } catch (err) {
-    console.error(`Display name NOT successfully retrieved: ${err}`);
     displayName = '';
   }
   return displayName;
@@ -79,11 +77,9 @@ function getProposalTitleFromDescription(description) {
   let [proposalName] = lines;
   // remove markdown heading symbol and then leading and trailing spaces
   if (proposalName !== undefined) {
-    console.log(proposalName);
     try {
       proposalName = proposalName.replaceAll('#', '').trim();
     } catch (err) {
-      console.error(err);
       proposalName = undefined;
     }
   }
@@ -188,33 +184,31 @@ async function createDiscordMessage(eventName, params, transactionHash) {
 
 // eslint-disable-next-line func-names
 exports.handler = async function (autotaskEvent) {
-  console.log(autotaskEvent);
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
-    return {};
+    throw new Error('autotaskEvent undefined');
   }
 
-  const { secrets } = autotaskEvent;
+  const { secrets, request } = autotaskEvent;
   if (secrets === undefined) {
-    return {};
+    throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { COMPGovernanceDiscordUrl: discordUrl } = secrets;
+  const { GovernanceDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
-    return {};
+    throw new Error('GovernanceDiscordUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
-  const { request } = autotaskEvent;
   if (request === undefined) {
-    return {};
+    throw new Error('request undefined');
   }
 
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
-    return {};
+    throw new Error('body undefined');
   }
 
   // ensure that the alert key exists within the body Object
@@ -223,7 +217,7 @@ exports.handler = async function (autotaskEvent) {
     hash: transactionHash,
   } = body;
   if (matchReasons === undefined) {
-    return {};
+    throw new Error('matchReasons undefined');
   }
 
   // create messages for Discord
@@ -232,14 +226,16 @@ exports.handler = async function (autotaskEvent) {
     const { signature, params } = reason;
     const eventName = signature.slice(0, signature.indexOf('('));
     // craft the Discord message
-    console.log('Creating Discord message');
     return createDiscordMessage(eventName, params, transactionHash);
   });
 
   // wait for the promises to settle
   let results = await Promise.allSettled(promises);
 
-  const discordPromises = results.map((result) => postToDiscord(discordUrl, result.value));
+  const discordPromises = results.map((result) => {
+    console.log(result.value);
+    return postToDiscord(discordUrl, result.value);
+  });
 
   results = await Promise.allSettled(discordPromises);
   results = results.filter((result) => result.status === 'rejected');
@@ -247,8 +243,6 @@ exports.handler = async function (autotaskEvent) {
   if (results.length > 0) {
     throw new Error(results[0].reason);
   }
-
-  console.log('Posted!');
 
   return {};
 };

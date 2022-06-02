@@ -59,7 +59,6 @@ async function getDecimalsAndSymbol(cTokenAddress, provider) {
 }
 
 function formatAmountString(amount, decimals) {
-  console.log('amount here', amount);
   const amountBN = ethers.BigNumber.from(amount);
   const divisorBN = ethers.BigNumber.from(10).pow(decimals);
 
@@ -82,9 +81,7 @@ async function createDiscordMessage(reporterPrice, cTokenAddress, transactionHas
 
   const amountString = formatAmountString(reporterPrice, decimals);
 
-  console.log('amount string here', amountString);
-
-  // // construct the Etherscan transaction link
+  // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   return `${etherscanLink} 🚫 reported price of **${amountString}** for **${symbol}** was rejected`;
@@ -195,8 +192,6 @@ async function getFortaAlerts(botId, transactionHash) {
     return undefined;
   }
 
-  console.log('Forta Public API data');
-  console.log(JSON.stringify(data, null, 2));
   const { data: { alerts: { alerts } } } = data;
   return alerts;
 }
@@ -206,40 +201,35 @@ async function getFortaAlerts(botId, transactionHash) {
 exports.handler = async function (autotaskEvent) {
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
-    return {};
+    throw new Error('autotaskEvent undefined');
   }
-  console.log('Autotask Event');
-  console.log(JSON.stringify(autotaskEvent, null, 2));
 
-  const { secrets } = autotaskEvent;
+  const { secrets, request } = autotaskEvent;
   if (secrets === undefined) {
-    return {};
+    throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret. Name changes depending on what webhook secret you use
-  const { COMPSecurityAlertsDiscordUrl: discordUrl } = secrets;
+  const { SecurityAlertsDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
-    return {};
+    throw new Error('SecurityAlertsDiscordUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
-  const { request } = autotaskEvent;
   if (request === undefined) {
-    return {};
+    throw new Error('request undefined');
   }
 
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
-    return {};
+    throw new Error('body undefined');
   }
-  console.log('Body');
-  console.log(JSON.stringify(body, null, 2));
 
   // ensure that the alert key exists within the body Object
   const { alert } = body;
   if (alert === undefined) {
-    return {};
+    throw new Error('alert undefined');
   }
 
   // extract the transaction hash and bot ID from the alert Object
@@ -254,9 +244,6 @@ exports.handler = async function (autotaskEvent) {
 
   // retrieve the metadata from the Forta public API
   const alerts = await getFortaAlerts(botId, transactionHash);
-  // alerts = alerts.filter((alertObject) => alertObject.hash === hash);
-  console.log('Alerts');
-  console.log(JSON.stringify(alerts, null, 2));
 
   // use the relayer provider for JSON-RPC requests
   const provider = new DefenderRelayProvider(autotaskEvent);
@@ -280,7 +267,10 @@ exports.handler = async function (autotaskEvent) {
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   // create promises for posting messages to Discord webhook
-  const discordPromises = results.map((result) => postToDiscord(discordUrl, `${etherscanLink} ${result.value}`));
+  const discordPromises = results.map((result) => {
+    console.log(`${etherscanLink} ${result.value}`);
+    return postToDiscord(discordUrl, `${etherscanLink} ${result.value}`);
+  });
 
   // wait for the promises to settle
   results = await Promise.allSettled(discordPromises);

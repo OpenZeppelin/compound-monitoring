@@ -89,7 +89,6 @@ async function getFortaAlerts(botId, transactionHash) {
   };
 
   // perform the POST request
-  console.log('Getting Forta Alert from Public API');
   const response = await axios({
     url: fortaApiEndpoint,
     method: 'post',
@@ -102,8 +101,6 @@ async function getFortaAlerts(botId, transactionHash) {
     return undefined;
   }
 
-  console.log('Forta Public API data');
-  console.log(JSON.stringify(data, null, 2));
   const { data: { alerts: { alerts } } } = data;
   return alerts;
 }
@@ -112,40 +109,35 @@ async function getFortaAlerts(botId, transactionHash) {
 exports.handler = async function (autotaskEvent) {
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
-    return {};
+    throw new Error('autotaskEvent undefined');
   }
-  console.log('Autotask Event');
-  console.log(JSON.stringify(autotaskEvent, null, 2));
 
-  const { secrets } = autotaskEvent;
+  const { secrets, request } = autotaskEvent;
   if (secrets === undefined) {
-    return {};
+    throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { COMPSecurityAlertsDiscordUrl: discordUrl } = secrets;
+  const { SecurityAlertsDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
-    return {};
+    throw new Error('SecurityAlertsDiscordUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
-  const { request } = autotaskEvent;
   if (request === undefined) {
-    return {};
+    throw new Error('request undefined');
   }
 
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
-    return {};
+    throw new Error('body undefined');
   }
-  console.log('Body');
-  console.log(JSON.stringify(body, null, 2));
 
   // ensure that the alert key exists within the body Object
   const { alert } = body;
   if (alert === undefined) {
-    return {};
+    throw new Error('alert undefined');
   }
 
   // extract the transaction hash and bot ID from the alert Object
@@ -162,8 +154,6 @@ exports.handler = async function (autotaskEvent) {
   // retrieve the metadata from the Forta public API
   let alerts = await getFortaAlerts(botId, transactionHash);
   alerts = alerts.filter((alertObject) => alertObject.hash === hash);
-  console.log('Alerts');
-  console.log(JSON.stringify(alerts, null, 2));
 
   // wait for the promises to settle
   const messages = alerts.map((alertData) => alertData.description);
@@ -173,7 +163,10 @@ exports.handler = async function (autotaskEvent) {
 
   // create promises for posting messages to Discord webhook
   const warningEmoji = '⚠️';
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${warningEmoji} ${message}`));
+  const discordPromises = messages.map((message) => {
+    console.log(`${etherscanLink} ${warningEmoji} ${message}`);
+    return postToDiscord(discordUrl, `${etherscanLink} ${warningEmoji} ${message}`);
+  });
 
   // wait for the promises to settle
   let results = await Promise.allSettled(discordPromises);
