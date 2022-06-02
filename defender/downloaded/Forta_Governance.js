@@ -24,9 +24,6 @@ async function postToDiscord(url, message) {
     data: body,
   };
 
-  console.log(`discordObject: ${discordObject}`);
-  console.log(`stringified: ${JSON.stringify(discordObject, null, 2)}`);
-
   let response;
   try {
     // perform the POST request
@@ -113,8 +110,6 @@ async function getFortaAlerts(botId, transactionHash) {
     return undefined;
   }
 
-  console.log('Forta Public API data');
-  console.log(JSON.stringify(data, null, 2));
   const { data: { alerts: { alerts } } } = data;
   return alerts;
 }
@@ -148,11 +143,8 @@ async function getAccountDisplayName(voter, proposalId) {
   const queryUrl = `?account=${voter}&proposal_id=${proposalId}`;
   let displayName;
   try {
-    console.log(baseUrl + queryUrl);
     const result = await axios.get(baseUrl + queryUrl);
-    console.log(result);
     displayName = result.data.proposal_vote_receipts[0].voter.display_name;
-    console.log(displayName);
     if (displayName === null) {
       displayName = '';
     }
@@ -198,7 +190,6 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
         id,
       } = metadata);
 
-      console.log('Retrieving name from Compound API');
       displayName = await getAccountDisplayName(voter, id);
 
       if (description.includes('against')) {
@@ -253,38 +244,35 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
 exports.handler = async function (autotaskEvent) {
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
-    return {};
+    throw new Error('autotaskEvent undefined');
   }
-  console.log('autotaskEvent');
-  console.log(JSON.stringify(autotaskEvent, null, 2));
 
-  const { secrets } = autotaskEvent;
+  const { secrets, request } = autotaskEvent;
   if (secrets === undefined) {
-    return {};
+    throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { TestingDiscordUrl: discordUrl } = secrets;
+  const { GovernanceDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
-    return {};
+    throw new Error('GovernanceDiscordUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
-  const { request } = autotaskEvent;
   if (request === undefined) {
-    return {};
+    throw new Error('request undefined');
   }
 
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
-    return {};
+    throw new Error('body undefined');
   }
 
   // ensure that the alert key exists within the body Object
   const { alert } = body;
   if (alert === undefined) {
-    return {};
+    throw new Error('alert undefined');
   }
 
   // extract the transaction hash and bot ID from the alert Object
@@ -301,13 +289,10 @@ exports.handler = async function (autotaskEvent) {
   // retrieve the metadata from the Forta public API
   let alerts = await getFortaAlerts(botId, transactionHash);
   alerts = alerts.filter((alertObject) => alertObject.hash === hash);
-  console.log('Alerts');
-  console.log(JSON.stringify(alerts, null, 2));
 
   const promises = alerts.map(async (alertData) => {
     const { metadata, description, alertId } = alertData;
     const message = await createDiscordMessage(metadata, description, alertId, transactionHash);
-    console.log(`message created: ${message}`);
     return message;
   });
 
@@ -318,7 +303,10 @@ exports.handler = async function (autotaskEvent) {
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   // create promises for posting messages to Discord webhook
-  const discordPromises = results.map((result) => postToDiscord(discordUrl, `${etherscanLink} ${result.value}`));
+  const discordPromises = results.map((result) => {
+    console.log(`${etherscanLink} ${result.value}`);
+    return postToDiscord(discordUrl, `${etherscanLink} ${result.value}`);
+  });
 
   // wait for the promises to settle
   results = await Promise.allSettled(discordPromises);

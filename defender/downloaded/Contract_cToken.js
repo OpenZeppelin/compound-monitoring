@@ -254,8 +254,8 @@ async function postToDiscord(discordWebhook, message) {
   } catch (err) {
     if (err.response && err.response.status === 429) {
       // rate-limited, retry
-      // after waiting a random amount of time between 2 and 15 seconds
-      const delay = getRandomInt(2000, 15000);
+      // after waiting a random amount of time between 2 and 120 seconds
+      const delay = getRandomInt(2000, 120000);
       // eslint-disable-next-line no-promise-executor-return
       const promise = new Promise((resolve) => setTimeout(resolve, delay));
       await promise;
@@ -318,34 +318,32 @@ function getAddressForMatchReason(reason, logs, abi) {
 
 // eslint-disable-next-line func-names
 exports.handler = async function (autotaskEvent) {
-  console.log(JSON.stringify(autotaskEvent, null, 2));
-
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
-    return {};
+    throw new Error('autotaskEvent undefined');
   }
 
   const { secrets } = autotaskEvent;
   if (secrets === undefined) {
-    return {};
+    throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { COMPDiscordUrl: discordUrl } = secrets;
+  const { DiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
-    return {};
+    throw new Error('discordUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
   const { request } = autotaskEvent;
   if (request === undefined) {
-    return {};
+    throw new Error('request undefined');
   }
 
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
-    return {};
+    throw new Error('body undefined');
   }
 
   // ensure that the alert key exists within the body Object
@@ -360,16 +358,14 @@ exports.handler = async function (autotaskEvent) {
     },
   } = body;
   if (matchReasons === undefined) {
-    return {};
+    throw new Error('matchReasons undefined');
   }
 
   // use the relayer provider for JSON-RPC requests
   const provider = new DefenderRelayProvider(autotaskEvent);
-  console.log('Created provider');
 
   // create an ethers.js Contract for the Compound Oracle contract
   const oracleContract = await getOracleContract(provider);
-  console.log('Created Oracle contract');
 
   // create messages for Discord
   const promises = matchReasons.map(async (reason) => {
@@ -378,7 +374,9 @@ exports.handler = async function (autotaskEvent) {
     // from which address, so we have to go back through all of the logs
     // to make that determination
     const cTokenAddress = getAddressForMatchReason(reason, logs, abi);
-    console.log(`Address for matchReasons: ${cTokenAddress}`);
+    if (cTokenAddress === undefined) {
+      throw new Error('unable to get address for match reason');
+    }
 
     // determine the type of event it was
     const { signature, params } = reason;
@@ -406,29 +404,25 @@ exports.handler = async function (autotaskEvent) {
   });
 
   // wait for the promises to settle
-  console.log('Waiting for promises to settle');
   const messages = await Promise.all(promises);
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
-  console.log('Creating Discord promises');
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
+  const discordPromises = messages.map((message) => {
+    console.log(`${etherscanLink} ${message}`);
+    return postToDiscord(discordUrl, `${etherscanLink} ${message}`);
+  });
 
   // wait for the promises to settle
   // we want to have as many succeed as possible, so we are using
   // .allSettled() rather than .all() here
-  console.log('Waiting for Discord promises to settle');
   let results = await Promise.allSettled(discordPromises);
-  console.log('\tDone');
 
   results = results.filter((result) => result.status === 'rejected');
-  console.log(`Number of rejected promises: ${results.length}`);
   if (results.length > 0) {
     throw new Error(results[0].reason);
   }
-
-  console.log('Messages sent to Discord webhook');
 
   return {};
 };
