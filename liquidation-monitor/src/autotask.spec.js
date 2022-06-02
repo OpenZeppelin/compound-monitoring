@@ -106,4 +106,13 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
   });
+
+  it('throws error if discordUrl is not valid', async () => {
+    // Use an invalid discord URL
+    secrets.discordUrl = 'http//zzzz';
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockTxHash);
+
+    // run the autotask on the events
+    await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
+  });
 });
