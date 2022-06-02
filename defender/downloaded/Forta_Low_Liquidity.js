@@ -145,7 +145,7 @@ exports.handler = async function (autotaskEvent) {
     hash,
     source: {
       transactionHash,
-      agent: {
+      bot: {
         id: botId,
       },
     },
