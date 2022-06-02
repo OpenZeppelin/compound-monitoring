@@ -24,6 +24,7 @@ const mockFinding = Finding.fromObject({
 
 // grab the existing keys before loading new content from the .env file
 const existingKeys = Object.keys(process.env);
+// eslint-disable-next-line import/no-unresolved
 require('dotenv').config();
 
 // now filter out all of the existing keys from what is currently in the process.env Object
