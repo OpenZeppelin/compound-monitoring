@@ -62,7 +62,7 @@ function createGnosisFinding(
 ) {
   let finding;
 
-  // iterate over logs to see which action occured
+  // iterate over logs to see which action occurred
   if (log.name === 'AddedOwner') {
     finding = createAddOwnerFinding(
       log,

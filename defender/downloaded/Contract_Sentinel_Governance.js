@@ -135,7 +135,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
     case 'ProposalCanceled':
       ({ id } = params);
       proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposa**l ${proposalName} ${noEntryEmoji}`;
+      message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'ProposalExecuted':
       ({ id } = params);
@@ -195,7 +195,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // create messages for Discord
-  const promises = matchReasons.map(async (reason) => {
+  let promises = matchReasons.map(async (reason) => {
     // determine the type of event it was
     const { signature, params } = reason;
     const eventName = signature.slice(0, signature.indexOf('('));
@@ -207,10 +207,10 @@ exports.handler = async function (autotaskEvent) {
   // wait for the promises to settle
   const messages = await Promise.all(promises);
 
-  const promises = messages.map((message) => {
+  promises = messages.map((message) => {
     console.log('Posting to Discord');
     console.log(message);
-    return postToDiscord(discordUrl, message)
+    return postToDiscord(discordUrl, message);
   });
 
   await Promise.all(promises);

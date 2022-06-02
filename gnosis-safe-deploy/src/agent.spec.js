@@ -16,7 +16,7 @@ const config = require('../bot-config.json');
 
 // check the configuration file to verify the values
 describe('check bot configuration file', () => {
-  it('procotolName key required', () => {
+  it('protocolName key required', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');
     expect(protocolName).not.toBe('');
@@ -298,7 +298,9 @@ describe('monitor emitted events', () => {
 
       // encode event data with argument override value
       const { mockArgs, mockTopics, data } = createMockEventLogs(
-        eventInConfig, iface, { name: argName, value: overrideValue },
+        eventInConfig,
+        iface,
+        { name: argName, value: overrideValue },
       );
 
       // update mock transaction event
@@ -357,7 +359,9 @@ describe('monitor emitted events', () => {
 
       // encode event data with argument override value
       const { mockArgs, mockTopics, data } = createMockEventLogs(
-        eventInConfig, iface, { name: argName, value: overrideValue },
+        eventInConfig,
+        iface,
+        { name: argName, value: overrideValue },
       );
 
       // update mock transaction event
