@@ -32,7 +32,7 @@ async function getDecimalsAndSymbol(cTokenAddress, provider) {
 
   let decimals;
   let symbol;
-  if (oddTokens.indexOf(underlyingTokenAddress.toLowerCase()) !== -1) {
+  if (oddTokens.includes(underlyingTokenAddress.toLowerCase())) {
     const underlyingTokenContract = new ethers.Contract(
       underlyingTokenAddress,
       MAKER_TOKEN_ABI,

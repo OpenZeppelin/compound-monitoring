@@ -133,7 +133,7 @@ describe('test the Forta Multi-Sig bot alerts', () => {
     await fortaMultiSigHandler(autotaskEvent);
   });
 
-  it('invokes the Forta Multi-Sig Autotask to create a Proprosal Created alert in a Discord channel', async () => {
+  it('invokes the Forta Multi-Sig Autotask to create a Proposal Created alert in a Discord channel', async () => {
     const eventNames = [
       'ProposalCreated',
       'ProposalExecuted',
