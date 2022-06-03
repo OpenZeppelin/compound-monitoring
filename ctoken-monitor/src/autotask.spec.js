@@ -10,6 +10,7 @@ const mockRedeemMeta = {
   redeemAmount: '229055296840622222476',
   redeemTokens: '1040572823132',
   redeemer: '0xb65Ca07fD529f891A14d5Df72CCCD915A59AafF9',
+  usdValue: '104',
 };
 
 const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
