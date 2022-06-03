@@ -102,16 +102,16 @@ exports.handler = async function (autotaskEvent) {
   // extract the hashes from the source Object
   const {
     transactionHash,
-    block: {
-      hash,
-    },
+    // block: {
+    //   hash,
+    // },
   } = source;
 
   // Start of usual modifications to the autotask script
   // extract the metadata
   const {
     cTokenSymbol,
-    contractAddress,
+    // contractAddress,
     eventName,
     usdValue,
   } = metadata;
@@ -146,13 +146,13 @@ exports.handler = async function (autotaskEvent) {
     },
   };
 
-  function emojiForEvent(eventName, usdValueString) {
+  function emojiForEvent(eventType, usdValueString) {
     // create the appropriate number of whale emoji for the value
     // add one whale for each power of 1000
     const numWhales = Math.floor((usdValueString.length - 1) / 3);
     const whaleString = '🐳'.repeat(numWhales);
 
-    switch (eventName) {
+    switch (eventType) {
       case 'Borrow':
         return whaleString.concat('📥');
       case 'LiquidateBorrow':
@@ -173,8 +173,6 @@ exports.handler = async function (autotaskEvent) {
   const internationalNumberFormat = new Intl.NumberFormat('en-US');
   const amountString = internationalNumberFormat.format(usdValue);
 
-
-  console.log(eventEmoji);
   const eventObject = eventMapping[eventName];
   const byAddress = metadata[eventObject.byKey];
 
