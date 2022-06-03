@@ -6,6 +6,18 @@ const {
 // Random block
 const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
 
+const mockBorrowTxHash = '0xf8d92b4b59c84bac00a57356f488dd9586f17e7034613c158372ef4375d7a502';
+const mockBorrowMeta = {
+  accountBorrows: '18500000000',
+  borrowAmount: '18500000000',
+  borrower: '0x87760d238Bc8A46d64990185aB357CAF99740d09',
+  cTokenSymbol: 'cUSDC',
+  contractAddress: '0x39aa39c021dfbae8fac545936693ac917d5e7563',
+  eventName: 'Borrow',
+  totalBorrows: '450187856880124',
+  usdValue: '18537',
+};
+
 const mockLiquidateBorrowTxHash = '0x064228d15febb05b929e8aecbf3d828449bd8210df758d692b9b855355ed3560';
 const mockLiquidateBorrowMeta = {
   borrower: '0xf1C6A281452fEdEAda164731895B1a38b5476516',
@@ -30,15 +42,15 @@ const mockMintMeta = {
   usdValue: '67721',
 };
 
-const mockRedeemTxHash = '0xa1be93b4be553650aec7c4d99dcefcad23c573c5a23004fbc7c0dfe4179d62ce';
+const mockRedeemTxHash = '0x881d7f5b2804d144535f7b51f504ba6bcf14f3ccd53d57f4e59e0ad262bddeb5';
 const mockRedeemMeta = {
-  cTokenSymbol: 'cUSDC',
-  contractAddress: '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
+  cTokenSymbol: 'cWBTC',
+  contractAddress: '0xccf4429db6322d5c611ee964527d42e5d685dd6a',
   eventName: 'Redeem',
-  redeemAmount: '894873',
-  redeemTokens: '20224',
-  redeemer: '0xb65Ca07fD529f891A14d5Df72CCCD915A59AafF9',
-  usdValue: '20224',
+  redeemAmount: '300000000',
+  redeemTokens: '14950771553',
+  redeemer: '0xF0163f66Ec80DDA288E753E0A62c8Eb71cd38684',
+  usdValue: '88512',
 };
 
 const mockRepayBorrowTxHash = '0x57a36644b7440ad247a41222ad105d5a08d21b47e434025bcf4427b2c20f3dee';
@@ -147,6 +159,14 @@ function createFortaSentinelEvent(finding, blockHash, tryTxHash) {
 }
 
 describe('check autotask', () => {
+  it('Runs autotask against mock Borrow data and posts in Discord (manual-check)', async () => {
+    const mockFinding = createFinding(mockBorrowMeta);
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockBorrowTxHash);
+
+    // run the autotask on the events
+    await handler(autotaskEvent);
+  });
+
   it('Runs autotask against mock LiquidateBorrow data and posts in Discord (manual-check)', async () => {
     const mockFinding = createFinding(mockLiquidateBorrowMeta);
     const autotaskEvent = createFortaSentinelEvent(
