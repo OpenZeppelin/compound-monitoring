@@ -95,9 +95,10 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // extract the metadata from the alert Object
-  const {
-    metadata,
-  } = alert;
+  const { metadata } = alert;
+  if (source === undefined) {
+    throw new Error('metadata undefined');
+  }
 
   // extract the hashes from the source Object
   const {
@@ -115,6 +116,10 @@ exports.handler = async function (autotaskEvent) {
     eventName,
     usdValue,
   } = metadata;
+  if (usdValue === undefined) {
+    throw new Error('usdValue undefined, please use newer bot version');
+  }
+
 
   const eventMapping = {
     Borrow: {
