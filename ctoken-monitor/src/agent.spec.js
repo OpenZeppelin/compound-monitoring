@@ -399,6 +399,7 @@ describe('monitor emitted events', () => {
       mockContract.getAllMarkets = jest.fn().mockResolvedValueOnce([newValidContractAddress]);
       mockContract.symbol = jest.fn().mockResolvedValueOnce(newValidContractSymbol);
       mockContract.underlying = jest.fn().mockResolvedValueOnce(underlyingAddress);
+      mockContract.decimals = jest.fn().mockResolvedValueOnce(decimals);
 
       // select event in config file
       const { mockArgs, mockTopics, data } = createMockEventLogs(eventInConfig, iface);
