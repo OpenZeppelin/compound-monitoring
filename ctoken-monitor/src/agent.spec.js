@@ -300,6 +300,7 @@ describe('monitor emitted events', () => {
       expectedMetaData = utils.extractEventArgs(expectedMetaData);
 
       mockCoinGeckoResponse.data[underlyingAddress] = { usd: '1' };
+      const expectedValue = '0';
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -315,6 +316,7 @@ describe('monitor emitted events', () => {
           cTokenSymbol: validContractSymbol,
           contractAddress: validContractAddress,
           eventName: eventInConfig.name,
+          usdValue: expectedValue,
           ...expectedMetaData,
         },
       })];
@@ -349,6 +351,7 @@ describe('monitor emitted events', () => {
       expectedMetaData = utils.extractEventArgs(expectedMetaData);
 
       mockCoinGeckoResponse.data[underlyingAddress] = { usd: '1' };
+      const expectedValue = '1000';
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -364,6 +367,7 @@ describe('monitor emitted events', () => {
           cTokenSymbol: validContractSymbol,
           contractAddress: validContractAddress,
           eventName: eventInConfig.name,
+          usdValue: expectedValue,
           ...expectedMetaData,
         },
       })];
@@ -417,6 +421,7 @@ describe('monitor emitted events', () => {
         .substring(6);
 
       mockCoinGeckoResponse.data[underlyingAddress] = { usd: '1' };
+      const expectedValue = '0';
 
       //  feed in event to handler
       const findings = await handleTransaction(mockTxEvent);
@@ -439,6 +444,7 @@ describe('monitor emitted events', () => {
           cTokenSymbol: newValidContractSymbol,
           contractAddress: newValidContractAddress,
           eventName: eventInConfig.name,
+          usdValue: expectedValue,
           ...expectedMetaData,
         },
       })];

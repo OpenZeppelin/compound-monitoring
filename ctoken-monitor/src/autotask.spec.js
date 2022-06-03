@@ -4,12 +4,12 @@ const {
 
 // Mock the data from the Bot finding
 const mockRedeemMeta = {
-  cTokenSymbol: "cDAI",
-  contractAddress: "0x5d3a536e4d6dbd6114cc1ead35777bab948e3643",
-  eventName: "Redeem",
-  redeemAmount: "229055296840622222476",
-  redeemTokens: "1040572823132",
-  redeemer: "0xb65Ca07fD529f891A14d5Df72CCCD915A59AafF9"
+  cTokenSymbol: 'cDAI',
+  contractAddress: '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643',
+  eventName: 'Redeem',
+  redeemAmount: '229055296840622222476',
+  redeemTokens: '1040572823132',
+  redeemer: '0xb65Ca07fD529f891A14d5Df72CCCD915A59AafF9',
 };
 
 const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
@@ -28,7 +28,6 @@ newKeys.forEach((key) => {
 });
 
 const { handler } = require('./autotask');
-
 
 function createFinding(metadata) {
   return Finding.fromObject({
@@ -120,6 +119,7 @@ describe('check autotask', () => {
   it('throws error if discordUrl is not valid', async () => {
     // Use an invalid discord URL
     secrets.discordUrl = 'http//zzzz';
+    const mockFinding = createFinding(mockRedeemMeta);
     const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockTxHash);
 
     // run the autotask on the events
