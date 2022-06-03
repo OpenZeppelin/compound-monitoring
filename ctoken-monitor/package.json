@@ -20,6 +20,7 @@
   "dependencies": {
     "axios": "^0.26.1",
     "bignumber.js": "^9.0.2",
+    "dotenv": "^16.0.1",
     "forta-agent": "^0.0.39"
   },
   "devDependencies": {
