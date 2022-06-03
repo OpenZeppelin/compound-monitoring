@@ -3,18 +3,30 @@ const {
 } = require('forta-agent');
 
 // Mock the data from the Bot finding
+// Random block
+const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
+
+const mockRedeemTxHash = '0xa1be93b4be553650aec7c4d99dcefcad23c573c5a23004fbc7c0dfe4179d62ce';
 const mockRedeemMeta = {
-  cTokenSymbol: 'cDAI',
-  contractAddress: '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643',
+  cTokenSymbol: 'cUSDC',
+  contractAddress: '0x39AA39c021dfbaE8faC545936693aC917d5E7563',
   eventName: 'Redeem',
-  redeemAmount: '229055296840622222476',
-  redeemTokens: '1040572823132',
+  redeemAmount: '894873',
+  redeemTokens: '20224',
   redeemer: '0xb65Ca07fD529f891A14d5Df72CCCD915A59AafF9',
-  usdValue: '104',
+  usdValue: '20224',
 };
 
-const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
-const mockTxHash = '0xb85bbcdfd06edf6bcaa3271e49a339cc878daa30ec5f987a43a4d11d925ba751';
+const mockMintTxHash = '0xff85476c183ef3cc0fb0623877abf5589197a773845f8acac341e48c42957a3e';
+const mockMintMeta = {
+  cTokenSymbol: 'cETH',
+  contractAddress: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5',
+  eventName: 'Mint',
+  mintAmount: '38307619381957671712',
+  mintTokens: '190925893578',
+  minter: '0x352E490bC98BB07AA908Cc2934b6Ca473a6b229d',
+  usdValue: '67721',
+};
 
 // grab the existing keys before loading new content from the .env file
 const existingKeys = Object.keys(process.env);
@@ -109,9 +121,17 @@ function createFortaSentinelEvent(finding, blockHash, tryTxHash) {
 }
 
 describe('check autotask', () => {
-  it('Runs autotask against mock data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mock Redeem data and posts in Discord (manual-check)', async () => {
     const mockFinding = createFinding(mockRedeemMeta);
-    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockTxHash);
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockRedeemTxHash);
+
+    // run the autotask on the events
+    await handler(autotaskEvent);
+  });
+
+  it('Runs autotask against mock Mint data and posts in Discord (manual-check)', async () => {
+    const mockFinding = createFinding(mockMintMeta);
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockMintTxHash);
 
     // run the autotask on the events
     await handler(autotaskEvent);
@@ -121,7 +141,7 @@ describe('check autotask', () => {
     // Use an invalid discord URL
     secrets.discordUrl = 'http//zzzz';
     const mockFinding = createFinding(mockRedeemMeta);
-    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockTxHash);
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockRedeemTxHash);
 
     // run the autotask on the events
     await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
