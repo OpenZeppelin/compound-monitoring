@@ -2,7 +2,7 @@ const {
   Finding, FindingSeverity, FindingType, ethers, getEthersBatchProvider,
 } = require('forta-agent');
 
-const web3 = require('web3-Eth');
+const web3 = require('web3-eth');
 const web3Eth = new web3();
 
 const {

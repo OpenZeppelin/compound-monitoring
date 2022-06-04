@@ -25,7 +25,7 @@ const {
 const { getAbi } = require('./utils');
 
 const config = require('../bot-config.json');
-const web3 = require('web3-Eth');
+const web3 = require('web3-eth');
 const web3Eth = new web3();
 
 // utility function specific for this test module
@@ -46,7 +46,7 @@ function createTransactionEvent(txObject) {
 
 // check the configuration file to verify the values
 describe('check bot configuration file', () => {
-  it('procotolName key required', () => {
+  it('protocolName key required', () => {
     const { protocolName } = config;
     expect(typeof(protocolName)).toBe('string');
     expect(protocolName).not.toBe('');
