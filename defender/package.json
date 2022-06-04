@@ -12,7 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "defender-autotask-client": "^1.18.0",
+    "defender-autotask-client": "^1.23.0",
     "defender-relay-client": "^1.21.3",
     "defender-sentinel-client": "^1.19.0",
     "dotenv": "^16.0.0",
