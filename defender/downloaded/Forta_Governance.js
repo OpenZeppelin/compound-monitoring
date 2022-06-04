@@ -3,32 +3,41 @@ const axios = require('axios');
 
 const fortaApiEndpoint = 'https://api.forta.network/graphql';
 
-async function post(url, method, headers, data) {
-  return axios({
-    url, method, headers, data,
-  });
+function getRandomInt(min, max) {
+  return Math.floor((Math.random() * (max - min)) + min);
 }
 
+// post to discord
 async function postToDiscord(url, message) {
-  const method = 'post';
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
+
+  const body = {
+    content: message,
+  };
+
+  const discordObject = {
+    url,
+    method: 'post',
+    headers,
+    data: body,
+  };
 
   let response;
   try {
     // perform the POST request
-    response = await post(url, method, headers, data);
+    response = await axios(discordObject);
   } catch (error) {
     // is this a "too many requests" error (HTTP status 429)
     if (error.response && error.response.status === 429) {
-      // the request was made and a response was received
-      // try again after waiting 5 seconds
+      // rate-limited, retry
+      // after waiting a random amount of time between 2 and 15 seconds
+      const delay = getRandomInt(2000, 15000);
       // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, 5000));
+      const promise = new Promise((resolve) => setTimeout(resolve, delay));
       await promise;
-      response = await post(url, method, headers, data);
+      response = await axios(discordObject);
     } else {
       // re-throw the error if it's not from a 429 status
       throw error;
@@ -38,7 +47,7 @@ async function postToDiscord(url, message) {
   return response;
 }
 
-async function getFortaAlerts(agentId, transactionHash) {
+async function getFortaAlerts(botId, transactionHash) {
   const headers = {
     'content-type': 'application/json',
   };
@@ -59,6 +68,7 @@ async function getFortaAlerts(agentId, transactionHash) {
           createdAt
           name
           protocol
+          hash
           findingType
           source {
             transactionHash
@@ -66,7 +76,7 @@ async function getFortaAlerts(agentId, transactionHash) {
               number
               chainId
             }
-            agent {
+            bot {
               id
             }
           }
@@ -79,7 +89,7 @@ async function getFortaAlerts(agentId, transactionHash) {
     variables: {
       input: {
         first: 100,
-        agents: [agentId],
+        bots: [botId],
         transactionHash,
         createdSince: 0,
         chainId: 1,
@@ -100,8 +110,6 @@ async function getFortaAlerts(agentId, transactionHash) {
     return undefined;
   }
 
-  console.log('Forta Public API data');
-  console.log(JSON.stringify(data, null, 2));
   const { data: { alerts: { alerts } } } = data;
   return alerts;
 }
@@ -135,11 +143,8 @@ async function getAccountDisplayName(voter, proposalId) {
   const queryUrl = `?account=${voter}&proposal_id=${proposalId}`;
   let displayName;
   try {
-    console.log(baseUrl + queryUrl);
     const result = await axios.get(baseUrl + queryUrl);
-    console.log(result);
     displayName = result.data.proposal_vote_receipts[0].voter.display_name;
-    console.log(displayName);
     if (displayName === null) {
       displayName = '';
     }
@@ -185,7 +190,6 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
         id,
       } = metadata);
 
-      console.log('Retrieving name from Compound API');
       displayName = await getAccountDisplayName(voter, id);
 
       if (description.includes('against')) {
@@ -215,7 +219,7 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED':
       ({ id } = metadata);
       proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposa**l ${proposalName} ${noEntryEmoji}`;
+      message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED':
       ({ id } = metadata);
@@ -225,6 +229,8 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
     case 'AE-COMP-GOVERNANCE-PROPOSAL-QUEUED':
       ({ eta, id } = metadata);
       proposalName = await getProposalTitle(id);
+      // message = `Queued Proposal ${proposalName} ${checkMarkEmoji}
+      // available to execute after ${eta} days`;
       message = `**Queued Proposal** ${proposalName} ${checkMarkEmoji} available to execute at timestamp ${eta}`;
       break;
     default:
@@ -238,56 +244,51 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
 exports.handler = async function (autotaskEvent) {
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
-    return {};
+    throw new Error('autotaskEvent undefined');
   }
-  console.log('autotaskEvent');
-  console.log(JSON.stringify(autotaskEvent, null, 2));
 
-  const { secrets } = autotaskEvent;
+  const { secrets, request } = autotaskEvent;
   if (secrets === undefined) {
-    return {};
+    throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { TestingDiscordUrl: discordUrl } = secrets;
+  const { GovernanceDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
-    return {};
+    throw new Error('GovernanceDiscordUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
-  const { request } = autotaskEvent;
   if (request === undefined) {
-    return {};
+    throw new Error('request undefined');
   }
 
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
-    return {};
+    throw new Error('body undefined');
   }
 
   // ensure that the alert key exists within the body Object
   const { alert } = body;
   if (alert === undefined) {
-    return {};
+    throw new Error('alert undefined');
   }
 
-  // extract the transaction hash and agent ID from the alert Object
+  // extract the transaction hash and bot ID from the alert Object
   const {
     hash,
     source: {
       transactionHash,
-      agent: {
-        id: agentId,
+      bot: {
+        id: botId,
       },
     },
   } = alert;
 
   // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(agentId, transactionHash);
+  let alerts = await getFortaAlerts(botId, transactionHash);
   alerts = alerts.filter((alertObject) => alertObject.hash === hash);
-  console.log('Alerts');
-  console.log(JSON.stringify(alerts, null, 2));
 
   const promises = alerts.map(async (alertData) => {
     const { metadata, description, alertId } = alertData;
@@ -296,13 +297,24 @@ exports.handler = async function (autotaskEvent) {
   });
 
   // wait for the promises to settle
-  const messages = await Promise.all(promises);
+  let results = await Promise.allSettled(promises);
 
-  // create promises for posting message to the Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, message));
+  // construct the Etherscan transaction link
+  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
+
+  // create promises for posting messages to Discord webhook
+  const discordPromises = results.map((result) => {
+    console.log(`${etherscanLink} ${result.value}`);
+    return postToDiscord(discordUrl, `${etherscanLink} ${result.value}`);
+  });
 
   // wait for the promises to settle
-  await Promise.all(discordPromises);
+  results = await Promise.allSettled(discordPromises);
+  results = results.filter((result) => result.status === 'rejected');
+
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
+  }
 
   return {};
 };

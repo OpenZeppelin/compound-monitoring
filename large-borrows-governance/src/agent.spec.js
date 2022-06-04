@@ -144,7 +144,8 @@ describe('handleTransaction', () => {
     const mockTopics = [
       ethers.utils.id('mockEvent(indexed address)'),
       ethers.utils.defaultAbiCoder.encode(
-        ['address'], ['0x1111111111111111111111111111111111111111'],
+        ['address'],
+        ['0x1111111111111111111111111111111111111111'],
       ),
     ];
     const mockReceipt = {

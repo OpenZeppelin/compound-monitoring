@@ -1,6 +1,10 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
+function getRandomInt(min, max) {
+  return Math.floor((Math.random() * (max - min)) + min);
+}
+
 async function postToDiscord(discordWebhook, message) {
   const headers = {
     'Content-Type': 'application/json',
@@ -10,14 +14,29 @@ async function postToDiscord(discordWebhook, message) {
     content: message,
   };
 
-  // perform the POST request
-  const response = await axios({
+  const discordObject = {
     url: discordWebhook,
     method: 'post',
     headers,
-    data: JSON.stringify(body),
-  });
-
+    data: body,
+  };
+  let response;
+  try {
+    // perform the POST request
+    response = await axios(discordObject);
+  } catch (err) {
+    if (err.response && err.response.status === 429) {
+      // rate-limited, retry
+      // after waiting a random amount of time between 2 and 15 seconds
+      const delay = getRandomInt(2000, 15000);
+      // eslint-disable-next-line no-promise-executor-return
+      const promise = new Promise((resolve) => setTimeout(resolve, delay));
+      await promise;
+      response = await axios(discordObject);
+    } else {
+      throw err;
+    }
+  }
   return response;
 }
 
@@ -37,9 +56,9 @@ async function getProposalTitle(proposalId) {
   return title;
 }
 
-async function getAccountDisplayName(voter, proposalId) {
+async function getAccountDisplayName(voter) {
   const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voter}&proposal_id=${proposalId}`;
+  const queryUrl = `?account=${voter}`;
   let displayName;
   try {
     const result = await axios.get(baseUrl + queryUrl);
@@ -47,7 +66,7 @@ async function getAccountDisplayName(voter, proposalId) {
     if (displayName === null) {
       displayName = '';
     }
-  } catch {
+  } catch (err) {
     displayName = '';
   }
   return displayName;
@@ -58,7 +77,11 @@ function getProposalTitleFromDescription(description) {
   let [proposalName] = lines;
   // remove markdown heading symbol and then leading and trailing spaces
   if (proposalName !== undefined) {
-    proposalName = proposalName.replaceAll('#', '').trim();
+    try {
+      proposalName = proposalName.replaceAll('#', '').trim();
+    } catch (err) {
+      proposalName = undefined;
+    }
   }
   return proposalName;
 }
@@ -92,7 +115,12 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       if (proposalName === undefined) {
         proposalName = await getProposalTitle(id);
       }
-      message = `**New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
+      displayName = await getAccountDisplayName(proposer);
+      if (displayName === '') {
+        message = `**New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
+      } else {
+        message = `**New Proposal** ${proposalName} by ${displayName} ${etherscanLink}`;
+      }
       message += `\nDetails: https://compound.finance/governance/proposals/${id}`;
       break;
     case 'VoteCast':
@@ -104,7 +132,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
         proposalId,
       } = params);
 
-      displayName = await getAccountDisplayName(voter, proposalId);
+      displayName = await getAccountDisplayName(voter);
 
       if (support === 0) {
         supportEmoji = noEntryEmoji;
@@ -135,7 +163,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
     case 'ProposalCanceled':
       ({ id } = params);
       proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposa**l ${proposalName} ${noEntryEmoji}`;
+      message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'ProposalExecuted':
       ({ id } = params);
@@ -156,33 +184,31 @@ async function createDiscordMessage(eventName, params, transactionHash) {
 
 // eslint-disable-next-line func-names
 exports.handler = async function (autotaskEvent) {
-  console.log(autotaskEvent);
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
-    return {};
+    throw new Error('autotaskEvent undefined');
   }
 
-  const { secrets } = autotaskEvent;
+  const { secrets, request } = autotaskEvent;
   if (secrets === undefined) {
-    return {};
+    throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { DiscordUrl: discordUrl } = secrets;
+  const { GovernanceDiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
-    return {};
+    throw new Error('GovernanceDiscordUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
-  const { request } = autotaskEvent;
   if (request === undefined) {
-    return {};
+    throw new Error('request undefined');
   }
 
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
-    return {};
+    throw new Error('body undefined');
   }
 
   // ensure that the alert key exists within the body Object
@@ -191,7 +217,7 @@ exports.handler = async function (autotaskEvent) {
     hash: transactionHash,
   } = body;
   if (matchReasons === undefined) {
-    return {};
+    throw new Error('matchReasons undefined');
   }
 
   // create messages for Discord
@@ -200,22 +226,23 @@ exports.handler = async function (autotaskEvent) {
     const { signature, params } = reason;
     const eventName = signature.slice(0, signature.indexOf('('));
     // craft the Discord message
-    console.log('Creating Discord message');
     return createDiscordMessage(eventName, params, transactionHash);
   });
 
   // wait for the promises to settle
-  const messages = await Promise.all(promises);
+  let results = await Promise.allSettled(promises);
 
-  const promises = messages.map((message) => {
-    console.log('Posting to Discord');
-    console.log(message);
-    return postToDiscord(discordUrl, message)
+  const discordPromises = results.map((result) => {
+    console.log(result.value);
+    return postToDiscord(discordUrl, result.value);
   });
 
-  await Promise.all(promises);
+  results = await Promise.allSettled(discordPromises);
+  results = results.filter((result) => result.status === 'rejected');
 
-  console.log('Posted!');
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
+  }
 
   return {};
 };
