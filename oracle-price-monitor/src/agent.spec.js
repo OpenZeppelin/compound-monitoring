@@ -48,7 +48,8 @@ describe('handleTransaction', () => {
     const mockTopics = [
       ethers.utils.id('mockEvent(indexed address)'),
       ethers.utils.defaultAbiCoder.encode(
-        ['address'], ['0x1111111111111111111111111111111111111111'],
+        ['address'],
+        ['0x1111111111111111111111111111111111111111'],
       ),
     ];
     const mockReceipt = {
@@ -83,7 +84,7 @@ describe('handleTransaction', () => {
     );
 
     // build mock receipt for mock txEvent, this time the event logs will contain a PriceGuarded
-    // event and the bot should return a finding as a reult
+    // event and the bot should return a finding as a result
     const iface = new ethers.utils.Interface(abi);
     const mockTopics = iface.encodeFilterTopics('PriceGuarded', [0x1]);
     const mockData = ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [100, 10]);

@@ -1,5 +1,6 @@
 const { ethers } = require('forta-agent');
 
+/* eslint-disable no-loss-of-precision */
 const defaultTypeMap = {
   uint256: 0,
   'uint256[]': [0],
@@ -12,6 +13,7 @@ const defaultTypeMap = {
   string: 'test',
   'string[]': ['test'],
 };
+/* eslint-enable no-loss-of-precision */
 
 function getObjectsFromAbi(abi, objectType) {
   const contractObjects = {};

@@ -36,7 +36,7 @@ const MINIMUM_EVENT_LIST = [
 
 // check the configuration file to verify the values
 describe('check bot configuration file', () => {
-  it('procotolName key required', () => {
+  it('protocolName key required', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');
     expect(protocolName).not.toBe('');
@@ -259,7 +259,7 @@ describe('monitor governance contracts for emitted events', () => {
     });
 
     it('returns finding with unknown proposal name if the ProposalCreated event was not observed (should only happen with initial deployment)', async () => {
-      // create another event to run through the handler so we can see if the propsal name was saved
+      // create an event to run through the handler so we can see if the proposal name was saved
       const { mockArgs, mockTopics, data } = createMockEventLogs(secondValidEvent, iface);
 
       // update mock transaction event
@@ -294,7 +294,7 @@ describe('monitor governance contracts for emitted events', () => {
     });
 
     it('returns finding with empty string for display name if no name was provided by the Compound API', async () => {
-      // create another event to run through the handler so we can see if the propsal name was saved
+      // create an event to run through the handler so we can see if the proposal name was saved
       const { mockArgs, mockTopics, data } = createMockEventLogs(thirdValidEvent, iface);
 
       // update mock transaction event
@@ -345,7 +345,7 @@ describe('monitor governance contracts for emitted events', () => {
     });
 
     it('returns finding with display name if name was provided by the Compound API', async () => {
-      // create another event to run through the handler so we can see if the propsal name was saved
+      // create an event to run through the handler so we can see if the proposal name was saved
       const { mockArgs, mockTopics, data } = createMockEventLogs(thirdValidEvent, iface);
 
       // update mock transaction event
@@ -445,7 +445,7 @@ describe('monitor governance contracts for emitted events', () => {
 
       expect(findings).toStrictEqual([expectedFinding]);
 
-      // create another event to run through the handler so we can see if the propsal name was saved
+      // create an event to run through the handler so we can see if the proposal name was saved
       ({ mockArgs, mockTopics, data } = createMockEventLogs(secondValidEvent, iface));
 
       // update mock transaction event

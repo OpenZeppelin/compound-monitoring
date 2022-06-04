@@ -1,14 +1,18 @@
 const {
   ethers, Finding, FindingSeverity, FindingType, getEthersProvider,
 } = require('forta-agent');
-const achoredViewAbi = require('../abi/UniswapAnchoredView.json');
+const anchoredViewAbi = require('../abi/UniswapAnchoredView.json');
 
 const UNI_ANCHORED_VIEW_ADDRESS = '0x046728da7cb8272284238bD3e47909823d63A58D';
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
 
 function createAlert(
-  cTokenAddress, underlyingTokenAddress, priceReporterAddress, currentPrice, rejectedPrice,
+  cTokenAddress,
+  underlyingTokenAddress,
+  priceReporterAddress,
+  currentPrice,
+  rejectedPrice,
 ) {
   return Finding.fromObject({
     name: 'Compound Oracle Price Monitor',
@@ -32,9 +36,9 @@ function provideInitialize(data) {
     /* eslint-disable no-param-reassign */
     // request the ethers provider from the forta sdk
     const provider = getEthersProvider();
-    const iface = new ethers.utils.Interface(achoredViewAbi);
+    const iface = new ethers.utils.Interface(anchoredViewAbi);
     // initialize the UniswapAnchoredView contract
-    data.contract = new ethers.Contract(UNI_ANCHORED_VIEW_ADDRESS, achoredViewAbi, provider);
+    data.contract = new ethers.Contract(UNI_ANCHORED_VIEW_ADDRESS, anchoredViewAbi, provider);
     data.priceGuardedEvent = iface.getEvent('PriceGuarded').format(ethers.utils.FormatTypes.full);
     /* eslint-enable no-param-reassign */
   };
