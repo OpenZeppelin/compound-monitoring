@@ -135,42 +135,46 @@ function createDiscordMessage(eventName, metadata, decimals, symbol, description
   return undefined;
 }
 
-async function post(url, method, headers, data) {
-  return axios({
-    url, method, headers, data,
-  });
+function getRandomInt(min, max) {
+  return Math.floor((Math.random() * (max - min)) + min);
 }
 
-async function postToDiscord(url, message) {
-  const method = 'post';
+async function postToDiscord(discordWebhook, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
 
+  const body = {
+    content: message,
+  };
+
+  const discordObject = {
+    url: discordWebhook,
+    method: 'post',
+    headers,
+    data: body,
+  };
   let response;
   try {
     // perform the POST request
-    response = await post(url, method, headers, data);
-  } catch (error) {
-    // is this a "too many requests" error (HTTP status 429)
-    if (error.response && error.response.status === 429) {
-      // the request was made and a response was received
-      // try again after waiting 5 seconds
+    response = await axios(discordObject);
+  } catch (err) {
+    if (err.response && err.response.status === 429) {
+      // rate-limited, retry
+      // after waiting a random amount of time between 2 and 15 seconds
+      const delay = getRandomInt(2000, 15000);
       // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, 5000));
+      const promise = new Promise((resolve) => setTimeout(resolve, delay));
       await promise;
-      response = await post(url, method, headers, data);
+      response = await axios(discordObject);
     } else {
-      // re-throw the error if it's not from a 429 status
-      throw error;
+      throw err;
     }
   }
-
   return response;
 }
 
-async function getFortaAlerts(agentId, transactionHash) {
+async function getFortaAlerts(botId, transactionHash) {
   const headers = {
     'content-type': 'application/json',
   };
@@ -198,7 +202,7 @@ async function getFortaAlerts(agentId, transactionHash) {
               number
               chainId
             }
-            agent {
+            bot {
               id
             }
           }
@@ -211,7 +215,7 @@ async function getFortaAlerts(agentId, transactionHash) {
     variables: {
       input: {
         first: 100,
-        agents: [agentId],
+        bots: [botId],
         transactionHash,
         createdSince: 0,
         chainId: 1,
@@ -232,8 +236,6 @@ async function getFortaAlerts(agentId, transactionHash) {
     return undefined;
   }
 
-  console.log('Forta Public API data');
-  console.log(JSON.stringify(data, null, 2));
   const { data: { alerts: { alerts } } } = data;
   return alerts;
 }
@@ -242,58 +244,51 @@ async function getFortaAlerts(agentId, transactionHash) {
 exports.handler = async function (autotaskEvent) {
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
-    return {};
+    throw new Error('autotaskEvent undefined');
   }
-  console.log('Autotask Event');
-  console.log(JSON.stringify(autotaskEvent, null, 2));
 
-  const { secrets } = autotaskEvent;
+  const { secrets, request } = autotaskEvent;
   if (secrets === undefined) {
-    return {};
+    throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { TestingDiscordUrl: discordUrl } = secrets;
+  const { DiscordUrl: discordUrl } = secrets;
   if (discordUrl === undefined) {
-    return {};
+    throw new Error('DiscordUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
-  const { request } = autotaskEvent;
   if (request === undefined) {
-    return {};
+    throw new Error('request undefined');
   }
 
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
-    return {};
+    throw new Error('body undefined');
   }
-  console.log('Body');
-  console.log(JSON.stringify(body, null, 2));
 
   // ensure that the alert key exists within the body Object
   const { alert } = body;
   if (alert === undefined) {
-    return {};
+    throw new Error('alert undefined');
   }
 
-  // extract the transaction hash and agent ID from the alert Object
+  // extract the transaction hash and bot ID from the alert Object
   const {
     hash,
     source: {
       transactionHash,
-      agent: {
-        id: agentId,
+      bot: {
+        id: botId,
       },
     },
   } = alert;
 
   // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(agentId, transactionHash);
+  let alerts = await getFortaAlerts(botId, transactionHash);
   alerts = alerts.filter((alertObject) => alertObject.hash === hash);
-  console.log('Alerts');
-  console.log(JSON.stringify(alerts, null, 2));
 
   // use the relayer provider for JSON-RPC requests
   const provider = new DefenderRelayProvider(autotaskEvent);
@@ -314,16 +309,24 @@ exports.handler = async function (autotaskEvent) {
   });
 
   // wait for the promises to settle
-  const messages = await Promise.all(promises);
+  let results = await Promise.allSettled(promises);
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   // create promises for posting messages to Discord webhook
-  const discordPromises = messages.map((message) => postToDiscord(discordUrl, `${etherscanLink} ${message}`));
+  const discordPromises = results.map((result) => {
+    console.log(`${etherscanLink} ${result.value}`);
+    return postToDiscord(discordUrl, `${etherscanLink} ${result.value}`);
+  });
 
   // wait for the promises to settle
-  await Promise.all(discordPromises);
+  results = await Promise.allSettled(discordPromises);
+  results = results.filter((result) => result.status === 'rejected');
+
+  if (results.length > 0) {
+    throw new Error(results[0].reason);
+  }
 
   return {};
 };
