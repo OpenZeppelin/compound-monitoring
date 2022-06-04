@@ -7,10 +7,12 @@ const { SafeFactory } = require('@gnosis.pm/safe-core-sdk');
 require('dotenv').config();
 
 // load the Gnosis Safe configuration and version to deploy
+/* eslint-disable import/no-unresolved */
 const {
   safeAccountConfig,
   safeVersion,
 } = require('../config.json');
+/* eslint-enable import/no-unresolved */
 
 // load values from the .env file
 const polygonEndpoint = process.env.POLYGON_ENDPOINT;

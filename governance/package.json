@@ -18,17 +18,14 @@
     "test": "jest"
   },
   "dependencies": {
-    "axios": "^0.26.1",
-    "forta-agent": "^0.0.39",
-    "dotenv": "^16.0.0",
-    "defender-relay-client": "^1.19.0",
-    "ethers": "^5.6.2"
+    "axios": "^0.27.2",
+    "forta-agent": "^0.0.39"
   },
   "devDependencies": {
-    "eslint": "^7.32.0",
-    "eslint-config-airbnb-base": "^14.2.1",
-    "eslint-plugin-import": "^2.25.1",
-    "jest": "^27.2.5",
+    "eslint": "^8.16.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "jest": "^28.1.0",
     "nodemon": "^2.0.8"
   }
 }

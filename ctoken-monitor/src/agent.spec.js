@@ -59,7 +59,7 @@ function createTransactionEvent(txObject) {
 
 // check the configuration file to verify the values
 describe('check bot configuration file', () => {
-  it('procotolName key required', () => {
+  it('protocolName key required', () => {
     const { protocolName } = config;
     expect(typeof (protocolName)).toBe('string');
     expect(protocolName).not.toBe('');
