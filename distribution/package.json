@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "dotenv": "^16.0.0",
-    "defender-relay-client": "^1.19.0"
+    "defender-relay-client": "^1.19.0",
     "bignumber.js": "^9.0.2",
     "forta-agent": "^0.1.4"
   },

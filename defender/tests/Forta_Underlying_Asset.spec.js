@@ -1,23 +1,22 @@
-const ethers = require('ethers');
+jest.mock('axios', () => jest.fn());
+const axios = require('axios');
 
-// DEFENDER FORTA SENTINEL AUTOTASK TESTING //
+const { handler } = require('../downloaded/Forta_Underlying_Asset');
 
 // grab the existing keys before loading new content from the .env file
 const existingKeys = Object.keys(process.env);
 require('dotenv').config();
 
 // now filter out all of the existing keys from what is currently in the process.env Object
-const newKeys = Object.keys(process.env).filter((key) => !existingKeys.includes(key));
+const newKeys = Object.keys(process.env).filter((key) => existingKeys.indexOf(key) === -1);
 const secrets = {};
 newKeys.forEach((key) => {
   secrets[key] = process.env[key];
 });
 
-const autotaskConfig = require('../autotask-config.json');
-
-const { jsonRpcUrl } = autotaskConfig;
-
 const cTokenSymbol = 'AAVE';
+
+const transactionHash = '0xaaec8f4fcb423b5190b8d78b9595376ca34aee8a50c7e3250b3a9e79688b734b';
 
 const mockFortaAlert = {
   data: {
@@ -26,33 +25,33 @@ const mockFortaAlert = {
         pageInfo: {
           hasNextPage: false,
           endCursor: {
-            alertId: 'AE-COMP-GOVERNANCE-THRESHOLD',
+            alertId: 'AE-COMP-CTOKEN-ASSET-UPGRADED',
             blockNumber: 0,
           },
         },
         alerts: [
           {
             createdAt: '2022-03-31T22:02:20.812799122Z',
-            name: 'Compound Governance Threshold Alert',
+            name: 'Compound cToken Asset Upgraded',
             protocol: 'Compound',
-            findingType: 'SUSPICIOUS',
+            findingType: 'INFORMATION',
             hash: '0xcee8d4bd1c065260acdcfa51c955fc29c984145de2769b685f29701b6edf318f',
+            alertId: 'AE-COMP-CTOKEN-ASSET-UPGRADED',
             source: {
-              transactionHash: '0xaaec8f4fcb423b5190b8d78b9595376ca34aee8a50c7e3250b3a9e79688b734b',
+              transactionHash,
               block: {
                 number: 14496506,
                 chainId: 1,
               },
-              agent: {
+              bot: {
                 id: '0x3f02bee8b17edc945c5c1438015aede79225ac69c46e9cd6cff679bb71f35576',
               },
             },
-            severity: 'HIGH',
+            severity: 'INFO',
             metadata: {
-              borrowerAddress: '0xF56df8FEbc5dB60433516539F50231FF7242AC87',
-              governanceLevel: 'proposal', // this is really governance event, but names governanceLevel in the agent
-              minCOMPNeeded: '10',
-              currCOMPOwned: '100',
+              cTokenSymbol: 'AAVE',
+              cTokenAddress: '0xAC6A6388691F564Cb69e4082E2bd4e347A978bF9',
+              underlyingAssetAddress: '0xAC6A6388691F564Cb69e4082E2bd4e347A978bF6',
             },
             description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
           },
@@ -63,31 +62,21 @@ const mockFortaAlert = {
 };
 
 // create a provider that will be injected as the Defender Relayer provider
-const mockProvider = new ethers.providers.JsonRpcBatchProvider(jsonRpcUrl);
+const mockProvider = jest.fn();
 jest.mock('defender-relay-client/lib/ethers', () => ({
   DefenderRelayProvider: jest.fn().mockReturnValue(mockProvider),
 }));
 
-jest.mock('axios', () => ({
-  ...jest.requireActual('axios'),
-  post: jest.fn().mockResolvedValue(mockFortaAlert),
-}));
-
-const { handler } = require('./autotask');
-
-const getFortaAlerts = jest.fn();
-getFortaAlerts.mockResolvedValue(mockFortaAlert.data.data.alerts.alerts);
-
-async function createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumber) {
-  const alerts = await getFortaAlerts(agentId, startBlockNumber, endBlockNumber);
+function createFortaSentinelEvents(botId) {
+  const { alerts } = mockFortaAlert.data.data.alerts;
   const autotaskEvents = alerts.map((alert) => {
     // augment the alert Object with additional fields
     // admittedly, there is some hand-waving here because we have to mock some of the Sentinel
     // fields that don't originate from the Forta Public API
     // e.g. We have to specify the alertId in the Sentinel to perform filtering on what we get from
-    // the Forta Agent in the first place.
+    // the Forta Bot in the first place.
     /* eslint-disable no-param-reassign */
-    alert.source.agent.name = 'N/A';
+    alert.source.bot.name = 'N/A';
     alert.source.block.chain_id = alert.source.block.chainId;
     alert.source.tx_hash = alert.source.transactionHash;
     alert.alertType = 'TX';
@@ -114,7 +103,7 @@ async function createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumb
       id: '8fe3d50b-9b52-44ff-b3fd-a304c66e1e56',
       name: 'Sentinel Name Placeholder',
       addresses: [],
-      agents: [agentId],
+      bots: [botId],
       network: 'mainnet',
       chainId: 1,
     };
@@ -127,7 +116,7 @@ async function createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumb
       secrets,
       request: {
         body: {
-          hash: alert.hash, // forta Agent hash
+          hash: alert.hash, // forta Bot hash
           alert,
           matchReasons,
           sentinel,
@@ -142,14 +131,30 @@ async function createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumb
 }
 
 it('Runs autotask against blocks in configuration file', async () => {
-  // get the development configuration values
-  const { agentId, startBlockNumber, endBlockNumber } = autotaskConfig;
+  const results = [];
+  const mockBotId = '0x12345';
+  const autotaskEvents = createFortaSentinelEvents(mockBotId);
 
-  // grab Forta Agent alerts from the Forta Public API and create autotaskEvents
-  const autotaskEvents = await createFortaSentinelEvents(agentId, startBlockNumber, endBlockNumber);
+  // pass the mocked Forta Bot alert into the function that will emulate a Forta Sentinel alert
+  // update the axios mock in preparation for capturing the Discord POST request
+  axios.post = jest.fn().mockResolvedValue(mockFortaAlert);
+  axios.mockImplementation((arg0) => { results.push(arg0); });
 
   // run the autotask on the events
   const promises = autotaskEvents.map((autotaskEvent) => handler(autotaskEvent));
 
   await Promise.all(promises);
+
+  const expectedResults = [{
+    url: secrets.SecurityAlertsDiscordUrl,
+    method: 'post',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: {
+      content: `[TX](<https://etherscan.io/tx/${transactionHash}>) 🆙 Underlying asset for the **AAVE** cToken contract was upgraded`,
+    },
+  }];
+
+  expect(results).toStrictEqual(expectedResults);
 });
