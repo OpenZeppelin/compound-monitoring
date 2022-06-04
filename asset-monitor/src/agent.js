@@ -2,8 +2,9 @@ const {
   Finding, FindingSeverity, FindingType, ethers, getEthersBatchProvider,
 } = require('forta-agent');
 
-const web3 = require('web3-eth');
-const web3Eth = new web3();
+const Web3 = require('web3-eth');
+
+const web3Eth = new Web3();
 
 const {
   getAbi,
@@ -25,10 +26,9 @@ function createUpgradeAlert(
   underlyingAssetAddress,
   eventArgs,
   eventType,
-  eventSeverity
+  eventSeverity,
 ) {
-
-  const modifiedArgs = {}
+  const modifiedArgs = {};
   Object.keys(eventArgs).forEach((key) => {
     modifiedArgs[`eventArgs_${key}`] = eventArgs[key];
   });
@@ -44,7 +44,7 @@ function createUpgradeAlert(
       cTokenSymbol,
       cTokenAddress,
       underlyingAssetAddress,
-        ...modifiedArgs,
+      ...modifiedArgs,
     },
   });
   return finding;
@@ -54,21 +54,19 @@ function isUpgradeableProxy(asset, proxyPatterns) {
   let foundPattern = false;
 
   proxyPatterns.some((pattern) => {
-    let isPattern = pattern.functionHashes.every((functionHash) => {
-      if ( asset.code.indexOf(functionHash) !== -1) {
+    const isPattern = pattern.functionHashes.every((functionHash) => {
+      if (asset.code.indexOf(functionHash) !== -1) {
         return true;
-      } else {
-        return false;
       }
+      return false;
     });
-    if ( isPattern ) {
+    if (isPattern) {
       foundPattern = pattern;
       return true;
     }
-    else {
-      return false;
-    }
-  });  
+
+    return false;
+  });
 
   return foundPattern;
 }
@@ -78,7 +76,7 @@ async function getUnderlyingAsset(address, abi, provider, proxyPatterns) {
   let symbol;
 
   const underlyingAsset = {
-    "isProxy": false
+    isProxy: false,
   };
 
   const contract = new ethers.Contract(address, abi, provider);
@@ -86,18 +84,18 @@ async function getUnderlyingAsset(address, abi, provider, proxyPatterns) {
   try {
     symbol = await contract.symbol();
     underlyingTokenAddress = await contract.underlying();
-  } catch(e) {
+  } catch (e) {
     console.log(e);
   }
 
-  if ( underlyingTokenAddress ) {
+  if (underlyingTokenAddress) {
     underlyingAsset.symbol = symbol;
     underlyingAsset.cToken = address;
     underlyingAsset.address = underlyingTokenAddress;
     underlyingAsset.code = await provider.getCode(underlyingTokenAddress);
 
-    let proxyPattern = isUpgradeableProxy(underlyingAsset, proxyPatterns);
-    if ( proxyPattern !== false) {
+    const proxyPattern = isUpgradeableProxy(underlyingAsset, proxyPatterns);
+    if (proxyPattern !== false) {
       underlyingAsset.isProxy = true;
       underlyingAsset.pattern = proxyPattern;
     }
@@ -117,18 +115,19 @@ async function getCompoundTokens(contract, excludeAddresses) {
 function provideInitialize(data) {
   return async function initialize() {
     // assign configurable fields
+    /* eslint-disable no-param-reassign */
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
 
-    const excludeAddresses = config.excludeAddresses;
+    const { excludeAddresses } = config;
     data.excludeAddresses = excludeAddresses.map((addr) => addr.toLowerCase());
 
     data.proxyPatterns = config.proxyPatterns;
     data.proxyPatterns.forEach((pattern) => {
       pattern.functionHashes = [];
       pattern.functionSignatures.forEach((signature) => {
-        let hash = web3Eth.abi.encodeFunctionSignature(signature).slice(2);
+        const hash = web3Eth.abi.encodeFunctionSignature(signature).slice(2);
         pattern.functionHashes.push(hash);
       });
     });
@@ -156,11 +155,13 @@ function provideInitialize(data) {
 
     data.upgradeableProxyAssets = [];
     const promises = data.cTokenAddresses.map(async (address) => {
-      let underlyingAsset = await getUnderlyingAsset(address, data.cTokenAbi, data.provider, data.proxyPatterns);
-      if ( underlyingAsset.isProxy ) data.upgradeableProxyAssets.push(underlyingAsset);
+      // eslint-disable-next-line max-len
+      const underlyingAsset = await getUnderlyingAsset(address, data.cTokenAbi, data.provider, data.proxyPatterns);
+      if (underlyingAsset.isProxy) data.upgradeableProxyAssets.push(underlyingAsset);
     });
     await Promise.all(promises);
   };
+  /* eslint-enable no-param-reassign */
 }
 
 function provideHandleTransaction(data) {
@@ -175,7 +176,7 @@ function provideHandleTransaction(data) {
       protocolAbbreviation,
       developerAbbreviation,
       excludeAddresses,
-      proxyPatterns
+      proxyPatterns,
     } = data;
 
     const findings = [];
@@ -189,8 +190,9 @@ function provideHandleTransaction(data) {
     if (unique.length > 0) {
       // create ethers.js Contract Objects and add them to the Object of other Contract Objects
       const promises = unique.map(async (address) => {
-        let underlyingAsset = await getUnderlyingAsset(address, cTokenAbi, provider, proxyPatterns);
-        if ( underlyingAsset.isProxy ) upgradeableProxyAssets.push(underlyingAsset);
+        // eslint-disable-next-line max-len
+        const underlyingAsset = await getUnderlyingAsset(address, cTokenAbi, provider, proxyPatterns);
+        if (underlyingAsset.isProxy) upgradeableProxyAssets.push(underlyingAsset);
       });
       await Promise.all(promises);
     }
@@ -208,7 +210,7 @@ function provideHandleTransaction(data) {
             asset.address,
             upgradeEvent.args,
             asset.pattern.findingType,
-            asset.pattern.findingSeverity
+            asset.pattern.findingSeverity,
           ));
         });
       });
@@ -223,5 +225,5 @@ module.exports = {
   initialize: provideInitialize(initializeData),
   provideHandleTransaction,
   handleTransaction: provideHandleTransaction(initializeData),
-  createUpgradeAlert
+  createUpgradeAlert,
 };
