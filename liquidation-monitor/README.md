@@ -29,3 +29,17 @@ This bot detects when an account on Compound is able to be liquidated.
   - Severity is configurable in `agent-config.json`
   - Type is configurable in `agent-config.json`
   - Metadata field contains the borrower's address, liquidatable amount and total shortfall amount.
+
+## Autotask
+
+This Autotask sends alerts from Openzeppelin's Defender Forta Sentinels to Compound's Discord channel.
+
+### Testing
+
+The Autotask files contain code to facilitate development and testing of OpenZeppelin Defender Autotasks.
+
+Rather than creating Autotask scripts in the Defender Web App and then waiting for appropriate blockchain events to trigger a Forta Sentinel, this code allows a developer to specify a mocked finding alert. Those alerts are then fed directly into the Autotask in the same format that they would have if they were occurring live.
+
+### Autotask Setup
+- Create a .env file that contains the name of your discord webhook and the URL for it:
+  - ex.) `discordUrl = "discord_webhook_url"`

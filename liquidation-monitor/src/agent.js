@@ -67,7 +67,9 @@ async function verifyToken(data, tokenAddressImport) {
   if (tokens[tokenAddress] === undefined) {
     tokens[tokenAddress] = {};
     tokens[tokenAddress].contract = new ethers.Contract(
-      tokenAddress, data.cTokenABI, data.provider,
+      tokenAddress,
+      data.cTokenABI,
+      data.provider,
     );
     const cContract = tokens[tokenAddress].contract;
     tokens[tokenAddress].symbol = await cContract.symbol();
@@ -86,7 +88,9 @@ async function verifyToken(data, tokenAddressImport) {
     // Look up decimals of the underlying tokens as well.
     const decimalsABI = '["function decimals() view returns (uint)"]';
     const underlyingTokenContract = new ethers.Contract(
-      tokens[tokenAddress].underlying, decimalsABI, data.provider,
+      tokens[tokenAddress].underlying,
+      decimalsABI,
+      data.provider,
     );
     tokens[tokenAddress].tokenDecimals = new BigNumber(
       (await underlyingTokenContract.decimals()).toString(),
@@ -174,7 +178,10 @@ function provideInitialize(data) {
     const pages = [...Array(maxPages)].map((_, i) => 1 + i);
     const foundAccounts = (await Promise.all(pages.map(async (page) => {
       const currentRequest = buildJsonRequest(
-        maximumHealth, minimumBorrowInETH, page, pageIncrement,
+        maximumHealth,
+        minimumBorrowInETH,
+        page,
+        pageIncrement,
       );
       const apiResults = await callCompoundAPI(currentRequest);
       return apiResults.accounts;
