@@ -116,7 +116,6 @@ exports.handler = async function (autotaskEvent) {
     + `is liquidatable for $${liquidationAmount}`;
 
   // construct the Etherscan transaction link
-  // const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
   let etherscanLink = `[BLOCK](<https://etherscan.io/block/${hash}>)`;
   etherscanLink += ` - [ACCT](<https://etherscan.io/address/${borrowerAddress}>)`;
   // create promises for posting messages to Discord webhook
