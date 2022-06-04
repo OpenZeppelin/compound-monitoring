@@ -37,3 +37,16 @@ not be able to perform JSON-RPC requests (this will cause errors).
 Run `npm run download` to pull down a Defender configuration and save it to the `./downloaded` directory.  This will create a `defender-config.json` file
 as well as JSON and JS files for the downloaded Autotasks.
 
+## Autotask Testing
+
+The Autotask files contain code to facilitate development and testing of OpenZeppelin Defender Autotasks.
+
+Rather than creating Autotask scripts in the Defender Web App and then waiting for appropriate blockchain events
+to trigger a Forta Sentinel, this code allows a developer to mock the requests sent by Defender Forta Sentinels to
+the Autotasks to verify that the Autotasks are performing as expected.
+
+### Use of Jest
+
+This code uses Jest to override the several modules (`axios`, `ethers`, and `defender-relay-client`) to mock their actions and avoid performing interactions
+with the blockchain or the Internet. This approach allows us to simplify testing by simulating all external data sources and then verifying that Autotasks
+performs the functions we expect.
