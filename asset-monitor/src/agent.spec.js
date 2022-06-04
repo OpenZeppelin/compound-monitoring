@@ -7,26 +7,25 @@ jest.mock('forta-agent', () => ({
   getEthersBatchProvider: mockedGetProvider,
   ethers: {
     ...jest.requireActual('ethers'),
-    Contract: mockedGetContract
+    Contract: mockedGetContract,
   },
 }));
 
 const {
-  TransactionEvent, ethers, FindingType, FindingSeverity, Finding
+  TransactionEvent, ethers, FindingType, FindingSeverity, Finding,
 } = require('forta-agent');
 
+const Web3 = require('web3-eth');
 const { provideHandleTransaction, provideInitialize, createUpgradeAlert } = require('./agent');
 const {
-  getObjectsFromAbi,
-  getEventFromConfig,
   createMockEventLogs,
 } = require('./test-utils');
 
 const { getAbi } = require('./utils');
 
 const config = require('../bot-config.json');
-const web3 = require('web3-eth');
-const web3Eth = new web3();
+
+const web3Eth = new Web3();
 
 // utility function specific for this test module
 // we are intentionally not using the Forta SDK function due to issues with
@@ -48,25 +47,25 @@ function createTransactionEvent(txObject) {
 describe('check bot configuration file', () => {
   it('protocolName key required', () => {
     const { protocolName } = config;
-    expect(typeof(protocolName)).toBe('string');
+    expect(typeof (protocolName)).toBe('string');
     expect(protocolName).not.toBe('');
   });
 
   it('protocolAbbreviation key required', () => {
     const { protocolAbbreviation } = config;
-    expect(typeof(protocolAbbreviation)).toBe('string');
+    expect(typeof (protocolAbbreviation)).toBe('string');
     expect(protocolAbbreviation).not.toBe('');
   });
 
   it('developerAbbreviation key required', () => {
     const { developerAbbreviation } = config;
-    expect(typeof(developerAbbreviation)).toBe('string');
+    expect(typeof (developerAbbreviation)).toBe('string');
     expect(developerAbbreviation).not.toBe('');
   });
 
   it('contracts key required', () => {
     const { contracts } = config;
-    expect(typeof(contracts)).toBe('object');
+    expect(typeof (contracts)).toBe('object');
     expect(contracts).not.toBe({});
   });
 
@@ -74,10 +73,10 @@ describe('check bot configuration file', () => {
     const { contracts } = config;
 
     const { Comptroller, cTokens } = contracts;
-    expect(typeof(Comptroller)).toBe('object');
+    expect(typeof (Comptroller)).toBe('object');
     expect(Comptroller).not.toBe({});
 
-    expect(typeof(cTokens)).toBe('object');
+    expect(typeof (cTokens)).toBe('object');
     expect(cTokens).not.toBe({});
 
     const { abiFile: ComptrollerAbiFile, address: ComptrollerAddress } = Comptroller;
@@ -88,8 +87,8 @@ describe('check bot configuration file', () => {
 
     // load the ABI from the specified file
     // the call to getAbi will fail if the file does not exist
-    const ComptrollerAbi = getAbi(ComptrollerAbiFile);
-    const cTokenAbi = getAbi(cTokenAbiFile);
+    getAbi(ComptrollerAbiFile);
+    getAbi(cTokenAbiFile);
   });
 
   it('excludeAddresses key required', () => {
@@ -111,18 +110,20 @@ describe('check bot configuration file', () => {
     const { proxyPatterns } = config;
 
     proxyPatterns.forEach((pattern) => {
-      expect(typeof(pattern)).toBe('object');
+      expect(typeof (pattern)).toBe('object');
       expect(pattern).not.toBe({});
-      
-      const { name, findingType, findingSeverity, functionSignatures, eventSignatures } = pattern;
 
-      expect(typeof(name)).toBe('string');
+      const {
+        name, findingType, findingSeverity, functionSignatures, eventSignatures,
+      } = pattern;
+
+      expect(typeof (name)).toBe('string');
 
       // check type, this will fail if 'findingType' is not valid
       expect(Object.prototype.hasOwnProperty.call(FindingType, findingType)).toBe(true);
 
       // check severity, this will fail if 'findingSeverity' is not valid
-      expect(Object.prototype.hasOwnProperty.call(FindingSeverity, findingSeverity)).toBe(true);      
+      expect(Object.prototype.hasOwnProperty.call(FindingSeverity, findingSeverity)).toBe(true);
 
       expect(Array.isArray(functionSignatures)).toBe(true);
       expect(functionSignatures).not.toBe([]);
@@ -130,10 +131,10 @@ describe('check bot configuration file', () => {
       expect(Array.isArray(eventSignatures)).toBe(true);
       expect(eventSignatures).not.toBe([]);
     });
-  });  
+  });
 });
 
-describe('test createUpgradeAlert', () =>  {
+describe('test createUpgradeAlert', () => {
   let protocolName;
   let protocolAbbreviation;
   let developerAbbreviation;
@@ -152,19 +153,19 @@ describe('test createUpgradeAlert', () =>  {
   });
 
   it('returns a proper finding', () => {
-    cTokenSymbol = "TEST";
-    findingType = "Info";
-    findingSeverity = "Info";
-    cTokenAddress = "0x1234";
-    underlyingAssetAddress = "0x5678";
+    cTokenSymbol = 'TEST';
+    findingType = 'Info';
+    findingSeverity = 'Info';
+    cTokenAddress = '0x1234';
+    underlyingAssetAddress = '0x5678';
     eventArgs = {
-      implementation: "0x8888"
-    }
+      implementation: '0x8888',
+    };
     modifiedArgs = {
-      eventArgs_implementation: "0x8888"
-    }
+      eventArgs_implementation: '0x8888',
+    };
 
-    expectedFinding = Finding.fromObject({
+    const expectedFinding = Finding.fromObject({
       name: `${protocolName} cToken Asset Upgraded`,
       description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
       alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-ASSET-UPGRADED`,
@@ -175,11 +176,11 @@ describe('test createUpgradeAlert', () =>  {
         cTokenSymbol,
         cTokenAddress,
         underlyingAssetAddress,
-        ...modifiedArgs
-      }
-    }); 
+        ...modifiedArgs,
+      },
+    });
 
-    finding = createUpgradeAlert(
+    const finding = createUpgradeAlert(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
@@ -188,11 +189,11 @@ describe('test createUpgradeAlert', () =>  {
       underlyingAssetAddress,
       eventArgs,
       findingType,
-      findingSeverity      
-    )
+      findingSeverity,
+    );
 
     expect(finding).toStrictEqual(expectedFinding);
-  })
+  });
 });
 
 // tests
@@ -209,37 +210,37 @@ describe('monitor compound for upgraded cToken assets', () => {
     let mockTxEvent;
     let testEventAbi;
     let testEventIFace;
-    let validFunctionSignature = 'TestFunction(address)';
+    const validFunctionSignature = 'TestFunction(address)';
     let validFunctionHash;
-    let validCTokenAddress = `0x1${'0'.repeat(39)}`;
-    let validAssetAddress = `0x5${'0'.repeat(39)}`;
-    let validUpgradeAddress = `0x9${'0'.repeat(39)}`;
-    let validSymbol = "TEST";
+    const validCTokenAddress = `0x1${'0'.repeat(39)}`;
+    const validAssetAddress = `0x5${'0'.repeat(39)}`;
+    const validUpgradeAddress = `0x9${'0'.repeat(39)}`;
+    const validSymbol = 'TEST';
 
     beforeAll(async () => {
       mockedProvider = {
-        getCode: jest.fn()
+        getCode: jest.fn(),
       };
-      mockedGetProvider.mockReturnValue(mockedProvider)
+      mockedGetProvider.mockReturnValue(mockedProvider);
 
-      const { proxyPatterns } = config; 
+      const { proxyPatterns } = config;
 
-      testPattern = {
-        name: "testPattern",
-        findingType: "Info",
-        findingSeverity: "Info",
+      const testPattern = {
+        name: 'testPattern',
+        findingType: 'Info',
+        findingSeverity: 'Info',
         functionSignatures: [
           validFunctionSignature,
         ],
         eventSignatures: [
-          "event TestEvent(address implementation)"
-        ]
-      }
+          'event TestEvent(address implementation)',
+        ],
+      };
 
       validFunctionHash = web3Eth.abi.encodeFunctionSignature(validFunctionSignature).slice(2);
 
-      proxyPatterns.push(testPattern)
-    })
+      proxyPatterns.push(testPattern);
+    });
 
     beforeEach(async () => {
       initializeData = {};
@@ -268,29 +269,28 @@ describe('monitor compound for upgraded cToken assets', () => {
       developerAbbreviation = initializeData.developerAbbreviation;
 
       testEventAbi = {
-        "anonymous": false,
-        "inputs": [
+        anonymous: false,
+        inputs: [
           {
-            "indexed": false,
-            "name": "implementation",
-            "type": "address"
-          }
+            indexed: false,
+            name: 'implementation',
+            type: 'address',
+          },
         ],
-        "name": "TestEvent",
-        "type": "event"
-      }
+        name: 'TestEvent',
+        type: 'event',
+      };
       testEventIFace = new ethers.utils.Interface([testEventAbi]);
 
       mockTxEvent = createTransactionEvent({
         receipt: {
-          "logs": []
+          logs: [],
         },
       });
     });
 
-
     it('returns empty findings if no upgrade events were emitted in the transaction', async () => {
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([])
+      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([]);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -298,21 +298,21 @@ describe('monitor compound for upgraded cToken assets', () => {
     });
 
     it('returns findings if valid upgrade events were emitted in the transaction', async () => {
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([])
-      
+      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([]);
+
       const override = {
         implementation: validUpgradeAddress,
-      }
-      
-      const testEventAbi = testEventIFace.getEvent("TestEvent");
+      };
+
+      testEventAbi = testEventIFace.getEvent('TestEvent');
       const testEvent = createMockEventLogs(testEventAbi, testEventIFace, override);
       const testLog = {
-        "address": validAssetAddress,
-        "topics": testEvent.mockTopics,
-        "args": testEvent.mockArgs,
-        "data": testEvent.data,
-        "signature": testEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6)
-      }
+        address: validAssetAddress,
+        topics: testEvent.mockTopics,
+        args: testEvent.mockArgs,
+        data: testEvent.data,
+        signature: testEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
+      };
 
       mockTxEvent.receipt.logs.push(testLog);
 
@@ -324,21 +324,20 @@ describe('monitor compound for upgraded cToken assets', () => {
         validSymbol,
         validCTokenAddress,
         validAssetAddress,
-        {...testEvent.mockArgs, "0": validUpgradeAddress},
-        "Info",
-        "Info"
+        { ...testEvent.mockArgs, 0: validUpgradeAddress },
+        'Info',
+        'Info',
       );
 
       expect(findings).toStrictEqual([expectedFinding]);
     });
 
-
     it('returns no findings if cToken was added but no upgrade events were emitted in the transaction', async () => {
-      let newCTokenAddress = `0x2${'0'.repeat(39)}`;
-      let newAssetAddress = `0x6${'0'.repeat(39)}`;
-      let newSymbol = "NEWTEST";
+      const newCTokenAddress = `0x2${'0'.repeat(39)}`;
+      const newAssetAddress = `0x6${'0'.repeat(39)}`;
+      const newSymbol = 'NEWTEST';
 
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([newCTokenAddress])
+      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([newCTokenAddress]);
 
       mockedCTokenContract = {
         underlying: jest.fn().mockReturnValueOnce(newAssetAddress),
@@ -347,7 +346,7 @@ describe('monitor compound for upgraded cToken assets', () => {
 
       mockedGetContract.mockReturnValueOnce(mockedCTokenContract);
 
-      mockedProvider.getCode.mockReturnValueOnce(`0xDEADBEEF${validFunctionHash}DEADBEEF`);      
+      mockedProvider.getCode.mockReturnValueOnce(`0xDEADBEEF${validFunctionHash}DEADBEEF`);
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -355,11 +354,11 @@ describe('monitor compound for upgraded cToken assets', () => {
     });
 
     it('returns findings if cToken was added and upgrade events were emitted in the transaction', async () => {
-      let newCTokenAddress = `0x2${'0'.repeat(39)}`;
-      let newAssetAddress = `0x6${'0'.repeat(39)}`;
-      let newSymbol = "NEWTEST";
+      const newCTokenAddress = `0x2${'0'.repeat(39)}`;
+      const newAssetAddress = `0x6${'0'.repeat(39)}`;
+      const newSymbol = 'NEWTEST';
 
-      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([newCTokenAddress])
+      mockComptrollerContract.getAllMarkets.mockReturnValueOnce([newCTokenAddress]);
 
       mockedCTokenContract = {
         underlying: jest.fn().mockReturnValueOnce(newAssetAddress),
@@ -368,21 +367,21 @@ describe('monitor compound for upgraded cToken assets', () => {
 
       mockedGetContract.mockReturnValueOnce(mockedCTokenContract);
 
-      mockedProvider.getCode.mockReturnValueOnce(`0xDEADBEEF${validFunctionHash}DEADBEEF`);      
+      mockedProvider.getCode.mockReturnValueOnce(`0xDEADBEEF${validFunctionHash}DEADBEEF`);
 
       const override = {
         implementation: validUpgradeAddress,
-      }
-      
-      const testEventAbi = testEventIFace.getEvent("TestEvent");
+      };
+
+      testEventAbi = testEventIFace.getEvent('TestEvent');
       const testEvent = createMockEventLogs(testEventAbi, testEventIFace, override);
       const testLog = {
-        "address": newAssetAddress,
-        "topics": testEvent.mockTopics,
-        "args": testEvent.mockArgs,
-        "data": testEvent.data,
-        "signature": testEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6)
-      }
+        address: newAssetAddress,
+        topics: testEvent.mockTopics,
+        args: testEvent.mockArgs,
+        data: testEvent.data,
+        signature: testEventAbi.format(ethers.utils.FormatTypes.minimal).substring(6),
+      };
 
       mockTxEvent.receipt.logs.push(testLog);
 
@@ -394,9 +393,9 @@ describe('monitor compound for upgraded cToken assets', () => {
         newSymbol,
         newCTokenAddress,
         newAssetAddress,
-        {...testEvent.mockArgs, "0": validUpgradeAddress},
-        "Info",
-        "Info"
+        { ...testEvent.mockArgs, 0: validUpgradeAddress },
+        'Info',
+        'Info',
       );
 
       expect(findings).toStrictEqual([expectedFinding]);
