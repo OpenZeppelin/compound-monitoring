@@ -21,7 +21,7 @@ async function postToDiscord(url, message) {
     // perform the POST request
     response = await post(url, method, headers, data);
   } catch (error) {
-    // is this a "too many requests" error (HTTP status 429)
+    // check if this is a "too many requests" error (HTTP status 429)
     if (error.response && error.response.status === 429) {
       // the request was made and a response was received
       // try again after waiting 5 seconds
