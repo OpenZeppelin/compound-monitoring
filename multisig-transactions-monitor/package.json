@@ -21,7 +21,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "forta-agent": "^0.1.1",
+    "forta-agent": "^0.1.6",
     "bignumber.js": "^9.0.1"
   },
   "devDependencies": {
