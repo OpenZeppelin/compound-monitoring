@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "axios": "^0.27.2",
+    "dotenv": "^16.0.1",
     "forta-agent": "^0.0.39"
   },
   "devDependencies": {
