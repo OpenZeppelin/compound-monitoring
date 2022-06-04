@@ -79,7 +79,9 @@ function provideInitialize(data) {
     const decimalsAbi = ['function decimals() view returns (uint8)'];
     const compoundTokenAddress = compoundToken.address.toLowerCase();
     const compoundTokenContract = new ethers.Contract(
-      compoundTokenAddress, decimalsAbi, data.provider,
+      compoundTokenAddress,
+      decimalsAbi,
+      data.provider,
     );
     const compoundTokenDecimals = await compoundTokenContract.decimals();
 

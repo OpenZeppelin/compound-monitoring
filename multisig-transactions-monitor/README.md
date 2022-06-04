@@ -82,7 +82,7 @@ This bot detects specific transactions originating from and/or interacting with 
   - Severity is always set to `Info`
   - Metadata field contains:
     - Old pause guardian address
-    - New pause gaurdian address
+    - New pause guardian address
     - Compound multisig address
 
 - AE-COMP-ACTION-PAUSED-ALERT
