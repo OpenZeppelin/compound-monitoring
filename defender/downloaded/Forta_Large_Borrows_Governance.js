@@ -187,13 +187,10 @@ exports.handler = async function (autotaskEvent) {
   // wait for the promises to settle
   let results = await Promise.allSettled(promises);
 
-  // construct the Etherscan transaction link
-  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-
   // create promises for posting messages to Discord webhook
   const discordPromises = results.map((result) => {
-    console.log(`${etherscanLink} ${result.value}`);
-    return postToDiscord(discordUrl, `${etherscanLink} ${result.value}`);
+    console.log(`${result.value}`);
+    return postToDiscord(discordUrl, `${result.value}`);
   });
 
   // wait for the promises to settle
