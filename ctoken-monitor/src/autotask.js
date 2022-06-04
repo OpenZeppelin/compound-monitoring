@@ -120,7 +120,6 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('usdValue undefined, please use newer bot version');
   }
 
-
   const eventMapping = {
     Borrow: {
       amountKey: 'borrowAmount',
