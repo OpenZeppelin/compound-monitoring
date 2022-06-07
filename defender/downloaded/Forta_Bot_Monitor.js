@@ -29,7 +29,7 @@ function convertEpochToDateTime(epochTimestamp) {
 function camelize(str, delimiter) {
   let output = '';
   str.split(delimiter).forEach((element, index) => {
-    let add = element.toLowerCase();
+    const add = element.toLowerCase();
     if (index === 0) {
       output += add;
     } else {
