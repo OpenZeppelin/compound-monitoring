@@ -1,3 +1,6 @@
+// Set the name of the Secret set in Autotask
+const discordSecretName = 'LiquidationDiscordUrl';
+
 const axios = require('axios');
 
 async function post(url, method, headers, data) {
@@ -50,7 +53,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { discordUrl } = secrets;
+  const discordUrl = secrets[discordSecretName];
   if (discordUrl === undefined) {
     throw new Error('discordUrl undefined');
   }
@@ -101,7 +104,6 @@ exports.handler = async function (autotaskEvent) {
 
   // extract the hashes from the source Object
   const {
-    // transactionHash,
     block: {
       hash,
     },
@@ -118,6 +120,7 @@ exports.handler = async function (autotaskEvent) {
   // construct the Etherscan transaction link
   let etherscanLink = `[BLOCK](<https://etherscan.io/block/${hash}>)`;
   etherscanLink += ` - [ACCT](<https://etherscan.io/address/${borrowerAddress}>)`;
+
   // create promises for posting messages to Discord webhook
   await postToDiscord(discordUrl, `${etherscanLink} ${message}`);
 

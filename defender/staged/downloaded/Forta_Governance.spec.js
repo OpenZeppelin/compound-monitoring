@@ -1,6 +1,7 @@
-const {
-  Finding, FindingType, FindingSeverity,
-} = require('forta-agent');
+// Set the name of the Secret set in Autotask
+const discordSecretName = 'GovernanceDiscordUrl';
+// Name of the Secret in the .env file
+const discordEnvSecretName = 'discordUrl';
 
 // Mock the data from the Bot finding
 // Random block
@@ -21,6 +22,10 @@ const mockCreatedMeta = {
   targets: '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B,0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B,0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B,0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B,0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B',
 };
 
+const {
+  Finding, FindingType, FindingSeverity,
+} = require('forta-agent');
+
 // grab the existing keys before loading new content from the .env file
 const existingKeys = Object.keys(process.env);
 // eslint-disable-next-line import/no-unresolved
@@ -33,7 +38,11 @@ newKeys.forEach((key) => {
   secrets[key] = process.env[key];
 });
 
-const { handler } = require('./autotask');
+// Map the Env name to the Secret variable name
+secrets[discordSecretName] = secrets[discordEnvSecretName];
+
+// eslint-disable-next-line import/no-useless-path-segments
+const { handler } = require('../downloaded/Forta_Governance');
 
 function createFinding(metadata) {
   return Finding.fromObject({
@@ -123,17 +132,20 @@ describe('check autotask', () => {
       mockBlockHash,
       mockCreatedTxHash,
     );
-
     // run the autotask on the events
     await handler(autotaskEvent);
   });
 
   it('throws error if discordUrl is not valid', async () => {
     // Use an invalid discord URL
-    secrets.discordUrl = 'http//zzzz';
-    const mockFinding = createFinding(mockRedeemMeta);
-    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockRedeemTxHash);
-
+    secrets[discordSecretName] = 'http//zzzz';
+    const mockFinding = createFinding(mockCreatedMeta);
+    const autotaskEvent = createFortaSentinelEvent(
+      mockFinding,
+      mockCreatedName,
+      mockBlockHash,
+      mockCreatedTxHash,
+    );
     // run the autotask on the events
     await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
   });
