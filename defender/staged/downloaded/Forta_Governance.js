@@ -1,3 +1,6 @@
+// Set the name of the Secret set in Autotask
+const discordSecretName = 'GovernanceDiscordUrl';
+
 const axios = require('axios');
 
 async function post(url, method, headers, data) {
@@ -192,7 +195,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { discordUrl } = secrets;
+  const discordUrl = secrets[discordSecretName];
   if (discordUrl === undefined) {
     throw new Error('discordUrl undefined');
   }

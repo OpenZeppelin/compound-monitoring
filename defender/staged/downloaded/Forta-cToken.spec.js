@@ -1,10 +1,7 @@
 // Set the name of the Secret set in Autotask
 const discordSecretName = 'cTokenDiscordUrl';
+// Name of the Secret in the .env file
 const discordEnvSecretName = 'discordUrl';
-
-const {
-  Finding, FindingType, FindingSeverity,
-} = require('forta-agent');
 
 // Mock the data from the Bot finding
 // Random block
@@ -69,6 +66,10 @@ const mockRRepayBorrowMeta = {
   totalBorrows: '449947401135954',
   usdValue: '19985',
 };
+
+const {
+  Finding, FindingType, FindingSeverity,
+} = require('forta-agent');
 
 // grab the existing keys before loading new content from the .env file
 const existingKeys = Object.keys(process.env);

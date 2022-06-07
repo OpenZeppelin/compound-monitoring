@@ -54,11 +54,6 @@ exports.handler = async function (autotaskEvent) {
 
   // ensure that there is a DiscordUrl secret
   const discordUrl = secrets[discordSecretName];
-
-  // console.log(discordUrl);
-  // console.log(discordSecretName);
-  // console.log(secrets);
-
   if (discordUrl === undefined) {
     throw new Error('discordUrl undefined');
   }
