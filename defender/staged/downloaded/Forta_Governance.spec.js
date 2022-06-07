@@ -22,6 +22,41 @@ const mockCreatedMeta = {
   targets: '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B,0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B,0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B,0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B,0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B',
 };
 
+const mockCastTxHash = '0xe65195312258cef491732d11a18199055bab6ded4ffd5cfb7bbbca034159492d';
+const mockCastName = 'Compound Governance Proposal Vote Cast';
+const mockCastMeta = {
+  address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
+  displayName: '',
+  id: '107',
+  proposalName: '(unknown proposal name)',
+  reason: '',
+  voter: '0x13BDaE8c5F0fC40231F0E6A4ad70196F59138548',
+  votes: '50000000000000000000000',
+};
+
+// No data for ProposalCanceled found, skipping this mock
+
+const mockExecutedTxHash = '0x0f0c6fba386a7f654e249d6d1531696708805ad335ef4d234d1aa7d5378466b9';
+const mockExecutedName = 'Compound Governance Proposal Executed';
+const mockExecutedMeta = {
+  address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
+  id: '107',
+  proposalName: '(unknown proposal name)',
+  state: 'executed',
+};
+
+const mockQueuedTxHash = '0x9964fd7648c0f5d2faf6aa9e952027085d5df3b0632464a7d16291c3ac4ccc5d  ';
+const mockQueuedName = 'Compound Governance Proposal Queued';
+const mockQueuedMeta = {
+  address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
+  eta: '1653983138',
+  id: '107',
+  proposalName: '(unknown proposal name)',
+  state: 'queued',
+};
+
+// No data for ThresholdSet found, skipping this mock
+
 const {
   Finding, FindingType, FindingSeverity,
 } = require('forta-agent');
@@ -124,13 +159,49 @@ function createFortaSentinelEvent(finding, findingName, blockHash, tryTxHash) {
 }
 
 describe('check autotask', () => {
-  it('Runs autotask against mock Borrow data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mock Created data and posts in Discord (manual-check)', async () => {
     const mockFinding = createFinding(mockCreatedMeta);
     const autotaskEvent = createFortaSentinelEvent(
       mockFinding,
       mockCreatedName,
       mockBlockHash,
       mockCreatedTxHash,
+    );
+    // run the autotask on the events
+    await handler(autotaskEvent);
+  });
+
+  it('Runs autotask against mock Cast data and posts in Discord (manual-check)', async () => {
+    const mockFinding = createFinding(mockCastMeta);
+    const autotaskEvent = createFortaSentinelEvent(
+      mockFinding,
+      mockCastName,
+      mockBlockHash,
+      mockCastTxHash,
+    );
+    // run the autotask on the events
+    await handler(autotaskEvent);
+  });
+
+  it('Runs autotask against mock Executed data and posts in Discord (manual-check)', async () => {
+    const mockFinding = createFinding(mockExecutedMeta);
+    const autotaskEvent = createFortaSentinelEvent(
+      mockFinding,
+      mockExecutedName,
+      mockBlockHash,
+      mockExecutedTxHash,
+    );
+    // run the autotask on the events
+    await handler(autotaskEvent);
+  });
+
+  it('Runs autotask against mock Queued data and posts in Discord (manual-check)', async () => {
+    const mockFinding = createFinding(mockQueuedMeta);
+    const autotaskEvent = createFortaSentinelEvent(
+      mockFinding,
+      mockQueuedName,
+      mockBlockHash,
+      mockQueuedTxHash,
     );
     // run the autotask on the events
     await handler(autotaskEvent);
