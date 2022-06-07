@@ -1,3 +1,7 @@
+// Set the name of the Secret set in Autotask
+const discordSecretName = 'cTokenDiscordUrl';
+const discordEnvSecretName = 'discordUrl';
+
 const {
   Finding, FindingType, FindingSeverity,
 } = require('forta-agent');
@@ -78,7 +82,11 @@ newKeys.forEach((key) => {
   secrets[key] = process.env[key];
 });
 
-const { handler } = require('./autotask');
+// Map the Env name to the Secret variable name
+secrets[discordSecretName] = secrets[discordEnvSecretName];
+
+// eslint-disable-next-line import/no-useless-path-segments
+const { handler } = require('../downloaded/Forta-cToken');
 
 function createFinding(metadata) {
   return Finding.fromObject({
@@ -209,7 +217,7 @@ describe('check autotask', () => {
 
   it('throws error if discordUrl is not valid', async () => {
     // Use an invalid discord URL
-    secrets.discordUrl = 'http//zzzz';
+    secrets[discordSecretName] = 'http//zzzz';
     const mockFinding = createFinding(mockRedeemMeta);
     const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockRedeemTxHash);
 
