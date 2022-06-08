@@ -123,7 +123,7 @@ exports.handler = async function (autotaskEvent) {
   const message = `${etherscanLink} 🌊 More **COMP** distributed to **${receiverFormatted}** than expected`;
 
   // create promises for posting messages to Discord webhook
-  await postToDiscord(discordUrl, `${etherscanLink} ${message}`);
+  await postToDiscord(discordUrl, message);
 
   return {};
 };
