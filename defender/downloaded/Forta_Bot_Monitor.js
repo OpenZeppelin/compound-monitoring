@@ -1,5 +1,11 @@
 /* eslint-disable import/no-unresolved,import/no-extraneous-dependencies */
 const axios = require('axios');
+// const { KeyValueStoreClient } = require('defender-kvstore-client');
+
+// this value was retrieved from the Forta Explorer front-end
+// it corresponds to 05-DEC-2021, presumably the launch date of Forta Explorer
+const fortaExplorerEarliestTimestamp = 1638721490212;
+
 /* eslint-enable import/no-unresolved,import/no-extraneous-dependencies */
 
 const botIds = [
@@ -18,8 +24,9 @@ function convertEpochToDateTime(epochTimestamp) {
   const dateObject = new Date(epochTimestamp);
 
   const year = dateObject.getUTCFullYear();
-  const month = dateObject.getUTCMonth().toString().padStart(2, '0');
-  const day = dateObject.getUTCDay().toString().padStart(2, '0');
+  // getUTCMonth uses zero based indexing, so 0 = January, 1 = February, etc.
+  const month = (1 + dateObject.getUTCMonth()).toString().padStart(2, '0');
+  const day = dateObject.getUTCDate().toString().padStart(2, '0');
   const hours = dateObject.getUTCHours().toString().padStart(2, '0');
   const minutes = dateObject.getUTCMinutes().toString().padStart(2, '0');
 
@@ -44,10 +51,8 @@ function parseAgentInformationResponse(response) {
 
   const output = {};
   Object.entries(getAgentInformation[0]).forEach(([key, value]) => {
-    if (key !== '__typename') {
-      const newKey = camelize(key, '_');
-      output[newKey] = value;
-    }
+    const newKey = camelize(key, '_');
+    output[newKey] = value;
   });
 
   return output;
@@ -125,8 +130,6 @@ function parseAlertsResponse(response) {
         case 'projects':
           output.projects = value.map((project) => getProject(project));
           break;
-        case '__typename':
-          break;
         default:
           output[camelize(key, '_')] = value;
       }
@@ -164,17 +167,16 @@ function parseMetricsResponse(response) {
       });
     });
   });
-
   return output;
 }
 
 // this appears to query for previous alerts emitted by a Bot
 // this data is then displayed in a table view titled 'Alerts' on the bottom of the Forta Explorer
 // page for the Bot
-function createAlertsQuery(botId) {
+function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
   const graphqlQuery = {
-    operationName: 'Retrive',
-    query: `query Retrive($getListInput: GetAlertsInput) {
+    operationName: 'Retrieve',
+    query: `query Retrieve($getListInput: GetAlertsInput) {
       getList(input: $getListInput) {
         alerts {
           hash
@@ -190,45 +192,37 @@ function createAlertsQuery(botId) {
             agent {
               id
               name
-              __typename
             }
             block {
               chain_id
               number
               timestamp
-              __typename
             }
-            __typename
           }
           projects {
             id
             name
-            __typename
           }
-          __typename
         }
         nextPageValues {
           blocknumber
           id
-          __typename
         }
         currentPageValues {
           blocknumber
           id
-          __typename
         }
-        __typename
       }
     }`,
     variables: {
       getListInput: {
         severity: [],
-        startDate: '',
-        endDate: '',
+        startDate: lastUpdateTimestamp.toString(),
+        endDate: currentTimestamp.toString(),
         txHash: '',
         text: '',
         muted: [],
-        limit: 50,
+        limit: 0,
         sort: 'desc',
         agents: [botId],
         addresses: [],
@@ -240,41 +234,33 @@ function createAlertsQuery(botId) {
 }
 
 // this query gathers data for the Alert Severities pie chart on the Forta Explorer page for a Bot
-function createAlertSeveritiesQuery(timeFrame) {
-  const currentTimestamp = (new Date()).getTime();
+function createAlertSeveritiesQuery(timeFrame, currentTimestamp, lastUpdateTimestamp) {
   const graphqlQuery = {
-    operationName: 'Retrive',
-    query: `query Retrive($getListInput: GetAlertsInput) {
+    operationName: 'Retrieve',
+    query: `query Retrieve($getListInput: GetAlertsInput) {
       getList(input: $getListInput) {
         aggregations {
           severity {
             key
             doc_count
-            __typename
           }
           alerts {
             key
             doc_count
-            __typename
           }
           agents {
             key
             doc_count
-            __typename
           }
           interval {
             key
             doc_count
-            __typename
           }
           cardinalities {
             agents
             alerts
-            __typename
           }
-          __typename
         }
-        __typename
       }
     }`,
     variables: {
@@ -287,7 +273,7 @@ function createAlertSeveritiesQuery(timeFrame) {
         sort: '',
         limit: 0,
         project: '',
-        startDate: '1638721490212',
+        startDate: lastUpdateTimestamp.toString(),
         endDate: currentTimestamp.toString(),
         aggregations: {
           severity: true,
@@ -305,8 +291,8 @@ function createAlertSeveritiesQuery(timeFrame) {
 // specifically, this contains data such as the Bot ID, Image, Last Updated, Enabled, etc.
 function createAgentInformationQuery(id) {
   const graphqlQuery = {
-    operationName: 'Retrive',
-    query: `query Retrive($getAgentInput: AgentInformation) {
+    operationName: 'Retrieve',
+    query: `query Retrieve($getAgentInput: AgentInformation) {
       getAgentInformation(input: $getAgentInput) {
         id
         name
@@ -322,7 +308,6 @@ function createAgentInformationQuery(id) {
         image
         manifest_ipfs
         doc_ipfs
-        __typename
       }
     }`,
     variables: {
@@ -347,13 +332,9 @@ function createMetricsQuery(agentId, timeFrame) {
               key
               sum
               max
-              __typename
             }
-            __typename
           }
-          __typename
         }
-        __typename
       }
     }`,
     variables: {
@@ -382,39 +363,99 @@ async function postQuery(graphqlQuery) {
   return response;
 }
 
+function calculateTimeFrame(currentTimestamp, lastUpdateTimestamp) {
+  // if this is the first time the Autotask has executed, gather data for the last month
+  // on subsequent runs, set the time frame based on the previous timestamp and the current
+  // timestamp
+  let timeFrame;
+  const millisecondsPerHour = 60 * 60 * 1000;
+  const millisecondsPerDay = millisecondsPerHour * 24;
+  const millisecondsPerWeek = millisecondsPerDay * 7;
+
+  // set the time frame based on the previous timestamp and the current timestamp
+  const deltaTimestamp = currentTimestamp - lastUpdateTimestamp;
+  if (deltaTimestamp <= millisecondsPerHour) {
+    timeFrame = 'hour';
+  } else if (deltaTimestamp <= millisecondsPerDay) {
+    timeFrame = 'day';
+  } else if (deltaTimestamp <= millisecondsPerWeek) {
+    timeFrame = 'week';
+  } else {
+    timeFrame = 'month';
+  }
+  return timeFrame;
+}
+
 // entry point for autotask
 // eslint-disable-next-line func-names
-exports.handler = async function () {
-  const timeFrame = 'day';
+// exports.handler = async function (autotaskEvent) {
+
+async function main(autotaskEvent) {
+  // get the current timestamp once
+  // this value will be used across all queries to determine how much data to
+  // retrieve
+  const currentTimestamp = (new Date()).getTime();
+
+  let firstRun = false;
+
+  // load the latest timestamp that was stored
+  // const store = new KeyValueStoreClient(autotaskEvent);
+  // let lastUpdateTimestamp = await store.get('lastUpdateTimestamp');
+  let lastUpdateTimestamp;
+
+  // the first time this Autotask is executed, we will need to manually set the value
+  // of the last timestamp
+  if (lastUpdateTimestamp === undefined) {
+    firstRun = true;
+    lastUpdateTimestamp = fortaExplorerEarliestTimestamp;
+  }
+
+  // set the time frame based upon when this Autotask was last executed
+  const timeFrame = calculateTimeFrame(currentTimestamp, lastUpdateTimestamp);
+
+  /*
+    await store.put('myKey', 'myValue');
+    const value = await store.get('myKey');
+    await store.del('myKey');
+  */
 
   const promises = botIds.map(async (botId) => {
-    const alertsQuery = createAlertsQuery(botId);
+    const output = { botId };
+    const alertsQuery = createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp + 1);
     const alertsResponse = await postQuery(alertsQuery);
-    const alerts = parseAlertsResponse(alertsResponse);
+    output.alerts = parseAlertsResponse(alertsResponse);
 
-    const alertSeveritiesQuery = createAlertSeveritiesQuery(timeFrame);
+    const alertSeveritiesQuery = createAlertSeveritiesQuery(
+      timeFrame,
+      currentTimestamp,
+      lastUpdateTimestamp,
+    );
     const alertSeveritiesResponse = await postQuery(alertSeveritiesQuery);
-    const alertSeverities = parseAlertSeverities(alertSeveritiesResponse);
+    output.alertSeverities = parseAlertSeverities(alertSeveritiesResponse);
 
-    const agentInformationQuery = createAgentInformationQuery(botId);
-    const agentInformationResponse = await postQuery(agentInformationQuery);
-    const agentInformation = parseAgentInformationResponse(agentInformationResponse);
+    // this information is unlikely to change, so only retrieve it once
+    if (firstRun === true) {
+      const agentInformationQuery = createAgentInformationQuery(botId);
+      const agentInformationResponse = await postQuery(agentInformationQuery);
+      output.agentInformation = parseAgentInformationResponse(agentInformationResponse);
+    }
 
     const metricsQuery = createMetricsQuery(botId, timeFrame);
     const metricsResponse = await postQuery(metricsQuery);
-    const metrics = parseMetricsResponse(metricsResponse);
+    output.metrics = parseMetricsResponse(metricsResponse, lastUpdateTimestamp);
 
-    const output = {
-      botId,
-      alerts,
-      alertSeverities,
-      agentInformation,
-      metrics,
-    };
     return output;
   });
 
   const results = await Promise.all(promises);
 
+  console.log(results);
   return results;
-};
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
