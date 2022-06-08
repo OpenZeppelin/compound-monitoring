@@ -1,5 +1,5 @@
 // Set the name of the Secret set in Autotask
-const discordSecretName = 'cTokenDiscordUrl';
+const discordSecretName = 'DiscordUrl';
 // Name of the Secret in the .env file
 const discordEnvSecretName = 'discordUrl';
 
@@ -87,7 +87,7 @@ newKeys.forEach((key) => {
 secrets[discordSecretName] = secrets[discordEnvSecretName];
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('../downloaded/Forta-cToken');
+const { handler } = require('../downloaded/Forta_cToken');
 
 function createFinding(metadata) {
   return Finding.fromObject({
@@ -101,7 +101,7 @@ function createFinding(metadata) {
   });
 }
 
-function createFortaSentinelEvent(finding, blockHash, tryTxHash) {
+function createFortaSentinelEvent(finding, blockHash, txHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
   //  with some metadata being added and removed along the way. This function will mimic
   // the Sentinel output with only Finding, block and transaction data.
@@ -109,14 +109,6 @@ function createFortaSentinelEvent(finding, blockHash, tryTxHash) {
   // Note: Much of the extra data here is superfluous but is left here just in case future bots
   // want to reference any of the Sentinel data in the Discord output. It also mimics sentinel
   // output more accurately.
-
-  // On block events, the txHash does not exist
-  let txHash;
-  if (tryTxHash === undefined || tryTxHash === null) {
-    txHash = '';
-  } else {
-    txHash = tryTxHash;
-  }
 
   // populate the matchReasons Array with placeholders
   const matchReasons = [
