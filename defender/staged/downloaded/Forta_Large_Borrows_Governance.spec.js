@@ -4,8 +4,8 @@ const discordSecretName = 'SecurityAlertsDiscordUrl';
 const discordEnvSecretName = 'discordUrl';
 
 // Mock the data from the Bot finding
-const mockTxHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
-const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
+const mockTxHash = '0x2c9931793876db33b1a9aad123ad4921dfb9cd5e59dbb78ce78f277759587115';
+const mockBlockHash = '0xfc492bb1149eaad9dbffb1990003ce203a9c8102fb57cd767b45c6c4749c86c5';
 const mockMetadata = {
   borrowerAddress: '0x1212121212121212121212121212121212121212',
   governanceLevel: 'proposal',
