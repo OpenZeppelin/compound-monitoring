@@ -1,128 +1,45 @@
-/* eslint-disable import/no-extraneous-dependencies */
+// Set the name of the Secret set in Autotask
+const discordSecretName = 'SecurityAlertsDiscordUrl';
+
 const axios = require('axios');
-/* eslint-enable import/no-extraneous-dependencies */
 
-const fortaApiEndpoint = 'https://api.forta.network/graphql';
-
-function createDiscordMessage(borrowerAddress, governanceEvent, transactionHash) {
-  const borrowerFormatted = borrowerAddress.slice(0, 6);
-
-  // // construct the Etherscan transaction link
-  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-
-  return `${etherscanLink} 💸 **${borrowerFormatted}** has enough **COMP** tokens to pass min threshold for the governance event: **${governanceEvent}**`;
+async function post(url, method, headers, data) {
+  return axios({
+    url,
+    method,
+    headers,
+    data,
+  });
 }
 
-function getRandomInt(min, max) {
-  return Math.floor((Math.random() * (max - min)) + min);
-}
-
-// post to discord
 async function postToDiscord(url, message) {
+  const method = 'post';
   const headers = {
     'Content-Type': 'application/json',
   };
-
-  const body = {
-    content: message,
-  };
-
-  const discordObject = {
-    url,
-    method: 'post',
-    headers,
-    data: body,
-  };
+  const data = JSON.stringify({ content: message });
 
   let response;
   try {
     // perform the POST request
-    response = await axios(discordObject);
+    response = await post(url, method, headers, data);
   } catch (error) {
     // is this a "too many requests" error (HTTP status 429)
     if (error.response && error.response.status === 429) {
-      // rate-limited, retry
-      // after waiting a random amount of time between 2 and 15 seconds
-      const delay = getRandomInt(2000, 15000);
+      // the request was made and a response was received
+      // try again after waiting 5 seconds
       // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, delay));
+      const promise = new Promise((resolve) => setTimeout(resolve, 5000));
       await promise;
-      response = await axios(discordObject);
+      response = await post(url, method, headers, data);
     } else {
       // re-throw the error if it's not from a 429 status
       throw error;
     }
   }
-
   return response;
 }
 
-async function getFortaAlerts(botId, transactionHash) {
-  const headers = {
-    'content-type': 'application/json',
-  };
-
-  // construct query with data that you want to get back
-  const graphqlQuery = {
-    operationName: 'recentAlerts',
-    query: `query recentAlerts($input: AlertsInput) {
-      alerts(input: $input) {
-        pageInfo {
-          hasNextPage
-          endCursor {
-            alertId
-            blockNumber
-          }
-        }
-        alerts {
-          createdAt
-          name
-          protocol
-          findingType
-          hash
-          source {
-            transactionHash
-            block {
-              number
-              chainId
-            }
-            bot {
-              id
-            }
-          }
-          severity
-          metadata
-          description
-        }
-      }
-    }`,
-    variables: {
-      input: {
-        first: 100,
-        bots: [botId],
-        transactionHash,
-        createdSince: 0,
-        chainId: 1,
-      },
-    },
-  };
-
-  // perform the POST request
-  const response = await axios.post(
-    fortaApiEndpoint,
-    graphqlQuery,
-    headers,
-  );
-
-  const { data } = response;
-  if (data === undefined) {
-    return undefined;
-  }
-  const { data: { alerts: { alerts } } } = data;
-  return alerts;
-}
-
-// entry point for autotask
 // eslint-disable-next-line func-names
 exports.handler = async function (autotaskEvent) {
   // ensure that the autotaskEvent Object exists
@@ -130,18 +47,34 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('autotaskEvent undefined');
   }
 
-  const { secrets, request } = autotaskEvent;
+  const { secrets } = autotaskEvent;
   if (secrets === undefined) {
     throw new Error('secrets undefined');
   }
 
-  // ensure that there is a DiscordUrl secret. Name changes depending on what webhook secret you use
-  const { GovernanceDiscordUrl: discordUrl } = secrets;
+  // ensure that there is a DiscordUrl secret
+  const discordUrl = secrets[discordSecretName];
   if (discordUrl === undefined) {
-    throw new Error('GovernanceDiscordUrl undefined');
+    throw new Error('discordUrl undefined');
+  }
+
+  // Ref: https://developer.mozilla.org/en-US/docs/Web/API/URL
+  function isValidUrl(string) {
+    let url;
+    try {
+      url = new URL(string);
+    } catch (_) {
+      return false;
+    }
+    return url.href;
+  }
+
+  if (isValidUrl(discordUrl) === false) {
+    throw new Error('discordUrl is not a valid URL');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
+  const { request } = autotaskEvent;
   if (request === undefined) {
     throw new Error('request undefined');
   }
@@ -158,48 +91,42 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('alert undefined');
   }
 
-  // extract the transaction hash and bot ID from the alert Object
+  // ensure that the alert key exists within the body Object
+  const { source } = body;
+  if (source === undefined) {
+    throw new Error('source undefined');
+  }
+
+  // extract the metadata from the alert Object
+  const { metadata } = alert;
+  if (source === undefined) {
+    throw new Error('metadata undefined');
+  }
+
+  // extract the hashes from the source Object
   const {
-    hash,
-    source: {
-      transactionHash,
-      bot: {
-        id: botId,
-      },
-    },
-  } = alert;
+    transactionHash,
+  } = source;
 
-  // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(botId, transactionHash);
-  alerts = alerts.filter((alertObject) => alertObject.hash === hash);
+  // Start of usual modifications to the autotask script
+  // extract the metadata
+  const {
+    borrowerAddress,
+    governanceLevel,
+  } = metadata;
+  if (borrowerAddress === undefined) {
+    throw new Error('borrowerAddress undefined');
+  }
 
-  const promises = alerts.map((alertData) => {
-    const { metadata } = alertData;
-    const { borrowerAddress, governanceLevel: governanceEvent } = metadata;
+  const borrowerFormatted = borrowerAddress.slice(0, 6);
 
-    return createDiscordMessage(
-      borrowerAddress,
-      governanceEvent,
-      transactionHash,
-    );
-  });
+  // // construct the Etherscan transaction link
+  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
-  // wait for the promises to settle
-  let results = await Promise.allSettled(promises);
+  const message = `${etherscanLink} 💸 **${borrowerFormatted}** has enough **COMP** tokens to pass min threshold for the governance event: **${governanceLevel}**`;
 
   // create promises for posting messages to Discord webhook
-  const discordPromises = results.map((result) => {
-    console.log(`${result.value}`);
-    return postToDiscord(discordUrl, `${result.value}`);
-  });
-
-  // wait for the promises to settle
-  results = await Promise.allSettled(discordPromises);
-  results = results.filter((result) => result.status === 'rejected');
-
-  if (results.length > 0) {
-    throw new Error(results[0].reason);
-  }
+  await postToDiscord(discordUrl, message);
 
   return {};
 };
