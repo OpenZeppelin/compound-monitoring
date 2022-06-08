@@ -1,5 +1,5 @@
 // Set the name of the Secret set in Autotask
-const discordSecretName = 'cTokenDiscordUrl';
+const discordSecretName = 'DiscordUrl';
 
 const axios = require('axios');
 
@@ -106,16 +106,12 @@ exports.handler = async function (autotaskEvent) {
   // extract the hashes from the source Object
   const {
     transactionHash,
-    // block: {
-    //   hash,
-    // },
   } = source;
 
   // Start of usual modifications to the autotask script
   // extract the metadata
   const {
     cTokenSymbol,
-    // contractAddress,
     eventName,
     usdValue,
   } = metadata;
