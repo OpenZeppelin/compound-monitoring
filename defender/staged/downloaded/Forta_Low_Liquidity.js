@@ -1,12 +1,14 @@
-/* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
-const axios = require('axios');
-/* eslint-enable import/no-extraneous-dependencies,import/no-unresolved */
+// Set the name of the Secret set in Autotask
+const discordSecretName = 'SecurityAlertsDiscordUrl';
 
-const fortaApiEndpoint = 'https://api.forta.network/graphql';
+const axios = require('axios');
 
 async function post(url, method, headers, data) {
   return axios({
-    url, method, headers, data,
+    url,
+    method,
+    headers,
+    data,
   });
 }
 
@@ -15,7 +17,7 @@ async function postToDiscord(url, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = { content: message };
+  const data = JSON.stringify({ content: message });
 
   let response;
   try {
@@ -35,74 +37,7 @@ async function postToDiscord(url, message) {
       throw error;
     }
   }
-
   return response;
-}
-
-async function getFortaAlerts(botId, transactionHash) {
-  const headers = {
-    'content-type': 'application/json',
-  };
-
-  const graphqlQuery = {
-    operationName: 'recentAlerts',
-    query: `query recentAlerts($input: AlertsInput) {
-      alerts(input: $input) {
-        pageInfo {
-          hasNextPage
-          endCursor {
-            alertId
-            blockNumber
-          }
-        }
-        alerts {
-          createdAt
-          name
-          protocol
-          findingType
-          hash
-          source {
-            transactionHash
-            block {
-              number
-              chainId
-            }
-            bot {
-              id
-            }
-          }
-          severity
-      metadata
-      description
-        }
-      }
-    }`,
-    variables: {
-      input: {
-        first: 100,
-        bots: [botId],
-        transactionHash,
-        createdSince: 0,
-        chainId: 1,
-      },
-    },
-  };
-
-  // perform the POST request
-  const response = await axios({
-    url: fortaApiEndpoint,
-    method: 'post',
-    headers,
-    data: graphqlQuery,
-  });
-
-  const { data } = response;
-  if (data === undefined) {
-    return undefined;
-  }
-
-  const { data: { alerts: { alerts } } } = data;
-  return alerts;
 }
 
 // eslint-disable-next-line func-names
@@ -112,18 +47,34 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('autotaskEvent undefined');
   }
 
-  const { secrets, request } = autotaskEvent;
+  const { secrets } = autotaskEvent;
   if (secrets === undefined) {
     throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { SecurityAlertsDiscordUrl: discordUrl } = secrets;
+  const discordUrl = secrets[discordSecretName];
   if (discordUrl === undefined) {
-    throw new Error('SecurityAlertsDiscordUrl undefined');
+    throw new Error('discordUrl undefined');
+  }
+
+  // Ref: https://developer.mozilla.org/en-US/docs/Web/API/URL
+  function isValidUrl(string) {
+    let url;
+    try {
+      url = new URL(string);
+    } catch (_) {
+      return false;
+    }
+    return url.href;
+  }
+
+  if (isValidUrl(discordUrl) === false) {
+    throw new Error('discordUrl is not a valid URL');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
+  const { request } = autotaskEvent;
   if (request === undefined) {
     throw new Error('request undefined');
   }
@@ -140,41 +91,41 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('alert undefined');
   }
 
-  // extract the transaction hash and bot ID from the alert Object
+  // ensure that the alert key exists within the body Object
+  const { source } = body;
+  if (source === undefined) {
+    throw new Error('source undefined');
+  }
+
+  // extract the metadata from the alert Object
+  const { metadata } = alert;
+  if (source === undefined) {
+    throw new Error('metadata undefined');
+  }
+
+  // extract the hashes from the source Object
   const {
-    hash,
-    source: {
-      transactionHash,
-      bot: {
-        id: botId,
-      },
-    },
-  } = alert;
+    transactionHash,
+  } = source;
 
-  // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(botId, transactionHash);
-  alerts = alerts.filter((alertObject) => alertObject.hash === hash);
+  // Start of usual modifications to the autotask script
+  // extract the metadata
+  const {
+    compTokenSymbol,
+    maliciousAddress,
+  } = metadata;
+  if (maliciousAddress === undefined) {
+    throw new Error('maliciousAddress undefined');
+  }
 
-  // wait for the promises to settle
-  const messages = alerts.map((alertData) => alertData.description);
+  const maliciousAddressFormatted = maliciousAddress.slice(0, 6);
 
-  // construct the Etherscan transaction link
+  // // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
+  const message = `${etherscanLink} The address ${maliciousAddressFormatted} is potentially manipulating the cToken ${compTokenSymbol} market`;
 
   // create promises for posting messages to Discord webhook
-  const warningEmoji = '⚠️';
-  const discordPromises = messages.map((message) => {
-    console.log(`${etherscanLink} ${warningEmoji} ${message}`);
-    return postToDiscord(discordUrl, `${etherscanLink} ${warningEmoji} ${message}`);
-  });
-
-  // wait for the promises to settle
-  let results = await Promise.allSettled(discordPromises);
-  results = results.filter((result) => result.status === 'rejected');
-
-  if (results.length > 0) {
-    throw new Error(results[0].reason);
-  }
+  await postToDiscord(discordUrl, message);
 
   return {};
 };

@@ -1,15 +1,19 @@
 // Set the name of the Secret set in Autotask
-const discordSecretName = 'LiquidationDiscordUrl';
+const discordSecretName = 'SecurityAlertsDiscordUrl';
 // Name of the Secret in the .env file
 const discordEnvSecretName = 'discordUrl';
 
 // Mock the data from the Bot finding
-const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
+const mockTxHash = '0x2c9931793876db33b1a9aad123ad4921dfb9cd5e59dbb78ce78f277759587115';
+const mockBlockHash = '0xfc492bb1149eaad9dbffb1990003ce203a9c8102fb57cd767b45c6c4749c86c5';
 const mockMetadata = {
-  borrowerAddress: '0x0000000000000000000000000000000000000000',
-  liquidationAmount: '1000.00',
-  shortfallAmount: '1000.00',
-  healthFactor: '0.80',
+  compTokenSymbol: 'cBTC',
+  cTokenAddress: '0x2000000000000000000000000000000000000000',
+  mintAmount: '1',
+  mintTokens: '100',
+  maliciousAddress: '0x9000000000000000000000000000000000000000',
+  maliciousAmount: '10000',
+  totalSupply: '100',
 };
 
 const {
@@ -42,9 +46,9 @@ newKeys.forEach((key) => {
 secrets[discordSecretName] = secrets[discordEnvSecretName];
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('../downloaded/Forta_Liquidation_Monitor');
+const { handler } = require('../downloaded/Forta_Low_Liquidity');
 
-function createFortaSentinelEvent(finding, blockHash) {
+function createFortaSentinelEvent(finding, blockHash, txHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
   //  with some metadata being added and removed along the way. This function will mimic
   // the Sentinel output with only Finding, block and transaction data.
@@ -52,9 +56,6 @@ function createFortaSentinelEvent(finding, blockHash) {
   // Note: Much of the extra data here is superfluous but is left here just in case future bots
   // want to reference any of the Sentinel data in the Discord output. It also mimics sentinel
   // output more accurately.
-
-  // On block events, the txHash does not exist
-  const txHash = '';
 
   // populate the matchReasons Array with placeholders
   const matchReasons = [
@@ -107,8 +108,7 @@ function createFortaSentinelEvent(finding, blockHash) {
 
 describe('check autotask', () => {
   it('Runs autotask against mock data and posts in Discord (manual-check)', async () => {
-    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash);
-
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockTxHash);
     // run the autotask on the events
     await handler(autotaskEvent);
   });
@@ -116,8 +116,7 @@ describe('check autotask', () => {
   it('throws error if discordUrl is not valid', async () => {
     // Use an invalid discord URL
     secrets[discordSecretName] = 'http//zzzz';
-    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash);
-
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockTxHash);
     // run the autotask on the events
     await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
   });
