@@ -111,19 +111,19 @@ exports.handler = async function (autotaskEvent) {
   // Start of usual modifications to the autotask script
   // extract the metadata
   const {
-    delegateAddress,
-    levelName,
+    borrowerAddress,
+    governanceLevel,
   } = metadata;
-  if (delegateAddress === undefined) {
-    throw new Error('delegateAddress undefined');
+  if (borrowerAddress === undefined) {
+    throw new Error('borrowerAddress undefined');
   }
 
-  const delegateFormatted = delegateAddress.slice(0, 6);
+  const borrowerFormatted = borrowerAddress.slice(0, 6);
 
   // // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
-  const message = `${etherscanLink} 💸 **${delegateFormatted}** has enough **COMP** tokens to pass min threshold for the governance event: **${levelName}**`;
+  const message = `${etherscanLink} 💸 **${borrowerFormatted}** has enough **COMP** tokens to pass min threshold for the governance event: **${governanceLevel}**`;
 
   // create promises for posting messages to Discord webhook
   await postToDiscord(discordUrl, message);
