@@ -24,12 +24,33 @@ async function postToDiscord(url, message) {
     // perform the POST request
     response = await post(url, method, headers, data);
   } catch (error) {
-    // is this a "too many requests" error (HTTP status 429)
+    // check if this is a "too many requests" error (HTTP status 429)
     if (error.response && error.response.status === 429) {
       // the request was made and a response was received
-      // try again after waiting 5 seconds
+      // try again after waiting 5 - 50 seconds, if retry_after value is received, use that.
+      let timeout;
+      // Discord Webhook API defaults to v6, and v6 returns retry_after value in ms. Later versions
+      // use seconds, so this will need to be updated when Discord changes their default API version
+      // Ref: https://discord.com/developers/docs/reference
+      if (error.response.data
+        && error.response.data.retry_after
+        && error.response.data.retry_after < 50000) {
+        // Wait the specified amount of time + a random number to reduce
+        // overlap with newer requests. Initial testing reveals that the Discord Webhook allows 5
+        // requests and then resets the counter after 2 seconds. With a 15 second range of 5-20,
+        // this function can reliably can handle batches of 15 requests. Increase the max variable
+        // below if you anticipate a larger number of requests.
+        // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+        const min = 5000;
+        const max = 30000;
+        timeout = Math.floor(Math.random() * (max - min) + min);
+        timeout += error.response.data.retry_after;
+      } else {
+        // If retry_after is larger than 50 seconds, then just wait 50 seconds.
+        timeout = 50000;
+      }
       // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, 5000));
+      const promise = new Promise((resolve) => setTimeout(resolve, timeout));
       await promise;
       response = await post(url, method, headers, data);
     } else {
