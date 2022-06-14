@@ -11,11 +11,22 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Add your Bot directory here 
-        all-dir: ['asset-monitor', 'comp-delegations-monitor', 'ctoken-monitor', 'defender', 
-          'distribution', 'gnosis-safe-deploy', 'governance', 'large-borrows-governance',
-          'liquidation-monitor', 'low-liquidity-market-attack-monitor', 'multisig-transactions-monitor',
-          'oracle-price-monitor']
+        # Add your Bot directory here
+        all-dir:
+          [
+            "asset-monitor",
+            "comp-delegations-monitor",
+            "ctoken-monitor",
+            "defender",
+            "distribution",
+            "gnosis-safe-deploy",
+            "governance",
+            "large-borrows-governance",
+            "liquidation-monitor",
+            "low-liquidity-market-attack-monitor",
+            "multisig-transactions-monitor",
+            "oracle-price-monitor",
+          ]
       fail-fast: false
     defaults:
       run:
@@ -23,23 +34,23 @@ jobs:
     timeout-minutes: 5
 
     steps:
-    - name: Checkout the repo
-      uses: actions/checkout@v3
-    - name: Use Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: lts/*
-    - name: Install Packages
-      run: npm install
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+      - name: Install Packages
+        run: npm install
 
-    - name: Standard Tests
-      if: ${{ matrix.all-dir != 'defender' }}
-      run: npm test
+      - name: Standard Tests
+        if: ${{ matrix.all-dir != 'defender' }}
+        run: npm test
 
     # Disabled until PR 1426 is merged
     # - name: Special Tests (Discord Tests)
     #   if: ${{ matrix.all-dir == 'defender' }}
-    #   # Secrets are masked in the logs, but do not use production secrets. 
+    #   # Secrets are masked in the logs, but do not use production secrets.
     #   #  Update the secret at Repo > Settings > Secrets > Actions
     #   run: |
     #     echo 'discordUrl = "${{ secrets.WEBHOOK }}"' > .env
