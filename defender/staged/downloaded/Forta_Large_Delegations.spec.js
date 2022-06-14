@@ -40,7 +40,10 @@ newKeys.forEach((key) => {
 });
 
 // Map the Env name to the Secret variable name
-secrets[discordSecretName] = secrets[discordEnvSecretName];
+if (discordSecretName !== discordEnvSecretName) {
+  secrets[discordSecretName] = secrets[discordEnvSecretName];
+  delete secrets[discordEnvSecretName];
+}
 
 // eslint-disable-next-line import/no-useless-path-segments
 const { handler } = require('../downloaded/Forta_Large_Delegations');

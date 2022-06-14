@@ -144,29 +144,29 @@ exports.handler = async function (autotaskEvent) {
     Borrow: {
       amountKey: 'borrowAmount',
       byKey: 'borrower',
-      action: 'borrow',
+      action: 'borrowed',
     },
     LiquidateBorrow: {
       amountKey: 'repayAmount',
       byKey: 'liquidator',
       fromKey: 'borrower',
-      action: 'liquidate',
+      action: 'liquidated',
     },
     Mint: {
       amountKey: 'mintAmount',
       byKey: 'minter',
-      action: 'supply',
+      action: 'supplied',
     },
     Redeem: {
       amountKey: 'redeemAmount',
       byKey: 'redeemer',
-      action: 'withdraw',
+      action: 'withdrew',
     },
     RepayBorrow: {
       amountKey: 'repayAmount',
       byKey: 'payer',
       forKey: 'borrower',
-      action: 'repay',
+      action: 'repaid',
     },
   };
 
@@ -203,10 +203,10 @@ exports.handler = async function (autotaskEvent) {
   const { action } = eventObject;
   let message = `${eventEmoji} **$${amountString} of ${cTokenSymbol}** ${action}`;
 
-  if (action === 'liquidate') {
+  if (action === 'liquidated') {
     const fromAddress = metadata[eventObject.fromKey];
     message += ` from ${fromAddress.slice(0, 6)} by ${byAddress.slice(0, 6)}`;
-  } else if (action === 'repayBorrow') {
+  } else if (action === 'repaid') {
     const forAddress = metadata[eventObject.forKey];
     message += ` by ${byAddress.slice(0, 6)}`;
     if (forAddress !== byAddress) {
