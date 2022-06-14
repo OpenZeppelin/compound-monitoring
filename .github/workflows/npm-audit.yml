@@ -1,4 +1,4 @@
-name: NPM VulnChecker
+name: NPM Vulnerability Checker
 on:
   # Enabling manual test
   # REF: https://stackoverflow.com/questions/58933155/manual-workflow-triggers-in-github-actions
@@ -8,7 +8,7 @@ on:
     - cron: '0 0 * * *'
 
 jobs:
-  npm-test:
+  npm-audit:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -34,9 +34,9 @@ jobs:
       run: npm install
 
     - name: Check for vulnerabilities
-      id: vulnCheck
+      id: VulnerabilityCheck
       continue-on-error: true
       run: npm audit
     - name: List outdated packages if vulnerabilities are detected
-      if: steps.vulnCheck.outcome == 'failure'
+      if: steps.VulnerabilityCheck.outcome == 'failure'
       run: npm outdated
