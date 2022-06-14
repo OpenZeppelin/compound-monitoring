@@ -265,7 +265,6 @@ exports.handler = async function (autotaskEvent) {
 
   // create promises for posting messages to Discord webhook
   const discordPromises = results.map((result) => {
-    console.log(`${result.value}`);
     return postToDiscord(discordUrl, `${result.value}`);
   });
 
