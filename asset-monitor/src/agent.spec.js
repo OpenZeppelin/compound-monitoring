@@ -1,6 +1,3 @@
-/* eslint-disable no-shadow */
-/* eslint-disable no-undef */
-/* eslint-disable no-unused-vars */
 const mockedGetContract = jest.fn();
 const mockedGetProvider = jest.fn();
 
@@ -21,8 +18,6 @@ const {
 const web3 = require('web3-eth');
 const { provideHandleTransaction, provideInitialize, createUpgradeAlert } = require('./agent');
 const {
-  getObjectsFromAbi,
-  getEventFromConfig,
   createMockEventLogs,
 } = require('./test-utils');
 
@@ -93,8 +88,8 @@ describe('check bot configuration file', () => {
 
     // load the ABI from the specified file
     // the call to getAbi will fail if the file does not exist
-    const ComptrollerAbi = getAbi(ComptrollerAbiFile);
-    const cTokenAbi = getAbi(cTokenAbiFile);
+    getAbi(ComptrollerAbiFile);
+    getAbi(cTokenAbiFile);
   });
 
   it('excludeAddresses key required', () => {
@@ -171,7 +166,7 @@ describe('test createUpgradeAlert', () => {
       eventArgs_implementation: '0x8888',
     };
 
-    expectedFinding = Finding.fromObject({
+    const expectedFinding = Finding.fromObject({
       name: `${protocolName} cToken Asset Upgraded`,
       description: `The underlying asset for the ${cTokenSymbol} cToken contract was upgraded`,
       alertId: `${developerAbbreviation}-${protocolAbbreviation}-CTOKEN-ASSET-UPGRADED`,
@@ -186,7 +181,7 @@ describe('test createUpgradeAlert', () => {
       },
     });
 
-    finding = createUpgradeAlert(
+    const finding = createUpgradeAlert(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
@@ -231,7 +226,7 @@ describe('monitor compound for upgraded cToken assets', () => {
 
       const { proxyPatterns } = config;
 
-      testPattern = {
+      const testPattern = {
         name: 'testPattern',
         findingType: 'Info',
         findingSeverity: 'Info',
@@ -310,7 +305,7 @@ describe('monitor compound for upgraded cToken assets', () => {
         implementation: validUpgradeAddress,
       };
 
-      const testEventAbi = testEventIFace.getEvent('TestEvent');
+      testEventAbi = testEventIFace.getEvent('TestEvent');
       const testEvent = createMockEventLogs(testEventAbi, testEventIFace, override);
       const testLog = {
         address: validAssetAddress,
@@ -379,7 +374,7 @@ describe('monitor compound for upgraded cToken assets', () => {
         implementation: validUpgradeAddress,
       };
 
-      const testEventAbi = testEventIFace.getEvent('TestEvent');
+      testEventAbi = testEventIFace.getEvent('TestEvent');
       const testEvent = createMockEventLogs(testEventAbi, testEventIFace, override);
       const testLog = {
         address: newAssetAddress,
