@@ -14,7 +14,8 @@ async function postToDiscord(url, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
+  const body = { content: message };
+  const data = body;
 
   let response;
   try {
@@ -88,8 +89,8 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('alert undefined');
   }
 
-  // ensure that the alert key exists within the body Object
-  const { source } = body;
+  // ensure that the source key exists within the alert Object
+  const { source } = alert;
   if (source === undefined) {
     throw new Error('source undefined');
   }
