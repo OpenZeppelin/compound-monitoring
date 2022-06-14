@@ -3,12 +3,11 @@
 ## Description
 
 This bot monitors the Compound Finance GovernorBravo contract for specific emitted events related
-to Proposals and Voting. All alert types and severities are set to Info.
+to Proposals and Voting.  All alert types and severities are set to Info.
 
 ## Alerts
 
 <!-- -->
-
 - AE-COMP-GOVERNANCE-PROPOSAL-CREATED
   - Type is always set to `Info`
   - Severity is always set to `Info`
@@ -17,7 +16,7 @@ to Proposals and Voting. All alert types and severities are set to Info.
     - Proposal ID
     - Proposer address
     - Target addresses for calls to be made during proposal execution
-    - Values to be passed to target calls during proposal execution, named "\_values" due to a naming collision with JavaScript Object method name
+    - Values to be passed to target calls during proposal execution, named "_values" due to a naming collision with JavaScript Object method name
     - Function signatures to be passed during proposal execution
     - Call datas to be passed to each individual function during proposal execution
     - Starting block for voting period
@@ -25,7 +24,6 @@ to Proposals and Voting. All alert types and severities are set to Info.
     - Description of proposal
 
 <!-- -->
-
 - AE-COMP-GOVERNANCE-VOTE-CAST
   - Type is always set to `Info`
   - Severity is always set to `Info`
@@ -37,7 +35,6 @@ to Proposals and Voting. All alert types and severities are set to Info.
     - First line of proposal description
 
 <!-- -->
-
 - AE-COMP-GOVERNANCE-PROPOSAL-CANCELED
   - Type is always set to `Info`
   - Severity is always set to `Info`
@@ -48,7 +45,6 @@ to Proposals and Voting. All alert types and severities are set to Info.
     - First line of proposal description
 
 <!-- -->
-
 - AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED
   - Type is always set to `Info`
   - Severity is always set to `Info`
@@ -59,7 +55,6 @@ to Proposals and Voting. All alert types and severities are set to Info.
     - First line of proposal description
 
 <!-- -->
-
 - AE-COMP-GOVERNANCE-PROPOSAL-QUEUED
   - Type is always set to `Info`
   - Severity is always set to `Info`
@@ -71,7 +66,6 @@ to Proposals and Voting. All alert types and severities are set to Info.
     - First line of proposal description
 
 <!-- -->
-
 - AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET
   - Type is always set to `Info`
   - Severity is always set to `Info`
@@ -79,6 +73,7 @@ to Proposals and Voting. All alert types and severities are set to Info.
     - Address of GovernorBravo contract
     - Old proposal threshold
     - New proposal threshold
+
 
 ## Testing
 
