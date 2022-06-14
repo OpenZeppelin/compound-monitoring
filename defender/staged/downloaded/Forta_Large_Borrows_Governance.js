@@ -144,7 +144,7 @@ exports.handler = async function (autotaskEvent) {
   // // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
-  const message = `${etherscanLink} 💸 **${borrowerFormatted}** has enough **COMP** tokens to pass min threshold for the governance event: **${governanceLevel}**`;
+  const message = `${etherscanLink} 💸 **${borrowerFormatted}** has borrowed enough **COMP** tokens to pass min threshold for the governance event: **${governanceLevel}**`;
 
   // create promises for posting messages to Discord webhook
   await postToDiscord(discordUrl, message);
