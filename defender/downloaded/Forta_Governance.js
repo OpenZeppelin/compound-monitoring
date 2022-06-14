@@ -154,7 +154,7 @@ async function getAccountDisplayName(voter, proposalId) {
   return displayName;
 }
 
-async function createDiscordMessage(metadata, description, alertId, transactionHash) {
+async function createDiscordMessage(metadata, description, alertId) {
   let proposer;
   let voter;
   let votes;
@@ -171,14 +171,11 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
   const noEntryEmoji = '⛔';
   const checkMarkEmoji = '✅';
 
-  // construct the Etherscan transaction link
-  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-
   switch (alertId) {
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED':
       ({ proposer, id, description: proposalDescription } = metadata);
       proposalName = getProposalTitleFromDescription(proposalDescription);
-      message = `**New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
+      message = `**New Proposal** ${proposalName} by ${proposer.slice(0, 6)}`;
       message += `\nDetails: https://compound.finance/governance/proposals/${id}`;
       break;
     case 'AE-COMP-GOVERNANCE-VOTE-CAST':
@@ -207,9 +204,9 @@ async function createDiscordMessage(metadata, description, alertId, transactionH
 
       proposalName = await getProposalTitle(id);
       if (displayName !== '') {
-        message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${displayName} ${etherscanLink}`;
+        message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${displayName}`;
       } else {
-        message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${voter.slice(0, 6)} ${etherscanLink}`;
+        message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${voter.slice(0, 6)}`;
       }
 
       if (reason !== '') {

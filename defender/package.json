@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.27.2",
     "defender-autotask-client": "^1.18.0",
     "defender-relay-client": "^1.21.3",
     "defender-sentinel-client": "^1.19.0",

@@ -1,5 +1,6 @@
 const { ethers } = require('forta-agent');
 
+/* eslint-disable no-loss-of-precision */
 const defaultTypeMap = {
   uint256: 0,
   'uint256[]': [0],
@@ -12,6 +13,7 @@ const defaultTypeMap = {
   string: 'test',
   'string[]': ['test'],
 };
+/* eslint-enable no-loss-of-precision */
 
 function getObjectsFromAbi(abi, objectType) {
   const contractObjects = {};
@@ -78,7 +80,7 @@ function createMockEventLogs(eventObject, iface, override = undefined) {
 
     // determine whether to take the default value for the type, or if an override is given, take
     // that value
-    if (override !== undefined && override[entry.name] != undefined) {
+    if (override !== undefined && override[entry.name] !== undefined) {
       value = override[entry.name];
     } else {
       value = defaultTypeMap[entry.type];

@@ -1,6 +1,6 @@
 require('dotenv').config({ path: `${__dirname}/.env` });
 
-const COMPSecurityAlertsDiscordUrl = process.env.TESTING_DISCORD_SECURITY_ALERTS;
+const SecurityAlertsDiscordUrl = process.env.TESTING_DISCORD_SECURITY_ALERTS;
 
 // mock the defender-relay-client package
 jest.mock('defender-relay-client/lib/ethers', () => ({
@@ -69,7 +69,7 @@ function createMockResponse(sampleAlert) {
 function createAutotaskEvent() {
   const autotaskEvent = {
     secrets: {
-      COMPSecurityAlertsDiscordUrl,
+      SecurityAlertsDiscordUrl,
     },
     request: {
       body: {
@@ -77,7 +77,7 @@ function createAutotaskEvent() {
           hash,
           source: {
             transactionHash,
-            agent: {
+            bot: {
               id,
             },
           },
@@ -126,8 +126,6 @@ describe('test the Forta Multi-Sig bot alerts', () => {
     const log = { args: { owner: '0xFAKEOWNERADDRESS' } };
     const sampleAlert = createRemoveOwnerFinding(log, 'Compound', 'COMP', 'AE');
     const mockResponse = createMockResponse(sampleAlert);
-    console.log('Removed Owner Alert');
-    console.log(JSON.stringify(mockResponse, null, 2));
     axios.mockResolvedValueOnce(mockResponse); // .mockImplementationOnce(axiosReal);
     const autotaskEvent = createAutotaskEvent();
     await fortaMultiSigHandler(autotaskEvent);
