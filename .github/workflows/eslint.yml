@@ -1,3 +1,4 @@
+---
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
@@ -8,6 +9,7 @@
 # and https://eslint.org
 
 name: ESLint
+# yamllint disable-line rule:truthy
 on: [push]
 
 jobs:
@@ -20,10 +22,21 @@ jobs:
     strategy:
       matrix:
         # All directories for linting (default)
-        all-dir: ['asset-monitor', 'comp-delegations-monitor', 'ctoken-monitor', 'defender', 
-          'distribution', 'gnosis-safe-deploy', 'governance', 'large-borrows-governance',
-          'liquidation-monitor', 'low-liquidity-market-attack-monitor', 'multisig-transactions-monitor',
-          'oracle-price-monitor']
+        all-dir:
+          [
+            "asset-monitor",
+            "comp-delegations-monitor",
+            "ctoken-monitor",
+            "defender",
+            "distribution",
+            "gnosis-safe-deploy",
+            "governance",
+            "large-borrows-governance",
+            "liquidation-monitor",
+            "low-liquidity-market-attack-monitor",
+            "multisig-transactions-monitor",
+            "oracle-price-monitor",
+          ]
       fail-fast: false
     steps:
       - name: Checkout the repo
