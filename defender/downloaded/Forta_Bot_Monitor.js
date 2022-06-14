@@ -140,7 +140,19 @@ function parseAlertsResponse(response) {
   return newAlerts;
 }
 
-function parseMetricsResponse(response, lastUpdateTimestamp) {
+// this function is a bit odd, because it will not keep the most recent
+// value, but the one BEFORE the most recent value
+// this approach is necessary because requesting data from the last
+// 'hour' will return results since the previous hour marker in the
+// GraphQL database, NOT over the last 60 minutes
+// for example, if we make a request at 1241 for the last hour, we
+// will expect to receive two results, one for the hour of 1100-1200 and
+// one for the range of 1200-1241 (now)
+// the second result will only reflect a portion of the metrics, as
+// the entire hour time range has not yet occurred.
+// Therefore, we will always go back one time frame and retrieve that
+// data value, NOT the current one
+function parseMetricsResponse(response, lastUpdateTimestamp, timeFrame) {
   const { data: { data: { getAgentMetrics: { metrics } } } } = response;
   const output = {};
   metrics.forEach((metric) => {
@@ -153,7 +165,35 @@ function parseMetricsResponse(response, lastUpdateTimestamp) {
       const scannerId = scanner.key;
       let records = scanner.interval;
 
-      records = records.filter((record) => parseInt(record.key, 10) > lastUpdateTimestamp);
+      records = records.filter((record) => {
+        const compValue = parseInt(record.key, 10);
+        let timeOffsetMilliseconds;
+        switch (timeFrame) {
+          case 'hour':
+            timeOffsetMilliseconds = 60 * 60 * 1000;
+            break;
+          case 'day':
+            timeOffsetMilliseconds = 24 * 60 * 60 * 1000;
+            break;
+          case 'week':
+            timeOffsetMilliseconds = 7 * 24 * 60 * 60 * 1000;
+            break;
+          case 'month':
+            timeOffsetMilliseconds = 30 * 24 * 60 * 60 * 1000;
+            break;
+          default:
+            timeOffsetMilliseconds = 0;
+        }
+        // do not keep any records that have a timestamp within
+        // the timeframe compared to the last update timestamp
+        if (compValue < lastUpdateTimestamp) {
+          return true;
+        } if (compValue - lastUpdateTimestamp > timeOffsetMilliseconds) {
+          return true;
+        }
+        return false;
+      });
+
       if (records.length > 0) {
         output[key][scannerId] = [];
       }
@@ -330,7 +370,7 @@ function createAgentInformationQuery(id) {
   return graphqlQuery;
 }
 
-// timeFrame values: 'day', 'week', 'month'
+// timeFrame values: 'hour', 'day', 'week', 'month'
 function createMetricsQuery(agentId, timeFrame) {
   const graphqlQuery = {
     query: `query ($getAgentMetricsInput: GetAgentMetricsInput) {
@@ -414,6 +454,8 @@ exports.handler = async function (autotaskEvent) {
   // retrieve
   const currentTimestamp = (new Date()).getTime();
 
+  console.debug(JSON.stringify(autotaskEvent, null, 2));
+
   let firstRun = false;
   let agentInformationUpdated = false;
 
@@ -422,7 +464,7 @@ exports.handler = async function (autotaskEvent) {
   // this is an Object containing all information about all of the Bots
   // load the agent information from the previous Autotask execution
   let agentInformation = await store.get('agentInformation');
-  if (agentInformation === undefined) {
+  if (agentInformation === undefined || agentInformation === null) {
     console.debug('Autotask run for the first time, initializing agentInformation');
     agentInformation = {};
   } else {
@@ -436,7 +478,7 @@ exports.handler = async function (autotaskEvent) {
 
   // the first time this Autotask is executed, we will need to manually set the value
   // of the last timestamp
-  if (lastUpdateTimestamp === undefined) {
+  if (lastUpdateTimestamp === undefined || lastUpdateTimestamp === null) {
     console.debug('Autotask run for the first time, initializing lastUpdateTimestamp');
     firstRun = true;
     lastUpdateTimestamp = fortaExplorerEarliestTimestamp;
@@ -494,7 +536,11 @@ exports.handler = async function (autotaskEvent) {
     // this will likely be updated every time
     const metricsQuery = createMetricsQuery(botId, timeFrame);
     const metricsResponse = await postQuery(metricsQuery);
-    const metrics = parseMetricsResponse(metricsResponse, lastUpdateTimestamp);
+    const metrics = parseMetricsResponse(
+      metricsResponse,
+      lastUpdateTimestamp,
+      timeFrame,
+    );
     if (Object.keys(metrics).length > 0) {
       console.debug(`Metrics found for botId ${botId}`);
       output.metrics = metrics;
