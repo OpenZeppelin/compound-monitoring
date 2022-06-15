@@ -65,3 +65,30 @@ This folder contains code for pulling down/pushing up configurations for Sentine
 ### [Gnosis Safe Bot Deployer](gnosis-safe-deploy/README.md)
 
 This code allows users to deploy bots to the Forta network using Gnosis Safe multi-sig accounts.
+
+## Autotasks
+
+### Underlying Asset Autotask
+
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the COMP Underlying Asset bot.
+
+### cToken Transaction Autotask
+
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the cToken Transaction bot.
+
+### Compound Distribution Autotask
+
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the Compound Governance bot.
+
+### Compound Governance Autotask
+
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the Compound Governance bot.
+
+### Compound Large Borrows Governance Autotask
+
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the Compound Large Borrows bot.
+
+### Oracle Price Autotask
+
+This Autotask sends alerts to Compound's Discord channel when Openzeppelin's Defender Forta Sentinel picks up on an alert for the Compound Price Oracle bot.
+
