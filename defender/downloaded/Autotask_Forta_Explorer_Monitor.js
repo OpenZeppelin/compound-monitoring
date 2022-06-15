@@ -186,9 +186,8 @@ function parseMetricsResponse(response, lastUpdateTimestamp, timeFrame) {
         }
         // do not keep any records that have a timestamp within
         // the timeframe compared to the last update timestamp
-        if (compValue < lastUpdateTimestamp) {
-          return true;
-        } if (compValue - lastUpdateTimestamp > timeOffsetMilliseconds) {
+        if (compValue < lastUpdateTimestamp
+          || compValue - lastUpdateTimestamp > timeOffsetMilliseconds) {
           return true;
         }
         return false;
@@ -442,6 +441,10 @@ function botChanged(information, agentInformation, botId) {
   if (agentInformation[botId] === undefined) {
     return true;
   }
+  // if the updatedAt timestamp is not defined in the retrieved data
+  if (information.updatedAt === undefined) {
+    return false;
+  }
   // if an entry exists in both but the updatedAt field value is different
   return (information.updatedAt !== agentInformation[botId].updatedAt);
 }
@@ -453,7 +456,6 @@ exports.handler = async function (autotaskEvent) {
   // this value will be used across all queries to determine how much data to
   // retrieve
   const currentTimestamp = (new Date()).getTime();
-
   console.debug(JSON.stringify(autotaskEvent, null, 2));
 
   let firstRun = false;
