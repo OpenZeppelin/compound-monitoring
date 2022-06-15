@@ -67,6 +67,17 @@ const mockRRepayBorrowMeta = {
   usdValue: '19985',
 };
 
+// mock the axios package
+const acceptedPost = {
+  status: 204,
+  statusText: 'No Content',
+};
+jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
+// eslint-disable-next-line import/no-extraneous-dependencies
+const axios = require('axios');
+
+axios.mockResolvedValue(acceptedPost);
+
 const {
   Finding, FindingType, FindingSeverity,
 } = require('forta-agent');
@@ -163,12 +174,30 @@ function createFortaSentinelEvent(finding, blockHash, txHash) {
 }
 
 describe('check autotask', () => {
+  const url = secrets[discordSecretName];
+  const headers = { 'Content-Type': 'application/json' };
+  const method = 'post';
+
+  beforeEach(async () => {
+    axios.mockClear();
+  });
+
   it('Runs autotask against mock Borrow data and posts in Discord (manual-check)', async () => {
     const mockFinding = createFinding(mockBorrowMeta);
     const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockBorrowTxHash);
 
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = `{"content":"[TX](<https://etherscan.io/tx/${mockBorrowTxHash}>) 🐳📥 **$18,537 of cUSDC** borrowed by 0x8776"}`;
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
+
+    console.log(JSON.stringify(axios.mock.lastCall.data));
+    // expect(axios.mock.lastCall.data).toBe(expectedData);
   });
 
   it('Runs autotask against mock LiquidateBorrow data and posts in Discord (manual-check)', async () => {
