@@ -182,7 +182,7 @@ describe('check autotask', () => {
     axios.mockClear();
   });
 
-  it('Runs autotask against mock Borrow data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mock Borrow data and posts in Discord', async () => {
     const mockFinding = createFinding(mockBorrowMeta);
     const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockBorrowTxHash);
 
@@ -195,12 +195,9 @@ describe('check autotask', () => {
     };
     expect(axios).toBeCalledTimes(1);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
-
-    console.log(JSON.stringify(axios.mock.lastCall.data));
-    // expect(axios.mock.lastCall.data).toBe(expectedData);
   });
 
-  it('Runs autotask against mock LiquidateBorrow data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mock LiquidateBorrow data and posts in Discord', async () => {
     const mockFinding = createFinding(mockLiquidateBorrowMeta);
     const autotaskEvent = createFortaSentinelEvent(
       mockFinding,
@@ -210,25 +207,46 @@ describe('check autotask', () => {
 
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x064228d15febb05b929e8aecbf3d828449bd8210df758d692b9b855355ed3560>) 💔 **$881 of cUSDT** liquidated from 0xf1C6 by 0xD911"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mock Mint data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mock Mint data and posts in Discord', async () => {
     const mockFinding = createFinding(mockMintMeta);
     const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockMintTxHash);
 
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0xff85476c183ef3cc0fb0623877abf5589197a773845f8acac341e48c42957a3e>) 🐳📈 **$67,721 of cETH** supplied by 0x352E"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mock Redeem data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mock Redeem data and posts in Discord', async () => {
     const mockFinding = createFinding(mockRedeemMeta);
     const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockRedeemTxHash);
 
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x881d7f5b2804d144535f7b51f504ba6bcf14f3ccd53d57f4e59e0ad262bddeb5>) 🐳📉 **$88,512 of cWBTC** withdrew by 0xF016"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mock RepayBorrow data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mock RepayBorrow data and posts in Discord', async () => {
     const mockFinding = createFinding(mockRRepayBorrowMeta);
     const autotaskEvent = createFortaSentinelEvent(
       mockFinding,
@@ -238,6 +256,13 @@ describe('check autotask', () => {
 
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x57a36644b7440ad247a41222ad105d5a08d21b47e434025bcf4427b2c20f3dee>) 🐳📤 **$19,985 of cUSDC** repaid by 0xF6aa"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
   it('throws error if discordUrl is not valid', async () => {
@@ -248,5 +273,7 @@ describe('check autotask', () => {
 
     // run the autotask on the events
     await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
+
+    expect(axios).toBeCalledTimes(0);
   });
 });
