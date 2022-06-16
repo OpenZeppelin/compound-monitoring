@@ -133,7 +133,7 @@ exports.handler = async function (autotaskEvent) {
   // extract the metadata
   const {
     cTokenSymbol,
-} = metadata;
+  } = metadata;
   if (cTokenSymbol === undefined) {
     throw new Error('cTokenSymbol undefined');
   }
