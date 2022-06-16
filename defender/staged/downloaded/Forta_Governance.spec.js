@@ -45,7 +45,7 @@ const mockExecutedMeta = {
   state: 'executed',
 };
 
-const mockQueuedTxHash = '0x9964fd7648c0f5d2faf6aa9e952027085d5df3b0632464a7d16291c3ac4ccc5d  ';
+const mockQueuedTxHash = '0x9964fd7648c0f5d2faf6aa9e952027085d5df3b0632464a7d16291c3ac4ccc5d';
 const mockQueuedName = 'Compound Governance Proposal Queued';
 const mockQueuedMeta = {
   address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
