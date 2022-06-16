@@ -12,6 +12,15 @@ const mockMetadata = {
   healthFactor: '0.80',
 };
 
+// mock the axios package
+const acceptedPost = {
+  status: 204,
+  statusText: 'No Content',
+};
+jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
+// eslint-disable-next-line import/no-extraneous-dependencies
+const axios = require('axios');
+
 const {
   Finding, FindingType, FindingSeverity,
 } = require('forta-agent');
@@ -109,11 +118,26 @@ function createFortaSentinelEvent(finding, blockHash) {
 }
 
 describe('check autotask', () => {
-  it('Runs autotask against mock data and posts in Discord (manual-check)', async () => {
+  const url = secrets[discordSecretName];
+  const headers = { 'Content-Type': 'application/json' };
+  const method = 'post';
+
+  beforeEach(async () => {
+    axios.mockClear();
+  });
+
+  it('Runs autotask against mock data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash);
 
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[BLOCK](<https://etherscan.io/block/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) - [ACCT](<https://etherscan.io/address/0x0000000000000000000000000000000000000000>) 📉💵🔥 **Liquidatable account detected** account 0x0000 is liquidatable for $1000.00"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
   it('throws error if discordUrl is not valid', async () => {
@@ -123,5 +147,7 @@ describe('check autotask', () => {
 
     // run the autotask on the events
     await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
+
+    expect(axios).toBeCalledTimes(0);
   });
 });

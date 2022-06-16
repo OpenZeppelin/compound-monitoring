@@ -13,6 +13,15 @@ const mockMetadata = {
   currCOMPOwned: '12',
 };
 
+// mock the axios package
+const acceptedPost = {
+  status: 204,
+  statusText: 'No Content',
+};
+jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
+// eslint-disable-next-line import/no-extraneous-dependencies
+const axios = require('axios');
+
 const {
   Finding, FindingType, FindingSeverity,
 } = require('forta-agent');
@@ -107,10 +116,25 @@ function createFortaSentinelEvent(finding, blockHash, txHash) {
 }
 
 describe('check autotask', () => {
-  it('Runs autotask against mock data and posts in Discord (manual-check)', async () => {
+  const url = secrets[discordSecretName];
+  const headers = { 'Content-Type': 'application/json' };
+  const method = 'post';
+
+  beforeEach(async () => {
+    axios.mockClear();
+  });
+
+  it('Runs autotask against mock data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockTxHash);
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x2c9931793876db33b1a9aad123ad4921dfb9cd5e59dbb78ce78f277759587115>) 💸 **0x1212** has borrowed enough **COMP** tokens to pass min threshold for the governance event: **proposal**"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
   it('throws error if discordUrl is not valid', async () => {
@@ -119,5 +143,7 @@ describe('check autotask', () => {
     const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockTxHash);
     // run the autotask on the events
     await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
+
+    expect(axios).toBeCalledTimes(0);
   });
 });
