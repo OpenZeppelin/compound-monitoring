@@ -57,38 +57,6 @@ function parseAgentInformationResponse(response) {
   return output;
 }
 
-/*
-function parseAlertSeverities(response) {
-  const { data: { data: { getList: { aggregations } } } } = response;
-
-  const {
-    severity,
-    alerts,
-    interval,
-    cardinalities,
-  } = aggregations;
-
-  const newSeverity = severity.map((entry) => ({ severity: entry.key, count: entry.doc_count }));
-  const newAlerts = alerts.map((entry) => ({ name: entry.key, count: entry.doc_count }));
-  const newInterval = interval.map((entry) => {
-    const timestamp = convertEpochToDateTime(parseInt(entry.key, 10));
-    return { timestamp, count: entry.doc_count };
-  });
-
-  const newCardinalities = {
-    agents: cardinalities.agents,
-    alerts: cardinalities.alerts,
-  };
-
-  return {
-    severity: newSeverity,
-    alerts: newAlerts,
-    interval: newInterval,
-    cardinalities: newCardinalities,
-  };
-}
-*/
-
 function parseAlertsResponse(response) {
   function getBlock(block) {
     return {
@@ -152,7 +120,7 @@ function parseAlertsResponse(response) {
 // the entire hour time range has not yet occurred.
 // Therefore, we will always go back one time frame and retrieve that
 // data value, NOT the current one
-function parseMetricsResponse(response, lastUpdateTimestamp, timeFrame) {
+function parseMetricsResponse(response, currentTimestamp, timeFrame) {
   const { data: { data: { getAgentMetrics: { metrics } } } } = response;
   const output = {};
   metrics.forEach((metric) => {
@@ -170,29 +138,28 @@ function parseMetricsResponse(response, lastUpdateTimestamp, timeFrame) {
         let timeOffsetMilliseconds;
         switch (timeFrame) {
           case 'hour':
-            timeOffsetMilliseconds = 60 * 60 * 1000;
+            timeOffsetMilliseconds = 60*60*1000;
             break;
           case 'day':
-            timeOffsetMilliseconds = 24 * 60 * 60 * 1000;
+            timeOffsetMilliseconds = 24*60*60*1000;
             break;
           case 'week':
-            timeOffsetMilliseconds = 7 * 24 * 60 * 60 * 1000;
+            timeOffsetMilliseconds = 7*24*60*60*1000;
             break;
           case 'month':
-            timeOffsetMilliseconds = 30 * 24 * 60 * 60 * 1000;
+            timeOffsetMilliseconds = 30*24*60*60*1000;
             break;
           default:
             timeOffsetMilliseconds = 0;
         }
         // do not keep any records that have a timestamp within
         // the timeframe compared to the last update timestamp
-        if (compValue < lastUpdateTimestamp
-          || compValue - lastUpdateTimestamp > timeOffsetMilliseconds) {
+        if (currentTimestamp - compValue >= timeOffsetMilliseconds) {
           return true;
         }
         return false;
       });
-
+      
       if (records.length > 0) {
         output[key][scannerId] = [];
       }
@@ -281,62 +248,6 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
   return graphqlQuery;
 }
 
-/*
-// this query gathers data for the Alert Severities pie chart on the Forta Explorer page for a Bot
-function createAlertSeveritiesQuery(timeFrame, currentTimestamp, lastUpdateTimestamp) {
-  const graphqlQuery = {
-    operationName: 'Retrieve',
-    query: `query Retrieve($getListInput: GetAlertsInput) {
-      getList(input: $getListInput) {
-        aggregations {
-          severity {
-            key
-            doc_count
-          }
-          alerts {
-            key
-            doc_count
-          }
-          agents {
-            key
-            doc_count
-          }
-          interval {
-            key
-            doc_count
-          }
-          cardinalities {
-            agents
-            alerts
-          }
-        }
-      }
-    }`,
-    variables: {
-      getListInput: {
-        severity: [],
-        agents: [],
-        txHash: '',
-        text: '',
-        muted: [],
-        sort: '',
-        limit: 0,
-        project: '',
-        startDate: lastUpdateTimestamp.toString(),
-        endDate: currentTimestamp.toString(),
-        aggregations: {
-          severity: true,
-          interval: timeFrame,
-          alerts: 6,
-          cardinalities: true,
-        },
-      },
-    },
-  };
-  return graphqlQuery;
-}
-*/
-
 // this query gathers information used to populate fields on the page for the Bot
 // specifically, this contains data such as the Bot ID, Image, Last Updated, Enabled, etc.
 function createAgentInformationQuery(id) {
@@ -417,7 +328,6 @@ function calculateTimeFrame(currentTimestamp, lastUpdateTimestamp) {
   // if this is the first time the Autotask has executed, gather data for the last month
   // on subsequent runs, set the time frame based on the previous timestamp and the current
   // timestamp
-  let timeFrame;
   const millisecondsPerHour = 60 * 60 * 1000;
   const millisecondsPerDay = millisecondsPerHour * 24;
   const millisecondsPerWeek = millisecondsPerDay * 7;
@@ -425,25 +335,21 @@ function calculateTimeFrame(currentTimestamp, lastUpdateTimestamp) {
   // set the time frame based on the previous timestamp and the current timestamp
   const deltaTimestamp = currentTimestamp - lastUpdateTimestamp;
   if (deltaTimestamp <= millisecondsPerHour) {
-    timeFrame = 'hour';
+    return 'hour';
   } else if (deltaTimestamp <= millisecondsPerDay) {
-    timeFrame = 'day';
+    return 'day';
   } else if (deltaTimestamp <= millisecondsPerWeek) {
-    timeFrame = 'week';
+    return 'week';
   } else {
-    timeFrame = 'month';
+    return 'month';
   }
-  return timeFrame;
+  return 'hour';
 }
 
 function botChanged(information, agentInformation, botId) {
   // if a new botId was added to the Array of values
   if (agentInformation[botId] === undefined) {
     return true;
-  }
-  // if the updatedAt timestamp is not defined in the retrieved data
-  if (information.updatedAt === undefined) {
-    return false;
   }
   // if an entry exists in both but the updatedAt field value is different
   return (information.updatedAt !== agentInformation[botId].updatedAt);
@@ -456,6 +362,8 @@ exports.handler = async function (autotaskEvent) {
   // this value will be used across all queries to determine how much data to
   // retrieve
   const currentTimestamp = (new Date()).getTime();
+  console.debug(`currentTimestamp: ${currentTimestamp.toString()}`);
+  
   console.debug(JSON.stringify(autotaskEvent, null, 2));
 
   let firstRun = false;
@@ -489,6 +397,7 @@ exports.handler = async function (autotaskEvent) {
     lastUpdateTimestamp = parseInt(lastUpdateTimestamp, 10);
     console.debug(lastUpdateTimestamp);
   }
+  console.debug(`lastUpdateTimestamp: ${lastUpdateTimestamp.toString()}`);
 
   // set the time frame based upon when this Autotask was last executed
   const timeFrame = calculateTimeFrame(currentTimestamp, lastUpdateTimestamp);
@@ -506,17 +415,6 @@ exports.handler = async function (autotaskEvent) {
     } else {
       console.debug(`NO alerts found for botId ${botId}`);
     }
-
-    /*
-    // this is unnecessary because it is for overall Forta Network statistics
-    const alertSeveritiesQuery = createAlertSeveritiesQuery(
-      timeFrame,
-      currentTimestamp,
-      lastUpdateTimestamp + 1,
-    );
-    const alertSeveritiesResponse = await postQuery(alertSeveritiesQuery);
-    output.alertSeverities = parseAlertSeverities(alertSeveritiesResponse);
-    */
 
     const agentInformationQuery = createAgentInformationQuery(botId);
     const agentInformationResponse = await postQuery(agentInformationQuery);
@@ -540,7 +438,7 @@ exports.handler = async function (autotaskEvent) {
     const metricsResponse = await postQuery(metricsQuery);
     const metrics = parseMetricsResponse(
       metricsResponse,
-      lastUpdateTimestamp,
+      currentTimestamp,
       timeFrame,
     );
     if (Object.keys(metrics).length > 0) {
@@ -573,3 +471,4 @@ exports.handler = async function (autotaskEvent) {
 
   return {};
 };
+
