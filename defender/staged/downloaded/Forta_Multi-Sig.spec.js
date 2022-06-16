@@ -74,6 +74,15 @@ const mockCapGuardMetadata = {
   multisigAddress: '0xbbf3f1421D886E9b2c5D716B5192aC998af2012c',
 };
 
+// mock the axios package
+const acceptedPost = {
+  status: 204,
+  statusText: 'No Content',
+};
+jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
+// eslint-disable-next-line import/no-extraneous-dependencies
+const axios = require('axios');
+
 const {
   Finding, FindingType, FindingSeverity,
 } = require('forta-agent');
@@ -169,7 +178,15 @@ function createFortaSentinelEvent(metadata, alertId, blockHash, txHash) {
 }
 
 describe('check autotask', () => {
-  it('Runs autotask against mocked OWNER-ADDED data and posts in Discord (manual-check)', async () => {
+  const url = secrets[discordSecretName];
+  const headers = { 'Content-Type': 'application/json' };
+  const method = 'post';
+
+  beforeEach(async () => {
+    axios.mockClear();
+  });
+
+  it('Runs autotask against mocked OWNER-ADDED data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockAddedMetadata,
       mockAddedId,
@@ -178,9 +195,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🆕 **Added Owner** 0xNEW to Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked OWNER-REMOVED data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked OWNER-REMOVED data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockRemovedMetadata,
       mockRemovedId,
@@ -189,9 +213,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🙅‍♂️ **Removed Owner** 0xREMOVED from Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked PROPOSAL-CREATED data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked PROPOSAL-CREATED data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockCreatedMetadata,
       mockCreatedId,
@@ -200,9 +231,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 📄 **New Proposal** created by Community Multi-Sig\\nDetails: https://compound.finance/governance/proposals/101"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked PROPOSAL-EXECUTED data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked PROPOSAL-EXECUTED data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockExecutedMetadata,
       mockExecutedId,
@@ -211,9 +249,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 👏 **Executed Proposal** #101 by Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked PROPOSAL-CANCELED data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked PROPOSAL-CANCELED data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockCanceledMetadata,
       mockCanceledId,
@@ -222,9 +267,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ❌ **Canceled Proposal**  #101 by Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked VOTE-CAST data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked VOTE-CAST data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockCastMetadata,
       mockCastId,
@@ -233,9 +285,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🗳️ **Vote Cast** on proposal #101 by Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked THRESHOLD-SET data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked THRESHOLD-SET data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockThresholdSetMetadata,
       mockThresholdSetId,
@@ -244,9 +303,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 📶 **Proposal Threshold Changed** from 100 to 200 by Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked NEW-ADMIN data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked NEW-ADMIN data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockNewAdminMetadata,
       mockNewAdminId,
@@ -255,9 +321,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🧑‍⚖️ **Admin Changed** from 0xME to 0xYOU by Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked NEW-PAUSE-GUARDIAN data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked NEW-PAUSE-GUARDIAN data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockNewPausedMetadata,
       mockNewPauseId,
@@ -266,9 +339,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ⏸️ **Pause Guardian Changed** from 0xME to 0xYOU by Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked ACTION-PAUSED data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked ACTION-PAUSED data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockPausedMetadata,
       mockPausedId,
@@ -277,9 +357,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ⏯️ **Pause on Action** PAUSED by Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked NEW-BORROW-CAP data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked NEW-BORROW-CAP data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockNewCapMetadata,
       mockNewCapId,
@@ -288,9 +375,16 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🧢 **New Borrow Cap** for 0x0cBT set to 10000000 by Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
-  it('Runs autotask against mocked NEW-BORROW-CAP-GUARDIAN data and posts in Discord (manual-check)', async () => {
+  it('Runs autotask against mocked NEW-BORROW-CAP-GUARDIAN data and posts in Discord', async () => {
     const autotaskEvent = createFortaSentinelEvent(
       mockCapGuardMetadata,
       mockCapGuardId,
@@ -299,6 +393,13 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 👲 **New Borrow Cap Guardian** changed from 0xME to 0xYOU by Community Multi-Sig"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
   it('throws error if discordUrl is not valid', async () => {
@@ -312,5 +413,7 @@ describe('check autotask', () => {
     );
     // run the autotask on the events
     await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
+
+    expect(axios).toBeCalledTimes(0);
   });
 });
