@@ -143,6 +143,8 @@ exports.handler = async function (autotaskEvent) {
   etherscanLink += ` - [ACCT](<https://etherscan.io/address/${borrowerAddress}>)`;
 
   // create promises for posting messages to Discord webhook
+  // with Log Forwarding enabled, this console.log will forward the text string to Dune Analytics
+  console.log(`${etherscanLink} ${message}`);
   await postToDiscord(discordUrl, `${etherscanLink} ${message}`);
 
   return {};
