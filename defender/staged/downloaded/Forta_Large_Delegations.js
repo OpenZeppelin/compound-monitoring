@@ -147,6 +147,8 @@ exports.handler = async function (autotaskEvent) {
   const message = `${etherscanLink} 💸 **${delegateFormatted}** has been delegated  enough **COMP** tokens to pass min threshold for the governance event: **${levelName}**`;
 
   // create promises for posting messages to Discord webhook
+  // with Log Forwarding enabled, this console.log will forward the text string to Dune Analytics
+  console.log(message);
   await postToDiscord(discordUrl, message);
 
   return {};
