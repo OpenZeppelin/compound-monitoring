@@ -272,9 +272,6 @@ exports.handler = async function (autotaskEvent) {
   // extract the hashes from the source Object
   const {
     transactionHash,
-    // block: {
-    //   hash,
-    // },
   } = source;
 
   // Start of usual modifications to the autotask script
