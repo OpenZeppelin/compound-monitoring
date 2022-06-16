@@ -308,6 +308,8 @@ exports.handler = async function (autotaskEvent) {
   const message = await createDiscordMessage(eventName, metadata, transactionHash);
 
   // create promises for posting messages to Discord webhook
+  // with Log Forwarding enabled, this console.log will forward the text string to Dune Analytics
+  console.log(message);
   await postToDiscord(discordUrl, message);
 
   return {};
