@@ -105,7 +105,7 @@ function createFinding(metadata) {
 
 function createFortaSentinelEvent(finding, findingName, blockHash, tryTxHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
-  //  with some metadata being added and removed along the way. This function will mimic
+  // with some metadata being added and removed along the way. This function will mimic
   // the Sentinel output with only Finding, block and transaction data.
 
   // Note: Much of the extra data here is superfluous but is left here just in case future bots
