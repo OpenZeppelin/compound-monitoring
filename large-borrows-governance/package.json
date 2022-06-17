@@ -24,7 +24,7 @@
     "axios": "^0.26.1",
     "bignumber.js": "^9.0.2",
     "ethers": "^5.6.4",
-    "forta-agent": "^0.0.39"
+    "forta-agent": "^0.1.6"
   },
   "devDependencies": {
     "eslint": "^8.16.0",
