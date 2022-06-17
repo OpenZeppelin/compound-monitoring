@@ -15,7 +15,7 @@ const {
   TransactionEvent, ethers, FindingType, FindingSeverity, Finding,
 } = require('forta-agent');
 
-const web3 = require('web3-eth');
+const Web3 = require('web3-eth');
 const { provideHandleTransaction, provideInitialize, createUpgradeAlert } = require('./agent');
 const {
   createMockEventLogs,
@@ -26,7 +26,7 @@ const { getAbi } = require('./utils');
 const config = require('../bot-config.json');
 
 // eslint-disable-next-line new-cap
-const web3Eth = new web3();
+const web3Eth = new Web3();
 
 // utility function specific for this test module
 // we are intentionally not using the Forta SDK function due to issues with
