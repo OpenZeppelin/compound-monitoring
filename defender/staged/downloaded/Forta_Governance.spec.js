@@ -57,7 +57,30 @@ const mockQueuedMeta = {
 
 // No data for ThresholdSet found, skipping this mock
 
-// mock the axios package
+// mock info for Compound API calls
+const mockTitle = {
+  data: {
+    proposals: [
+      {
+        title: 'Fake title',
+      },
+    ],
+  },
+};
+
+const mockName = {
+  data: {
+    proposal_vote_receipts: [
+      {
+        voter: {
+          display_name: 'Fake Name',
+        },
+      },
+    ],
+  },
+};
+
+// mock the axios package for posting to discord
 const acceptedPost = {
   status: 204,
   statusText: 'No Content',
@@ -65,6 +88,9 @@ const acceptedPost = {
 jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
+
+// mock the returned value from the Compound API call
+axios.get = jest.fn().mockResolvedValue(mockTitle);
 
 const {
   Finding, FindingType, FindingSeverity,
@@ -177,6 +203,7 @@ describe('check autotask', () => {
 
   beforeEach(async () => {
     axios.mockClear();
+    axios.get.mockClear();
   });
 
   it('Runs autotask against mock Created data and posts in Discord', async () => {
@@ -187,14 +214,17 @@ describe('check autotask', () => {
       mockBlockHash,
       mockCreatedTxHash,
     );
+    axios.get = jest.fn().mockResolvedValueOnce(mockName);
+
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"**New Proposal** Risk Parameter Updates for 5 Collateral Assets by 0x683a [TX](<https://etherscan.io/tx/0xcab21dadc18ca7c28ec204225ee350558322506df50e12b290b4b563bef0e773>)\\nDetails: https://compound.finance/governance/proposals/107"}';
+    const data = '{"content":"**New Proposal** Risk Parameter Updates for 5 Collateral Assets by Fake Name [TX](<https://etherscan.io/tx/0xcab21dadc18ca7c28ec204225ee350558322506df50e12b290b4b563bef0e773>)\\nDetails: https://compound.finance/governance/proposals/107"}';
     const expectedLastCall = {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
+    expect(axios.get).toBeCalledTimes(1);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
@@ -206,14 +236,19 @@ describe('check autotask', () => {
       mockBlockHash,
       mockCastTxHash,
     );
+    axios.get = jest.fn().mockResolvedValueOnce(mockTitle);
+    axios.get = jest.fn().mockResolvedValueOnce(mockName);
+
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"**Vote**  undefined 50,000 by 0x13BD [TX](<https://etherscan.io/tx/0xe65195312258cef491732d11a18199055bab6ded4ffd5cfb7bbbca034159492d>)"}';
+    const data = '{"content":"**Vote**  undefined 50,000 by Fake Name [TX](<https://etherscan.io/tx/0xe65195312258cef491732d11a18199055bab6ded4ffd5cfb7bbbca034159492d>)"}';
     const expectedLastCall = {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
+    expect(axios.get).toBeCalledTimes(2);
+    console.log(axios.get.mock);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
@@ -225,6 +260,7 @@ describe('check autotask', () => {
       mockBlockHash,
       mockExecutedTxHash,
     );
+    axios.get = jest.fn().mockResolvedValueOnce(mockTitle);
     // run the autotask on the events
     await handler(autotaskEvent);
 
@@ -233,6 +269,7 @@ describe('check autotask', () => {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
+    expect(axios.get).toBeCalledTimes(1);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
@@ -252,6 +289,7 @@ describe('check autotask', () => {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
+    expect(axios.get).toBeCalledTimes(0);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
@@ -268,6 +306,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
 
+    expect(axios.get).toBeCalledTimes(0);
     expect(axios).toBeCalledTimes(0);
   });
 });

@@ -62,16 +62,23 @@ async function postToDiscord(url, message) {
 }
 
 async function getProposalTitle(proposalId) {
+  console.log(proposalId);
   const baseUrl = 'https://api.compound.finance/api/v2/governance/proposals';
   const queryUrl = `?proposal_ids[]=${proposalId}`;
+  const fullUrl = baseUrl + queryUrl;
+  // TS
+  console.log(fullUrl);
   let title;
   try {
-    const result = await axios.get(baseUrl + queryUrl);
+    const result = await axios.get(fullUrl);
+    console.log(result);
     title = result.data.proposals[0].title;
     if (title === null) {
       title = '';
     }
   } catch {
+    // TS
+    console.log('failed');
     title = '';
   }
   return title;
@@ -133,7 +140,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
     case 'ProposalCreated':
       ({ proposer, id, description } = params);
       proposalName = getProposalTitleFromDescription(description);
-      if (proposalName === undefined) {
+      if (proposalName === undefined || proposalName === 'undefined') {
         proposalName = await getProposalTitle(id);
       }
       displayName = await getAccountDisplayName(proposer);
@@ -150,7 +157,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
         voter,
         votes,
         support,
-        proposalId,
+        id,
       } = params);
 
       displayName = await getAccountDisplayName(voter);
@@ -170,7 +177,8 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       }
       votes = internationalNumberFormat.format(votes);
 
-      proposalName = await getProposalTitle(proposalId);
+      proposalName = await getProposalTitle(id);
+      console.log(proposalName);
       if (displayName !== '') {
         message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${displayName} ${etherscanLink}`;
       } else {
