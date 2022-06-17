@@ -117,6 +117,7 @@ async function getCompoundTokens(contract, excludeAddresses) {
 function provideInitialize(data) {
   return async function initialize() {
     // assign configurable fields
+    /* eslint-disable no-param-reassign */
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
@@ -166,6 +167,7 @@ function provideInitialize(data) {
     });
     await Promise.all(promises);
   };
+  /* eslint-enable no-param-reassign */
 }
 
 function provideHandleTransaction(data) {
@@ -194,12 +196,8 @@ function provideHandleTransaction(data) {
     if (unique.length > 0) {
       // create ethers.js Contract Objects and add them to the Object of other Contract Objects
       const promises = unique.map(async (address) => {
-        const underlyingAsset = await getUnderlyingAsset(
-          address,
-          cTokenAbi,
-          provider,
-          proxyPatterns,
-        );
+        // eslint-disable-next-line max-len
+        const underlyingAsset = await getUnderlyingAsset(address, cTokenAbi, provider, proxyPatterns);
         if (underlyingAsset.isProxy) upgradeableProxyAssets.push(underlyingAsset);
       });
       await Promise.all(promises);
