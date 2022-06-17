@@ -30,6 +30,7 @@ const mockCastMeta = {
   id: '107',
   proposalName: '(unknown proposal name)',
   reason: '',
+  support: 1,
   voter: '0x13BDaE8c5F0fC40231F0E6A4ad70196F59138548',
   votes: '50000000000000000000000',
 };
@@ -214,7 +215,7 @@ describe('check autotask', () => {
       mockBlockHash,
       mockCreatedTxHash,
     );
-    axios.get = jest.fn().mockResolvedValueOnce(mockName);
+    axios.get.mockResolvedValueOnce(mockName);
 
     // run the autotask on the events
     await handler(autotaskEvent);
@@ -236,19 +237,17 @@ describe('check autotask', () => {
       mockBlockHash,
       mockCastTxHash,
     );
-    axios.get = jest.fn().mockResolvedValueOnce(mockTitle);
-    axios.get = jest.fn().mockResolvedValueOnce(mockName);
+    axios.get.mockResolvedValueOnce(mockName).mockResolvedValueOnce(mockTitle);
 
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"**Vote**  undefined 50,000 by Fake Name [TX](<https://etherscan.io/tx/0xe65195312258cef491732d11a18199055bab6ded4ffd5cfb7bbbca034159492d>)"}';
+    const data = '{"content":"**Vote** Fake title ✅ 50,000 by Fake Name [TX](<https://etherscan.io/tx/0xe65195312258cef491732d11a18199055bab6ded4ffd5cfb7bbbca034159492d>)"}';
     const expectedLastCall = {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
     expect(axios.get).toBeCalledTimes(2);
-    console.log(axios.get.mock);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
@@ -260,11 +259,11 @@ describe('check autotask', () => {
       mockBlockHash,
       mockExecutedTxHash,
     );
-    axios.get = jest.fn().mockResolvedValueOnce(mockTitle);
+    axios.get.mockResolvedValueOnce(mockTitle);
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"**Executed Proposal**  ✅"}';
+    const data = '{"content":"**Executed Proposal** Fake title ✅"}';
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -281,15 +280,16 @@ describe('check autotask', () => {
       mockBlockHash,
       mockQueuedTxHash,
     );
+    axios.get.mockResolvedValueOnce(mockTitle);
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"**Queued Proposal**  ✅ available to execute at timestamp 1653983138"}';
+    const data = '{"content":"**Queued Proposal** Fake title ✅ available to execute at timestamp 1653983138"}';
     const expectedLastCall = {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
-    expect(axios.get).toBeCalledTimes(0);
+    expect(axios.get).toBeCalledTimes(1);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
