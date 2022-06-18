@@ -111,7 +111,6 @@ function getProposalTitleFromDescription(description) {
 async function createDiscordMessage(eventName, params, transactionHash) {
   let description;
   let support;
-  let proposalId;
   let proposer;
   let voter;
   let votes;
