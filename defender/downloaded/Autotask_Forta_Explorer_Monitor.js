@@ -343,7 +343,6 @@ function calculateTimeFrame(currentTimestamp, lastUpdateTimestamp) {
   } else {
     return 'month';
   }
-  return 'hour';
 }
 
 function botChanged(information, agentInformation, botId) {
