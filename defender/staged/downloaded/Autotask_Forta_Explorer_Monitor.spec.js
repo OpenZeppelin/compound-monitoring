@@ -24,7 +24,7 @@ jest.mock('defender-kvstore-client', () => ({
   KeyValueStoreClient: jest.fn().mockReturnValue(mockKeyValueStore),
 }));
 
-const { handler } = require('../downloaded/Autotask_Forta_Explorer_Monitor');
+const { handler } = require('./Autotask_Forta_Explorer_Monitor');
 
 describe('Run the Autotask', () => {
   let outputObject;
