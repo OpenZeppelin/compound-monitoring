@@ -138,16 +138,16 @@ function parseMetricsResponse(response, currentTimestamp, timeFrame) {
         let timeOffsetMilliseconds;
         switch (timeFrame) {
           case 'hour':
-            timeOffsetMilliseconds = 60*60*1000;
+            timeOffsetMilliseconds = 60 * 60 * 1000;
             break;
           case 'day':
-            timeOffsetMilliseconds = 24*60*60*1000;
+            timeOffsetMilliseconds = 24 * 60 * 60 * 1000;
             break;
           case 'week':
-            timeOffsetMilliseconds = 7*24*60*60*1000;
+            timeOffsetMilliseconds = 7 * 24 * 60 * 60 * 1000;
             break;
           case 'month':
-            timeOffsetMilliseconds = 30*24*60*60*1000;
+            timeOffsetMilliseconds = 30 * 24 * 60 * 60 * 1000;
             break;
           default:
             timeOffsetMilliseconds = 0;
@@ -159,7 +159,7 @@ function parseMetricsResponse(response, currentTimestamp, timeFrame) {
         }
         return false;
       });
-      
+
       if (records.length > 0) {
         output[key][scannerId] = [];
       }
@@ -336,13 +336,12 @@ function calculateTimeFrame(currentTimestamp, lastUpdateTimestamp) {
   const deltaTimestamp = currentTimestamp - lastUpdateTimestamp;
   if (deltaTimestamp <= millisecondsPerHour) {
     return 'hour';
-  } else if (deltaTimestamp <= millisecondsPerDay) {
+  } if (deltaTimestamp <= millisecondsPerDay) {
     return 'day';
-  } else if (deltaTimestamp <= millisecondsPerWeek) {
+  } if (deltaTimestamp <= millisecondsPerWeek) {
     return 'week';
-  } else {
-    return 'month';
   }
+  return 'month';
 }
 
 function botChanged(information, agentInformation, botId) {
@@ -362,7 +361,7 @@ exports.handler = async function (autotaskEvent) {
   // retrieve
   const currentTimestamp = (new Date()).getTime();
   console.debug(`currentTimestamp: ${currentTimestamp.toString()}`);
-  
+
   console.debug(JSON.stringify(autotaskEvent, null, 2));
 
   let firstRun = false;
@@ -470,4 +469,3 @@ exports.handler = async function (autotaskEvent) {
 
   return {};
 };
-
