@@ -1,6 +1,6 @@
 {
   "name": "forta-ae-comp-ctoken-events",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "This bot monitors Compound Finance cToken contract for common market events.",
   "scripts": {
     "start": "npm run start:dev",
