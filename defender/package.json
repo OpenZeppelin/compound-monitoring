@@ -2,6 +2,9 @@
   "name": "defender-compound-monitoring",
   "version": "1.0.0",
   "description": "",
+  "jest": {
+    "testTimeout": 50000
+  },
   "scripts": {
     "download": "node download.js",
     "deploy": "node deploy.js",
@@ -13,7 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "0.27.2",
-    "defender-autotask-client": "^1.24.0",
+    "defender-autotask-client": "1.24.0",
     "defender-kvstore-client": "1.24.0",
     "defender-relay-client": "1.21.3",
     "defender-sentinel-client": "1.19.0",
