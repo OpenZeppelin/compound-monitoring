@@ -19,7 +19,6 @@
   },
   "dependencies": {
     "forta-agent": "0.0.39",
-    "web3": "1.7.1",
     "web3-eth": "1.7.1"
   },
   "devDependencies": {
