@@ -27,17 +27,21 @@ jest.mock('defender-kvstore-client', () => ({
 const { handler } = require('../downloaded/Autotask_Forta_Explorer_Monitor');
 
 describe('Run the Autotask', () => {
+  let outputObject;
+
+  beforeEach(() => {
+    // set up a capture of any put() calls to the kvstore
+    outputObject = {};
+    mockKeyValueStore.put.mockImplementation((inputKey, value) => {
+      outputObject[inputKey] = value;
+    });
+  });
+
   it('updates the kvstore values when the Autotask is first executed', async () => {
     // the first time the Autotask is executed, nothing is stored in the kvstore
     mockKeyValueStore.get
       .mockResolvedValueOnce(undefined) // agentInformation
       .mockResolvedValueOnce(undefined); // lastUpdateTimestamp
-
-    // set up a capture of any put() calls to the kvstore
-    const outputObject = {};
-    mockKeyValueStore.put.mockImplementation((inputKey, value) => {
-      outputObject[inputKey] = value;
-    });
 
     const alerts = [];
     const metrics = [];
@@ -92,12 +96,6 @@ describe('Run the Autotask', () => {
     mockKeyValueStore.get
       .mockResolvedValueOnce(mockAgentInformation) // agentInformation
       .mockResolvedValueOnce(mockLastUpdateTimestamp); // lastUpdateTimestamp
-
-    // set up a capture of any put() calls to the kvstore
-    const outputObject = {};
-    mockKeyValueStore.put.mockImplementation((inputKey, value) => {
-      outputObject[inputKey] = value;
-    });
 
     const mockUpdatedAt = '12345';
     const mockNewAgentInformation = botIds.map((botId) => ({
@@ -164,12 +162,6 @@ describe('Run the Autotask', () => {
       .mockResolvedValueOnce(mockAgentInformation) // agentInformation
       .mockResolvedValueOnce(mockLastUpdateTimestamp); // lastUpdateTimestamp
 
-    // set up a capture of any put() calls to the kvstore
-    const outputObject = {};
-    mockKeyValueStore.put.mockImplementation((inputKey, value) => {
-      outputObject[inputKey] = value;
-    });
-
     const alerts = [];
     const metrics = [];
     const mockAlertResponse = { data: { data: { getList: { alerts } } } };
@@ -228,12 +220,6 @@ describe('Run the Autotask', () => {
     mockKeyValueStore.get
       .mockResolvedValueOnce(mockAgentInformation) // agentInformation
       .mockResolvedValueOnce(mockLastUpdateTimestamp); // lastUpdateTimestamp
-
-    // set up a capture of any put() calls to the kvstore
-    const outputObject = {};
-    mockKeyValueStore.put.mockImplementation((inputKey, value) => {
-      outputObject[inputKey] = value;
-    });
 
     const alerts = [];
     // create fake metrics
@@ -336,12 +322,6 @@ describe('Run the Autotask', () => {
     mockKeyValueStore.get
       .mockResolvedValueOnce(mockAgentInformation) // agentInformation
       .mockResolvedValueOnce(mockLastUpdateTimestamp); // lastUpdateTimestamp
-
-    // set up a capture of any put() calls to the kvstore
-    const outputObject = {};
-    mockKeyValueStore.put.mockImplementation((inputKey, value) => {
-      outputObject[inputKey] = value;
-    });
 
     const alerts = [
       {
