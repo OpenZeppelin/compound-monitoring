@@ -45,7 +45,7 @@ function parseAlertsResponse(response) {
     } = alert;
 
     const output = {
-      date_happened: (new Date(timestamp).valueOf) / 1000,
+      date_happened: (new Date(timestamp).valueOf()) / 1000,
       tags: [
         `botid:${botId}`,
         `protocol:${protocol}`,
