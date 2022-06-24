@@ -111,7 +111,7 @@ describe('Run the Autotask', () => {
       },
     ];
 
-    let mockDatadogResponse;
+    let capturedDatadogRequest;
     const mockAlertResponse = { data: { data: { getList: { alerts } } } };
     axios.mockImplementation((inputObject) => {
       const {
@@ -126,7 +126,7 @@ describe('Run the Autotask', () => {
       }
 
       if (dateHappened !== undefined) {
-        mockDatadogResponse = inputObject;
+        capturedDatadogRequest = inputObject;
       }
 
       return undefined;
@@ -137,7 +137,7 @@ describe('Run the Autotask', () => {
 
     // construct the Object that we expect to receive from the handler
     expect(result).toStrictEqual({});
-    expect(mockDatadogResponse).toStrictEqual({
+    expect(capturedDatadogRequest).toStrictEqual({
       headers: {
         'Content-Type': 'application/json',
         'DD-API-KEY': 'fakeApiKey',
