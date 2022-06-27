@@ -287,7 +287,7 @@ describe('Run the Autotask', () => {
             {
               max: 0,
               sum: 0,
-              timestamp: '1970-01-01 00:02',
+              timestamp: '1970-01-01 02:24',
             },
           ],
         },
@@ -296,7 +296,7 @@ describe('Run the Autotask', () => {
             {
               max: 0,
               sum: 0,
-              timestamp: '1970-01-01 00:02',
+              timestamp: '1970-01-01 02:24',
             },
           ],
         },

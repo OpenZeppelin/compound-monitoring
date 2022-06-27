@@ -176,7 +176,7 @@ describe('Run the Autotask', () => {
               metric: 'finding',
               points: [
                 {
-                  timestamp: 123.456,
+                  timestamp: 8675,
                   value: 0,
                 },
               ],
@@ -190,7 +190,7 @@ describe('Run the Autotask', () => {
               metric: 'txSuccess',
               points: [
                 {
-                  timestamp: 123.456,
+                  timestamp: 8675,
                   value: 0,
                 },
               ],

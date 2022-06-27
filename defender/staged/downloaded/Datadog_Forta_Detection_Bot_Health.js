@@ -48,19 +48,7 @@ function parseAgentInformationResponse(response) {
   return output;
 }
 
-// this function is a bit odd, because it will not keep the most recent
-// value, but the one BEFORE the most recent value
-// this approach is necessary because requesting data from the last
-// 'hour' will return results since the previous hour marker in the
-// GraphQL database, NOT over the last 60 minutes
-// for example, if we make a request at 1241 for the last hour, we
-// will expect to receive two results, one for the hour of 1100-1200 and
-// one for the range of 1200-1241 (now)
-// the second result will only reflect a portion of the metrics, as
-// the entire hour time range has not yet occurred.
-// Therefore, we will always go back one time frame and retrieve that
-// data value, NOT the current one
-function parseMetricsResponse(response, currentTimestamp, timeFrame) {
+function parseMetricsResponse(response, currentTimestamp) {
   const { data: { data: { getAgentMetrics: { metrics } } } } = response;
   const output = {};
   metrics.forEach((metric) => {
@@ -71,50 +59,31 @@ function parseMetricsResponse(response, currentTimestamp, timeFrame) {
     metric.scanners.forEach((scanner) => {
       // scanner id
       const scannerId = scanner.key;
-      let records = scanner.interval;
+      const records = scanner.interval;
 
-      records = records.filter((record) => {
-        const compValue = parseInt(record.key, 10);
-        let timeOffsetMilliseconds;
-        switch (timeFrame) {
-          case 'hour':
-            timeOffsetMilliseconds = 60 * 60 * 1000;
-            break;
-          case 'day':
-            timeOffsetMilliseconds = 24 * 60 * 60 * 1000;
-            break;
-          case 'week':
-            timeOffsetMilliseconds = 7 * 24 * 60 * 60 * 1000;
-            break;
-          case 'month':
-            timeOffsetMilliseconds = 30 * 24 * 60 * 60 * 1000;
-            break;
-          default:
-            timeOffsetMilliseconds = 0;
+      // don't filter records
+      // sum the sums and take the maximum of the maximums
+      let sum = 0;
+      let max = 0;
+      records.forEach((record) => {
+        sum += parseInt(record.sum, 10);
+        const temp = parseInt(record.max, 10);
+        if (temp > max) {
+          max = temp;
         }
-        // do not keep any records that have a timestamp within
-        // the timeframe compared to the last update timestamp
-        if (currentTimestamp - compValue >= timeOffsetMilliseconds) {
-          return true;
-        }
-        return false;
       });
-
-      if (records.length > 0) {
-        output[key][scannerId] = [];
-      }
 
       // actual data
-      //   key: Epoch timestamp, in milliseconds
+      //   timestamp: Epoch timestamp
       //   sum: sum of metric over the interval
       //   max: maximum of metric over the interval
-      records.forEach((record) => {
-        output[key][scannerId].push({
-          timestamp: parseInt(record.key, 10),
-          sum: parseInt(record.sum, 10),
-          max: parseInt(record.max, 10),
-        });
-      });
+      if (records.length > 0) {
+        output[key][scannerId] = [{
+          timestamp: Math.floor(currentTimestamp / 1000),
+          sum,
+          max,
+        }];
+      }
     });
 
     if (Object.keys(output[key]).length === 0) {
@@ -330,7 +299,6 @@ exports.handler = async function (autotaskEvent) {
     const metrics = parseMetricsResponse(
       metricsResponse,
       currentTimestamp,
-      timeFrame,
     );
     if (Object.keys(metrics).length > 0) {
       console.debug(`Metrics found for botId ${botId}`);
@@ -369,7 +337,7 @@ exports.handler = async function (autotaskEvent) {
             const { timestamp, sum } = dataObject;
 
             // create the Object that will be submitted to Datadog
-            return { timestamp: timestamp / 1000, value: sum };
+            return { timestamp, value: sum };
           });
 
           if (points.length > 0) {
