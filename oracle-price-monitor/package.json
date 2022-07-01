@@ -4,7 +4,7 @@
   "chainIds": [
     1
   ],
-  "description": "This bot monitors the UniswapAnchoredView contract to see if any price updates have been rejected.",
+  "description": "This Bot monitors the UniswapAnchoredView contract to see if any price updates have been rejected.",
   "scripts": {
     "start": "npm run start:dev",
     "start:prod": "forta-agent run --prod",
