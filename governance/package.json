@@ -1,7 +1,7 @@
 {
   "name": "forta-ae-comp-governance-events",
   "version": "0.0.4",
-  "description": "This bot monitors events emitted from the Compound GovernorBravo contract.",
+  "description": "This Bot monitors events emitted from the Compound GovernorBravo contract.",
   "scripts": {
     "start": "npm run start:dev",
     "start:prod": "forta-agent run --prod",
