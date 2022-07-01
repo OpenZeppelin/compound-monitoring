@@ -14,23 +14,14 @@ const botIds = [
   '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53', // Forta Large Delegations Monitor
   '0xe200d890a67d51c3610520dd9fdfa9e2bd6dd341d41e32fa457601e73c4c6685', // Forta Oracle Price Monitor
   '0xf836bda7810aa2dd9df5bb7ac748f173b945863e922a15bb7c57da7b0e6dab05', // Forta Underlying Asset Monitor
+  '0xdb6d5f9cc2ee545d42b873dba9679ecfca8d81991592179b93a78e2953c47713', // Forta Airdrop Monitor
+  '0x77687a1f255c73f4008167d036c9717469f1a9a91fc2782236f33d91a76e4680', // Forta Agent Registry Monitor
+  '0x0071a23a322c4dbd306037a086275c15a384afa67c7a76ecdf03e54c3350cdbe', // big-tx-agent
+  '0x77281ae942ee1fe141d0652e9dad7d001761552f906fb1684b2812603de31049', // oz-gnosis-events
 ];
 
 const fortaExplorerApiEndpoint = 'https://explorer-api.forta.network/graphql';
-
-function convertEpochToDateTime(epochTimestamp) {
-  // desired format - YYYY-MM-DD HH:MM
-  const dateObject = new Date(epochTimestamp);
-
-  const year = dateObject.getUTCFullYear();
-  // getUTCMonth uses zero based indexing, so 0 = January, 1 = February, etc.
-  const month = (1 + dateObject.getUTCMonth()).toString().padStart(2, '0');
-  const day = dateObject.getUTCDate().toString().padStart(2, '0');
-  const hours = dateObject.getUTCHours().toString().padStart(2, '0');
-  const minutes = dateObject.getUTCMinutes().toString().padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-}
+const datadogApiEndpoint = 'https://api.datadoghq.com/api/v2/series';
 
 function camelize(str, delimiter) {
   let output = '';
@@ -55,57 +46,6 @@ function parseAgentInformationResponse(response) {
   });
 
   return output;
-}
-
-function parseAlertsResponse(response) {
-  function getBlock(block) {
-    return {
-      chainId: block.chain_id,
-      number: block.number,
-      timestamp: block.timestamp,
-    };
-  }
-
-  function getAgent(agent) {
-    return {
-      id: agent.id,
-      name: agent.name,
-    };
-  }
-
-  function getSource(value) {
-    return {
-      txHash: value.tx_hash,
-      agent: getAgent(value.agent),
-      block: getBlock(value.block),
-    };
-  }
-
-  function getProject(project) {
-    return {
-      id: project.id,
-      name: project.name,
-    };
-  }
-
-  const { data: { data: { getList: { alerts } } } } = response;
-  const newAlerts = alerts.map((alert) => {
-    const output = {};
-    Object.entries(alert).forEach(([key, value]) => {
-      switch (key) {
-        case 'source':
-          output.source = getSource(value);
-          break;
-        case 'projects':
-          output.projects = value.map((project) => getProject(project));
-          break;
-        default:
-          output[camelize(key, '_')] = value;
-      }
-    });
-    return output;
-  });
-  return newAlerts;
 }
 
 function parseMetricsResponse(response, currentTimestamp) {
@@ -134,13 +74,12 @@ function parseMetricsResponse(response, currentTimestamp) {
       });
 
       // actual data
-      //   key: Epoch timestamp, in milliseconds
+      //   timestamp: Epoch timestamp
       //   sum: sum of metric over the interval
       //   max: maximum of metric over the interval
       if (records.length > 0) {
-        const timestamp = convertEpochToDateTime(currentTimestamp);
         output[key][scannerId] = [{
-          timestamp,
+          timestamp: Math.floor(currentTimestamp / 1000),
           sum,
           max,
         }];
@@ -152,69 +91,6 @@ function parseMetricsResponse(response, currentTimestamp) {
     }
   });
   return output;
-}
-
-// this appears to query for previous alerts emitted by a Bot
-// this data is then displayed in a table view titled 'Alerts' on the bottom of the Forta Explorer
-// page for the Bot
-function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
-  const graphqlQuery = {
-    operationName: 'Retrieve',
-    query: `query Retrieve($getListInput: GetAlertsInput) {
-      getList(input: $getListInput) {
-        alerts {
-          hash
-          description
-          severity
-          protocol
-          name
-          everest_id
-          alert_id
-          scanner_count
-          source {
-            tx_hash
-            agent {
-              id
-              name
-            }
-            block {
-              chain_id
-              number
-              timestamp
-            }
-          }
-          projects {
-            id
-            name
-          }
-        }
-        nextPageValues {
-          blocknumber
-          id
-        }
-        currentPageValues {
-          blocknumber
-          id
-        }
-      }
-    }`,
-    variables: {
-      getListInput: {
-        severity: [],
-        startDate: (lastUpdateTimestamp + 1).toString(),
-        endDate: currentTimestamp.toString(),
-        txHash: '',
-        text: '',
-        muted: [],
-        limit: 0,
-        sort: 'desc',
-        agents: [botId],
-        addresses: [],
-        project: '',
-      },
-    },
-  };
-  return graphqlQuery;
 }
 
 // this query gathers information used to populate fields on the page for the Bot
@@ -293,24 +169,21 @@ async function postQuery(graphqlQuery) {
   return response;
 }
 
-function calculateTimeFrame(currentTimestamp, lastUpdateTimestamp) {
-  // if this is the first time the Autotask has executed, gather data for the last month
-  // on subsequent runs, set the time frame based on the previous timestamp and the current
-  // timestamp
-  const millisecondsPerHour = 60 * 60 * 1000;
-  const millisecondsPerDay = millisecondsPerHour * 24;
-  const millisecondsPerWeek = millisecondsPerDay * 7;
+async function postToDatadog(data, apiKey) {
+  const headers = {
+    'Content-Type': 'application/json',
+    'DD-API-KEY': apiKey,
+  };
 
-  // set the time frame based on the previous timestamp and the current timestamp
-  const deltaTimestamp = currentTimestamp - lastUpdateTimestamp;
-  if (deltaTimestamp <= millisecondsPerHour) {
-    return 'hour';
-  } if (deltaTimestamp <= millisecondsPerDay) {
-    return 'day';
-  } if (deltaTimestamp <= millisecondsPerWeek) {
-    return 'week';
-  }
-  return 'month';
+  // perform the POST request
+  const response = await axios({
+    url: datadogApiEndpoint,
+    method: 'post',
+    headers,
+    data,
+  });
+
+  return response;
 }
 
 function botChanged(information, agentInformation, botId) {
@@ -333,6 +206,16 @@ exports.handler = async function (autotaskEvent) {
 
   console.debug(JSON.stringify(autotaskEvent, null, 2));
 
+  const { secrets } = autotaskEvent;
+  if (secrets === undefined) {
+    throw new Error('secrets undefined');
+  }
+
+  const { DatadogApiKey: datadogApiKey } = secrets;
+  if (datadogApiKey === undefined) {
+    throw new Error('Datadog API key undefined');
+  }
+
   let firstRun = false;
   let agentInformationUpdated = false;
 
@@ -340,7 +223,7 @@ exports.handler = async function (autotaskEvent) {
 
   // this is an Object containing all information about all of the Bots
   // load the agent information from the previous Autotask execution
-  let agentInformation = await store.get('agentInformation');
+  let agentInformation = await store.get('agentInformationDD');
   if (agentInformation === undefined || agentInformation === null) {
     console.debug('Autotask run for the first time, initializing agentInformation');
     agentInformation = {};
@@ -351,7 +234,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // load the latest timestamp that was stored
-  let lastUpdateTimestamp = await store.get('lastUpdateTimestamp');
+  let lastUpdateTimestamp = await store.get('lastUpdateTimestampDD');
 
   // the first time this Autotask is executed, we will need to manually set the value
   // of the last timestamp
@@ -366,22 +249,10 @@ exports.handler = async function (autotaskEvent) {
   }
   console.debug(`lastUpdateTimestamp: ${lastUpdateTimestamp.toString()}`);
 
-  // set the time frame based upon when this Autotask was last executed
-  const timeFrame = calculateTimeFrame(currentTimestamp, lastUpdateTimestamp);
-  console.debug(`Calculated timeFrame for queries: ${timeFrame}`);
+  const timeFrame = 'hour';
 
   const promises = botIds.map(async (botId) => {
     const output = { botId };
-    const alertsQuery = createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp);
-    const alertsResponse = await postQuery(alertsQuery);
-    const alerts = parseAlertsResponse(alertsResponse);
-    // if there weren't any alerts, don't forward anything
-    if (alerts.length !== 0) {
-      console.debug(`Alerts found for botId ${botId}: ${alerts.length}`);
-      output.alerts = alerts;
-    } else {
-      console.debug(`NO alerts found for botId ${botId}`);
-    }
 
     const agentInformationQuery = createAgentInformationQuery(botId);
     const agentInformationResponse = await postQuery(agentInformationQuery);
@@ -422,18 +293,57 @@ exports.handler = async function (autotaskEvent) {
     // values stored must be strings
     console.debug('agentInformation updated');
     console.debug(JSON.stringify(agentInformation, null, 2));
-    await store.put('agentInformation', JSON.stringify(agentInformation));
+    await store.put('agentInformationDD', JSON.stringify(agentInformation));
   }
 
   // store the updated timestamp
   console.debug(`Storing new value for lastUpdateTimestamp: ${currentTimestamp.toString()}`);
-  await store.put('lastUpdateTimestamp', currentTimestamp.toString());
+  await store.put('lastUpdateTimestampDD', currentTimestamp.toString());
 
   const data = results.filter((result) => Object.keys(result).length > 1);
 
-  if (data.length !== 0) {
-    return data;
-  }
+  // check for available metrics
+  let metricsPromises = data.map(async (output) => {
+    const { metrics, botId } = output;
+    if (metrics !== undefined) {
+      const series = [];
+      Object.entries(metrics).map(([metricName, metricObject]) => {
+        Object.entries(metricObject).map(([scannerId, scannerArray]) => {
+          // scannerArray is an Array of Objects
+          const points = scannerArray.map((dataObject) => {
+            // extract the relevant data
+            const { timestamp, sum } = dataObject;
+
+            // create the Object that will be submitted to Datadog
+            return { timestamp, value: sum };
+          });
+
+          if (points.length > 0) {
+            series.push({
+              metric: metricName,
+              tags: [
+                `botid:${botId}`,
+                `scannerid:${scannerId}`,
+              ],
+              type: 0,
+              points,
+            });
+          }
+          return undefined;
+        });
+        return undefined;
+      });
+      console.debug(JSON.stringify(series, null, 2));
+
+      // post to Datadog
+      return postToDatadog({ series }, datadogApiKey);
+    }
+    return undefined;
+  });
+
+  metricsPromises = metricsPromises.filter((value) => value !== undefined);
+
+  await Promise.all(metricsPromises);
 
   return {};
 };
