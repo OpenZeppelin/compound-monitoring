@@ -4,7 +4,7 @@
   "chainIds": [
     1
   ],
-  "description": "This bot monitors all borrow events of COMP to see if an address has borrowed has enough COMP to influence governance.",
+  "description": "This Bot monitors all borrow events of COMP to see if an address has borrowed has enough COMP to influence governance.",
   "scripts": {
     "start": "npm run start:dev",
     "start:prod": "forta-agent run --prod",
