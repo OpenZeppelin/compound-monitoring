@@ -186,26 +186,6 @@ async function postToDatadog(data, apiKey) {
   return response;
 }
 
-function calculateTimeFrame(currentTimestamp, lastUpdateTimestamp) {
-  // if this is the first time the Autotask has executed, gather data for the last month
-  // on subsequent runs, set the time frame based on the previous timestamp and the current
-  // timestamp
-  const millisecondsPerHour = 60 * 60 * 1000;
-  const millisecondsPerDay = millisecondsPerHour * 24;
-  const millisecondsPerWeek = millisecondsPerDay * 7;
-
-  // set the time frame based on the previous timestamp and the current timestamp
-  const deltaTimestamp = currentTimestamp - lastUpdateTimestamp;
-  if (deltaTimestamp <= millisecondsPerHour) {
-    return 'hour';
-  } if (deltaTimestamp <= millisecondsPerDay) {
-    return 'day';
-  } if (deltaTimestamp <= millisecondsPerWeek) {
-    return 'week';
-  }
-  return 'month';
-}
-
 function botChanged(information, agentInformation, botId) {
   // if a new botId was added to the Array of values
   if (agentInformation[botId] === undefined) {
@@ -269,9 +249,7 @@ exports.handler = async function (autotaskEvent) {
   }
   console.debug(`lastUpdateTimestamp: ${lastUpdateTimestamp.toString()}`);
 
-  // set the time frame based upon when this Autotask was last executed
-  const timeFrame = calculateTimeFrame(currentTimestamp, lastUpdateTimestamp);
-  console.debug(`Calculated timeFrame for queries: ${timeFrame}`);
+  const timeFrame = 'hour';
 
   const promises = botIds.map(async (botId) => {
     const output = { botId };
