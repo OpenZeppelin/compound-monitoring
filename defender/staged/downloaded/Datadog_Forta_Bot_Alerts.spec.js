@@ -10,18 +10,18 @@ const mockKeyValueStore = {
   put: jest.fn(),
 };
 
-const botIds = [
-  '0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714', // Forta Low Liquidity Attack
-  '0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339', // Forta Large Borrows Governance
-  '0x916603512086fcad84c35858d2fc5356c512f72b19c80e52e8f9c04d8122e2ba', // Forta Multi-Sig Monitor
-  '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53', // Forta Large Delegations Monitor
-  '0xe200d890a67d51c3610520dd9fdfa9e2bd6dd341d41e32fa457601e73c4c6685', // Forta Oracle Price Monitor
-  '0xf836bda7810aa2dd9df5bb7ac748f173b945863e922a15bb7c57da7b0e6dab05', // Forta Underlying Asset Monitor
-  '0xdb6d5f9cc2ee545d42b873dba9679ecfca8d81991592179b93a78e2953c47713', // Forta Airdrop Monitor
-  '0x77687a1f255c73f4008167d036c9717469f1a9a91fc2782236f33d91a76e4680', // Forta Agent Registry Monitor
-  '0x0071a23a322c4dbd306037a086275c15a384afa67c7a76ecdf03e54c3350cdbe', // big-tx-agent
-  '0x77281ae942ee1fe141d0652e9dad7d001761552f906fb1684b2812603de31049', // oz-gnosis-events
-];
+const botIdsToNames = {
+  '0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714': 'Low Liquidity Attack',
+  '0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339': 'Large Borrows Governance',
+  '0x916603512086fcad84c35858d2fc5356c512f72b19c80e52e8f9c04d8122e2ba': 'Community Multi-Sig',
+  '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53': 'Large Delegations',
+  '0xe200d890a67d51c3610520dd9fdfa9e2bd6dd341d41e32fa457601e73c4c6685': 'Oracle Price',
+  '0xf836bda7810aa2dd9df5bb7ac748f173b945863e922a15bb7c57da7b0e6dab05': 'Underlying Asset',
+  '0x125c36816fbad9974a452947bf6a98d975988ddf4342c159a986383b64765e22': 'Market Activity',
+  '0xa0424dfee87cc34b9ff6a1dfa2cb22dbf1b20a238698ae0eeffbf07f869e5b39': 'Governance Activity',
+};
+
+const botIds = Object.keys(botIdsToNames);
 
 // override the key-value store Class
 jest.mock('defender-kvstore-client', () => ({
@@ -86,6 +86,7 @@ describe('Run the Autotask', () => {
     const mockSeverity = 'Mock Severity';
     const mockName = 'Mock Alert Name';
     const mockAlertId = 'MOCK-ALERT-ID';
+    const botId = '0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714';
     const mockDescription = 'Mock description of a Forta Bot alert';
     const alerts = [
       {
@@ -99,7 +100,7 @@ describe('Run the Autotask', () => {
         source: {
           txHash: '0xMOCKTRANSACTIONHASH',
           agent: {
-            id: '0xMOCKBOTID',
+            id: botId,
             name: null,
           },
           block: {
@@ -146,14 +147,16 @@ describe('Run the Autotask', () => {
       url: 'https://api.datadoghq.com/api/v1/events',
       data: {
         date_happened: new Date(mockTimestamp).valueOf() / 1000,
+        host: 'Low Liquidity Attack',
         tags: [
-          'botid:0xMOCKBOTID',
+          `botid:${botId}`,
           `protocol:${mockProtocolName}`,
           `severity:${mockSeverity}`,
+          'version:4',
         ],
         text: mockDescription,
         aggregation_key: mockAlertId,
-        title: mockName,
+        title: 'Low Liquidity Attack',
       },
     });
     expect(outputObject.lastUpdateTimestampAlerts).toStrictEqual('8675309');
