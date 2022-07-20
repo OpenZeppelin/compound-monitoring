@@ -126,8 +126,8 @@ function parseContractSentinel(item, notifications, autotasks) {
     getConditions(condition.eventConditions, eventConditions, 'event');
     getConditions(condition.functionConditions, functionConditions, 'function');
 
-    // the txConditions should be identical across all conditions
-    txConditions = condition.txConditions;
+    // the txConditions will be identical across all conditions
+    ({ txConditions } = condition);
 
     // if a sentinel contains either an autotaskCondition or autotaskTrigger (or both), parse and
     // replace the autotaskId with the name of the autotask the ID corresponds to
@@ -160,7 +160,7 @@ function parseContractSentinel(item, notifications, autotasks) {
     abi,
     functionConditions,
     eventConditions,
-    txConditions,
+    txCondition: txConditions[0].expression,
     autotaskCondition,
     autotaskTrigger,
     ...notificationObject,
