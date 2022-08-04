@@ -37,6 +37,10 @@ function adjustBalance(data, event) {
       console.debug(`User ${src} withdrew ${amount} of ${asset}`);
       if (users[src] === undefined) { users[src] = {}; }
       if (users[src][asset] === undefined) { users[src][asset] = ethers.BigNumber.from(0); }
+      // Anytime a user withdraws the baseToken, they are marked at a possibleBorrower.
+      // It is not possible to determine if the withdraw is taking back previous collateral or
+      // borrowing assets. Therefore, they will be scanned in a later section.
+      users[src].possibleBorrower = true;
       users[src][asset] = users[src][asset].add(amount);
       break;
     case 'WithdrawCollateral':
@@ -103,12 +107,9 @@ function provideInitialize(data) {
     const parsedEvents = rawLogs.map((log) => cometInterface.parseLog(log));
 
     // Get initial state of all borrowers
-    console.debug(parsedEvents[0]);
-    console.debug(data.users);
     parsedEvents.forEach((event) => {
       adjustBalance(data, event);
     });
-    console.debug(data.users);
   };
 }
 
