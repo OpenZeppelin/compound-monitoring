@@ -11,6 +11,50 @@ const cometAddress = '0xcC861650dc6f25cB5Ab4185d4657a70c923FDb27';
 
 const initializeData = {};
 
+// This function will also filter previously alerted addresses.
+function createAlert(
+  developerAbbreviation,
+  protocolName,
+  protocolAbbreviation,
+  type,
+  severity,
+  borrowerAddress,
+  liquidationAmount,
+  shortfallAmount,
+  healthFactor,
+  currentTimestamp,
+  dataObject,
+) {
+  // Check the alertTimer
+  if (currentTimestamp >= dataObject.nextAlertTime) {
+    // Add 1 day to the nextAlertTime and remove the previous alerted accounts.
+    const oneDay = 86400;
+    dataObject.nextAlertTime += oneDay;
+    dataObject.alertedAccounts = [];
+  }
+  // Skip if the account has already been alerted in the last 24 hours.
+  if (dataObject.alertedAccounts.includes(borrowerAddress)) {
+    return null;
+  }
+
+  // Add account to the alertedAccounts array
+  dataObject.alertedAccounts.push(borrowerAddress);
+  return Finding.fromObject({
+    name: `${protocolName} Liquidation Threshold Alert`,
+    description: `The address ${borrowerAddress} has dropped below the liquidation threshold. `
+      + `The account may be liquidated for: $${liquidationAmount} USD`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+    type: FindingType[type],
+    severity: FindingSeverity[severity],
+    protocol: protocolName,
+    metadata: {
+      borrowerAddress,
+      liquidationAmount,
+      shortfallAmount,
+      healthFactor,
+    },
+  });
+}
 function adjustBalance(data, event) {
   const { baseToken, users } = data;
   // When asset doesn't exist in the `supply` and `Withdraw` events, assign it with the `baseToken`
@@ -121,7 +165,6 @@ function provideInitialize(data) {
     data.provider = getEthersProvider();
     data.cometInterface = new Interface(abi);
     data.cometContract = new Contract(cometAddress, abi, getEthersProvider());
-
     const { cometContract, cometInterface, provider } = data;
 
     data.baseToken = await cometContract.baseToken();
@@ -136,6 +179,12 @@ function provideInitialize(data) {
       cometInterface.getEventTopic('AbsorbCollateral'),
     ]];
     data.numAssets = await cometContract.numAssets();
+
+    // Calculate the next report time.
+    const latestBlockTimestamp = (await data.provider.getBlock('latest')).timestamp;
+    //   Now minus seconds elapsed since midnight plus 1 day.
+    data.nextAlertTime = latestBlockTimestamp - (latestBlockTimestamp % 86400) + 86400;
+    data.alertedAccounts = []; // Accounts alerted in the last 24 hours.
     /* eslint-enable no-param-reassign */
 
     // Get list of all user interactions
@@ -225,13 +274,22 @@ function provideHandleBlock(data) {
     updateAssetInfo(data, blockNumber);
 
     // Update Prices
-    const pricePromise = updatePrices(data, blockNumber);
+    updatePrices(data, blockNumber);
 
-    findings = getLiquidatable(data, blockNumber);
+    // Check healthFactor
+    async function checkHealth() {
+      const borrowers = getBorrowersList(users);
+      await Promise.all(borrowers.map(async (user) => {
+        users[user].isLiquidatable = cometContract.isLiquidatable(user);
+        users[user].isBorrowCollateralized = cometContract.isBorrowCollateralized(user);
+      }));
+      console.debug(`Finished healthCheck in block ${blockNumber}`);
+    }
+    checkHealth();
 
-    await Promise.all([findings]);
     console.debug(assets);
     console.debug(`End block ${blockNumber}`);
+
     return [];
   };
 }
