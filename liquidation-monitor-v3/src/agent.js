@@ -91,7 +91,7 @@ function processEvent(data, event) {
       console.debug(`User ${src} withdrew ${amount} of ${asset}`);
       if (users[src] === undefined) { users[src] = {}; }
       if (users[src][asset] === undefined) { users[src][asset] = BigNumber.from(0); }
-      users[src][asset] = users[src][asset].add(amount);
+      users[src][asset] = users[src][asset].sub(amount);
       break;
     case 'TransferCollateral':
       // Initialize accounts and assets if they don't exist
@@ -145,20 +145,13 @@ async function updatePrices(data, blockNumber) {
   const { assets, cometContract } = data;
   await Promise.all(Object.entries(assets).map(async ([asset, value]) => {
     const price = await cometContract.getPrice(value.priceFeed);
-    assets[asset].price = price;
-    console.debug(`In block ${blockNumber} the price of ${asset} is ${price}`);
+    if (price.gt(0)) {
+      assets[asset].price = price;
+    } else {
+      console.error(`Error in getting price for ${asset}`);
+    }
   }));
   console.debug(`Finished updatePrices in block ${blockNumber}`);
-}
-
-async function getLiquidatable(data, blockNumber) {
-  const { users, cometContract } = data;
-  const borrowers = filterUsers('possibleBorrower', users);
-
-  await Promise.all(borrowers.map(async (borrower) => {
-    const isLiquidatable = await cometContract.isLiquidatable(borrower);
-    // console.debug(`User ${borrower} isLiquidatable ${isLiquidatable}`);
-  }));
 }
 
 // Multiply a `fromScale` quantity by a price, returning a common price quantity
@@ -188,6 +181,14 @@ function provideInitialize(data) {
     data.baseToken = await cometContract.baseToken();
     data.baseScale = await cometContract.baseScale();
     data.baseTokenPriceFeed = await cometContract.baseTokenPriceFeed();
+
+    // Add baseToken to asset object
+    const { baseToken, baseScale, baseTokenPriceFeed } = data;
+    data.assets[baseToken] = {
+      scale: baseScale,
+      priceFeed: baseTokenPriceFeed,
+    };
+
     data.topics = [[
       cometInterface.getEventTopic('Withdraw'),
       cometInterface.getEventTopic('SupplyCollateral'),
@@ -236,15 +237,14 @@ function provideHandleBlock(data) {
     // Process the block
     const { number: blockNumber } = blockEvent.block;
     const {
-      assets, cometContract, cometInterface, provider, topics, users,
+      assets, baseScale, baseToken, cometContract, cometInterface, provider, topics, users,
     } = data;
 
     // Each await is initiated individually and references the most up to date info that it has
     // access to. Previous promises may not be resolved by the time subsequent calls are made.
     // Calculations may be off by up to 3 blocks (in testing). Example: user.balance information is
     // from block 100 and the pricing data is from block 102. To account for this, any account
-    // within x% of liquidation will be checked on-chain with `isBorrowCollateralized(address)` and
-    // `isLiquidatable(address)` calls.
+    // within x% of liquidation will be checked on-chain with `isLiquidatable(address)` calls.
 
     // Scan for events in the latest block
     async function processLogs() {
@@ -298,44 +298,53 @@ function provideHandleBlock(data) {
     Object.entries(users).forEach(([user, userValue]) => {
       // Skip the non-borrowers
       if (userValue.borrowBalance !== undefined && userValue.borrowBalance.gt(0)) {
-        // Calculate the user's liquidity
+        console.debug(`Checking balances off-chain for user: ${user}`);
+        // Calculate the user's principal debt in USD
+        // eslint-disable-next-line no-param-reassign
+        userValue.principal = mulPrice(
+          userValue.borrowBalance,
+          assets[baseToken].price,
+          baseScale,
+        );
+        // Calculate the user's liquidity collateral in USD
         // eslint-disable-next-line no-param-reassign
         userValue.liquidity = BigNumber.from(0);
 
-        // Loop all tracked asset
-        console.debug(user);
-        console.debug(userValue);
+        // Loop through all tracked asset
         Object.entries(assets).forEach(([asset, assetValue]) => {
           if (userValue[asset]) {
           // ref: https://github.com/compound-finance/comet/blob/ad6a4205a96be36417632afba2417f25b6d574ad/contracts/Comet.sol#L542
-            console.debug(asset);
-            console.debug(assetValue);
             const newAmount = mulPrice(userValue[asset], assetValue.price, assetValue.scale);
-            console.debug(newAmount);
             const adjustedAmount = mulFactor(newAmount, assetValue.liquidateCollateralFactor);
-            console.debug(adjustedAmount);
             // eslint-disable-next-line no-param-reassign
             userValue.liquidity = userValue.liquidity.add(adjustedAmount);
-            console.debug(userValue.liquidity);
           }
         });
-        console.debug(`User: ${user} Liquidity: ${userValue.liquidity} borrowed: ${userValue.borrowBalance}`);
+        console.debug(`User: ${user} Liquidity: ${userValue.liquidity} borrowed: ${userValue.principal}`);
+        const risk = userValue.principal.mul(liquidationRiskScale).div(userValue.liquidity);
+        console.debug(`User: ${user} has a liquidation risk of ${risk}%`);
+        // User is above risk tolerance, marking them for on-chain check
+        if (risk.gt(minimumLiquidationRisk)) {
+          // eslint-disable-next-line no-param-reassign
+          userValue.atRisk = true;
+        }
       }
     });
 
-    // Check health on chain
-    async function checkHealthOnChain() {
-      const borrowers = filterUsers('possibleBorrower', users);
-      await Promise.all(borrowers.map(async (user) => {
-        users[user].isLiquidatable = cometContract.isLiquidatable(user);
-        users[user].isBorrowCollateralized = cometContract.isBorrowCollateralized(user);
+    // Check if liquidatable, on chain
+    async function checkLiquidatable() {
+      const atRiskUsers = filterUsers('atRisk', users);
+
+      await Promise.all(atRiskUsers.map(async (atRiskUser) => {
+        console.debug(`Checking isLiquidatable on-chain for user: ${atRiskUser}`);
+        users[atRiskUser].isLiquidatable = await cometContract.isLiquidatable(atRiskUser);
       }));
-      console.debug(`Finished healthCheck in block ${blockNumber}`);
+      console.debug(`Finished isLiquidatable in block ${blockNumber}`);
+      const liquidatableUsers = filterUsers('isLiquidatable', users);
+      // Create finding
     }
-    checkHealthOnChain();
-
-    console.debug(`End block ${blockNumber}`);
-
+    checkLiquidatable();
+    // console.debug(assets);
     return [];
   };
 }
