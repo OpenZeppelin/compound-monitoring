@@ -4,14 +4,20 @@
 //   USDC = $1
 // Bot prices are tracked in USD denomination.
 let mockBtcPrice = '100000000000000000000000000000'; // 1 BTC = 10 ETH
-let mockEthPrice = '10000000000000000000000000000'; // 1 ETH = 1 ETH
+let mockEthPrice = '100000000000000000000000000000'; // 1 BTC = 10 ETH
 let mockUsdcPrice = '3300000000000000000000000'; // 1 USDC = 0.00033 ETH
-let mockCDecimals = 8;
 let mockBtcDecimals = 8;
 let mockEthDecimals = 8;
 let mockUsdcDecimals = 8;
-const mockBorrower = '0x1111';
-const newBorrower = '0x2222222222222222222222222222222222222222';
+const mockBorrower = `0x${'1'.repeat(40)}`; // 0x11111...
+const newBorrower = `0x${'2'.repeat(40)}`;
+const mockBtcAddress = `0x${'4'.repeat(40)}`;
+const mockEthAddress = `0x${'5'.repeat(40)}`;
+const mockUsdcAddress = `0x${'6'.repeat(40)}`;
+const mockBtcFeedAddress = `0x${'7'.repeat(40)}`;
+const mockEthFeedAddress = `0x${'8'.repeat(40)}`;
+const mockUsdcFeedAddress = `0x${'9'.repeat(40)}`;
+
 
 // Ref https://compound.finance/docs/comptroller#collateral-factor
 let mockBtcCollateralFactor = '700000000000000000'; // 70%
@@ -19,21 +25,21 @@ let mockEthCollateralFactor = '850000000000000000'; // 85%
 
 const mockProvider = {
   getBlock: jest.fn(),
+  getLogs: jest.fn(),
+  // timestamp
 };
 
 const mockContract = {
-  // Comptroller
-  getAssetsIn: jest.fn(),
-  markets: jest.fn(), // returns collateral factor
-  getAccountLiquidity: jest.fn(),
-  // OneInch
-  getRateToEth: jest.fn(),
-  // ERC20
-  decimals: jest.fn(),
-  getAccountSnapshot: jest.fn(),
-  symbol: jest.fn(),
-  underlying: jest.fn(),
-  exchangeRateStored: jest.fn(),
+  // Comet
+  baseToken: jest.fn(),
+  baseScale: jest.fn(),
+  baseTokenPriceFeed: jest.fn(),
+  borrowBalanceOf: jest.fn(),
+  numAssets: jest.fn(),
+  getAssetInfo: jest.fn(),
+  getPrice: jest.fn(),
+  isLiquidatable: jest.fn(),
+  userCollateral: jest.fn(),
 };
 
 // combine the mocked provider and contracts into the ethers import mock
@@ -247,7 +253,6 @@ describe('initializeData', () => {
     await (provideInitialize(initializeData))();
   });
 
-
   it('should use contract calls', async () => {
     // Check counters from the initialize step.
     //   Should setup the initial alert time
@@ -322,7 +327,6 @@ function mockBlock(mockTimestamp) {
   const mockBlockEvent = new BlockEvent(null, null, block);
   return mockBlockEvent;
 }
-
 
 describe('handleBlock', () => {
   let initializeData;
@@ -919,7 +923,6 @@ describe('handleBlock', () => {
     expect(findings).toStrictEqual([expectedFinding]);
   });
 });
-
 
 describe('process newBorrower', () => {
   let initializeData;

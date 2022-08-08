@@ -1,7 +1,7 @@
 {
-  "name": "forta-agent-starter",
+  "name": "forta-compound-comet-liquidation-monitor",
   "version": "0.0.1",
-  "description": "Forta Agent Javascript starter project",
+  "description": "Forta Bot that monitors Compound Comet v3 for positions that can be liquidated",
   "chainIds": [
     42
   ],
