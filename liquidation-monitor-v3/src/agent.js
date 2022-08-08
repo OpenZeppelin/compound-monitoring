@@ -9,8 +9,12 @@ const { Interface } = ethers.utils;
 
 const cometAddress = '0xcC861650dc6f25cB5Ab4185d4657a70c923FDb27';
 
-const initializeData = {};
+// Check on chain for any account over this Liquidation Risk percentage.
+// 0 means to check every account on every block
+const minimumLiquidationRisk = 90;
 
+const initializeData = {};
+const liquidationRiskScale = 100;
 // This function will also filter previously alerted addresses.
 function createAlert(
   developerAbbreviation,
@@ -55,7 +59,8 @@ function createAlert(
     },
   });
 }
-function adjustBalance(data, event) {
+
+function processEvent(data, event) {
   const { baseToken, users } = data;
   // When asset doesn't exist in the `supply` and `Withdraw` events, assign it with the `baseToken`
   const {
@@ -103,11 +108,11 @@ function adjustBalance(data, event) {
   }
 }
 
-function getBorrowersList(users) {
-  const borrowers = Object.entries(users)
+function filterUsers(filter, users) {
+  const userList = Object.entries(users)
     // eslint-disable-next-line no-unused-vars
-    .filter(([user, value]) => value.possibleBorrower).map(([user, value]) => user);
-  return borrowers;
+    .filter(([user, value]) => value[filter]).map(([user, value]) => user);
+  return userList;
 }
 
 async function updateAssetInfo(data, blockNumber) {
@@ -148,12 +153,25 @@ async function updatePrices(data, blockNumber) {
 
 async function getLiquidatable(data, blockNumber) {
   const { users, cometContract } = data;
-  const borrowers = getBorrowersList(users);
+  const borrowers = filterUsers('possibleBorrower', users);
 
   await Promise.all(borrowers.map(async (borrower) => {
     const isLiquidatable = await cometContract.isLiquidatable(borrower);
     // console.debug(`User ${borrower} isLiquidatable ${isLiquidatable}`);
   }));
+}
+
+// Multiply a `fromScale` quantity by a price, returning a common price quantity
+// ref: https://github.com/compound-finance/comet/blob/ad6a4205a96be36417632afba2417f25b6d574ad/contracts/Comet.sol#L712
+function mulPrice(qty, price, scale) {
+  return qty.mul(price).div(scale);
+}
+
+// Multiply a number by a factor
+// ref: https://github.com/compound-finance/comet/blob/ad6a4205a96be36417632afba2417f25b6d574ad/contracts/Comet.sol#L698
+// ref: https://github.com/compound-finance/comet/blob/ad6a4205a96be36417632afba2417f25b6d574ad/contracts/CometCore.sol#L58
+function mulFactor(qty, factor) {
+  return qty.mul(factor).div(BigNumber.from(10).pow(18));
 }
 
 function provideInitialize(data) {
@@ -202,7 +220,7 @@ function provideInitialize(data) {
 
     // Get initial state of all borrowers
     parsedEvents.forEach((event) => {
-      adjustBalance(data, event);
+      processEvent(data, event);
     });
 
     // Update Asset priceFeed, scale, borrowCollateralFactor and liquidateCollateralFactor
@@ -240,7 +258,7 @@ function provideHandleBlock(data) {
 
       // Update state of all borrowers
       parsedEvents.forEach((event) => {
-        adjustBalance(data, event);
+        processEvent(data, event);
       });
       console.debug(`Finished processingLogs in block ${blockNumber}`);
     }
@@ -248,7 +266,7 @@ function provideHandleBlock(data) {
 
     // Update baseToken Balances for possible borrowers
     async function updateBalances() {
-      const borrowers = getBorrowersList(users);
+      const borrowers = filterUsers('possibleBorrower', users);
       await Promise.all(borrowers.map(async (user) => {
         users[user].borrowBalance = await cometContract.borrowBalanceOf(user);
         // console.debug(`User ${user} has ${users[user].borrowBalance} debt`);
@@ -276,18 +294,46 @@ function provideHandleBlock(data) {
     // Update Prices
     updatePrices(data, blockNumber);
 
-    // Check healthFactor
-    async function checkHealth() {
-      const borrowers = getBorrowersList(users);
+    // Check Liquidation Risk from stored data
+    Object.entries(users).forEach(([user, userValue]) => {
+      // Skip the non-borrowers
+      if (userValue.borrowBalance !== undefined && userValue.borrowBalance.gt(0)) {
+        // Calculate the user's liquidity
+        // eslint-disable-next-line no-param-reassign
+        userValue.liquidity = BigNumber.from(0);
+
+        // Loop all tracked asset
+        console.debug(user);
+        console.debug(userValue);
+        Object.entries(assets).forEach(([asset, assetValue]) => {
+          if (userValue[asset]) {
+          // ref: https://github.com/compound-finance/comet/blob/ad6a4205a96be36417632afba2417f25b6d574ad/contracts/Comet.sol#L542
+            console.debug(asset);
+            console.debug(assetValue);
+            const newAmount = mulPrice(userValue[asset], assetValue.price, assetValue.scale);
+            console.debug(newAmount);
+            const adjustedAmount = mulFactor(newAmount, assetValue.liquidateCollateralFactor);
+            console.debug(adjustedAmount);
+            // eslint-disable-next-line no-param-reassign
+            userValue.liquidity = userValue.liquidity.add(adjustedAmount);
+            console.debug(userValue.liquidity);
+          }
+        });
+        console.debug(`User: ${user} Liquidity: ${userValue.liquidity} borrowed: ${userValue.borrowBalance}`);
+      }
+    });
+
+    // Check health on chain
+    async function checkHealthOnChain() {
+      const borrowers = filterUsers('possibleBorrower', users);
       await Promise.all(borrowers.map(async (user) => {
         users[user].isLiquidatable = cometContract.isLiquidatable(user);
         users[user].isBorrowCollateralized = cometContract.isBorrowCollateralized(user);
       }));
       console.debug(`Finished healthCheck in block ${blockNumber}`);
     }
-    checkHealth();
+    checkHealthOnChain();
 
-    console.debug(assets);
     console.debug(`End block ${blockNumber}`);
 
     return [];
