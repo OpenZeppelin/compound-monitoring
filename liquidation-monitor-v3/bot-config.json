@@ -1,0 +1,15 @@
+{
+  "developerAbbreviation": "AE",
+  "protocolName": "CompoundV3",
+  "protocolAbbreviation": "COMP",
+  "liquidationMonitor": {
+    "cometAddress": "0xcC861650dc6f25cB5Ab4185d4657a70c923FDb27",
+    "triggerLevels": {
+      "minimumLiquidationRisk": 90
+    },
+    "alert": {
+      "type": "Info",
+      "severity": "Info"
+    }
+  }
+}

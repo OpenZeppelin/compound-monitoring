@@ -3,6 +3,7 @@ const {
   Finding, FindingSeverity, FindingType, ethers, getEthersProvider,
 } = require('forta-agent');
 const abi = require('../abi/comet.json');
+const config = require('../bot-config.json');
 
 const { BigNumber, Contract } = ethers;
 const { Interface } = ethers.utils;
@@ -23,14 +24,12 @@ function createAlert(
   type,
   severity,
   borrowerAddress,
-  liquidationAmount,
-  shortfallAmount,
-  healthFactor,
-  currentTimestamp,
+  blockNumber,
+  timestamp,
   dataObject,
 ) {
   // Check the alertTimer
-  if (currentTimestamp >= dataObject.nextAlertTime) {
+  if (timestamp >= dataObject.nextAlertTime) {
     // Add 1 day to the nextAlertTime and remove the previous alerted accounts.
     const oneDay = 86400;
     dataObject.nextAlertTime += oneDay;
@@ -45,26 +44,23 @@ function createAlert(
   dataObject.alertedAccounts.push(borrowerAddress);
   return Finding.fromObject({
     name: `${protocolName} Liquidation Threshold Alert`,
-    description: `The address ${borrowerAddress} has dropped below the liquidation threshold. `
-      + `The account may be liquidated for: $${liquidationAmount} USD`,
+    description: `The address ${borrowerAddress} is liquidatable in block ${blockNumber}`,
     alertId: `${developerAbbreviation}-${protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
     type: FindingType[type],
     severity: FindingSeverity[severity],
     protocol: protocolName,
     metadata: {
       borrowerAddress,
-      liquidationAmount,
-      shortfallAmount,
-      healthFactor,
+      blockNumber,
     },
   });
 }
 
-function processEvent(data, event) {
-  const { baseToken, users } = data;
+async function processEvent(data, event) {
+  const { baseToken, cometContract, users } = data;
   // When asset doesn't exist in the `supply` and `Withdraw` events, assign it with the `baseToken`
   const {
-    asset = baseToken, src, dst, from, to, amount,
+    asset = baseToken, account, src, dst, from, to, amount,
   } = event.args;
   switch (event.name) {
     case 'Withdraw':
@@ -103,6 +99,14 @@ function processEvent(data, event) {
       if (users[to][asset] === undefined) { users[to][asset] = BigNumber.from(0); }
       users[from][asset] = users[from][asset].sub(amount);
       users[to][asset] = users[to][asset].add(amount);
+      break;
+    // Liquidation occurred, update user's asset balance.
+    case 'AbsorbCollateral':
+      console.debug(`User ${account} had asset ${asset} liquidated`);
+      if (users[from] === undefined) { users[from] = {}; }
+      if (users[from][asset] === undefined) {
+        users[from][asset] = await cometContract.userCollateral(from, asset);
+      }
       break;
     default:
   }
@@ -171,8 +175,16 @@ function provideInitialize(data) {
   return async function initialize() {
     // Initialize
     /* eslint-disable no-param-reassign */
+    data.protocolName = config.protocolName;
+    data.protocolAbbreviation = config.protocolAbbreviation;
+    data.developerAbbreviation = config.developerAbbreviation;
+    data.alert = config.liquidationMonitor.alert;
+    data.minimumLiquidationInUSD = config.liquidationMonitor.triggerLevels.minimumLiquidationInUSD;
+    data.lowHealthThreshold = config.liquidationMonitor.triggerLevels.lowHealthThreshold;
+
     data.assets = {};
     data.users = {};
+    data.findings = [];
     data.provider = getEthersProvider();
     data.cometInterface = new Interface(abi);
     data.cometContract = new Contract(cometAddress, abi, getEthersProvider());
@@ -220,8 +232,8 @@ function provideInitialize(data) {
     const parsedEvents = rawLogs.map((log) => cometInterface.parseLog(log));
 
     // Get initial state of all borrowers
-    parsedEvents.forEach((event) => {
-      processEvent(data, event);
+    parsedEvents.forEach(async (event) => {
+      await processEvent(data, event);
     });
 
     // Update Asset priceFeed, scale, borrowCollateralFactor and liquidateCollateralFactor
@@ -235,7 +247,7 @@ function provideInitialize(data) {
 function provideHandleBlock(data) {
   return async function handleBlock(blockEvent) {
     // Process the block
-    const { number: blockNumber } = blockEvent.block;
+    const { number: blockNumber, timestamp } = blockEvent.block;
     const {
       assets, baseScale, baseToken, cometContract, cometInterface, provider, topics, users,
     } = data;
@@ -257,8 +269,8 @@ function provideHandleBlock(data) {
       const parsedEvents = rawLogs.map((log) => cometInterface.parseLog(log));
 
       // Update state of all borrowers
-      parsedEvents.forEach((event) => {
-        processEvent(data, event);
+      parsedEvents.forEach(async (event) => {
+        await processEvent(data, event);
       });
       console.debug(`Finished processingLogs in block ${blockNumber}`);
     }
@@ -342,26 +354,43 @@ function provideHandleBlock(data) {
       console.debug(`Finished isLiquidatable in block ${blockNumber}`);
       const liquidatableUsers = filterUsers('isLiquidatable', users);
       // Create finding
+      if (liquidatableUsers.length > 0) {
+        liquidatableUsers.forEach((user) => {
+          const newFinding = createAlert(
+            data.developerAbbreviation,
+            data.protocolName,
+            data.protocolAbbreviation,
+            data.alert.type,
+            data.alert.severity,
+            user,
+            blockNumber,
+            timestamp,
+            data,
+          );
+          // Check against no finding (undefined) and against filtered findings (null)
+          if (newFinding !== undefined && newFinding !== null) {
+            data.findings.push(newFinding);
+          }
+        });
+      }
     }
     checkLiquidatable();
-    // console.debug(assets);
-    return [];
+
+    // Report if any findings were found in previous async calls
+    let findings = [];
+    if (data.findings.length > 0) {
+      // Copy the array and remove the original
+      findings = [...data.findings];
+      // eslint-disable-next-line no-param-reassign
+      data.findings = [];
+    }
+    return findings;
   };
 }
-
-// function provideHandleTransaction(data) {
-//   return async function handleTransaction(txEvent) {
-//     // Process transaction
-//     // Disabled for now. Should I watch every transaction or check the logs from the block?
-//     return [];
-//   };
-// }
 
 module.exports = {
   provideHandleBlock,
   handleBlock: provideHandleBlock(initializeData),
-  // provideHandleTransaction,
-  // handleTransaction: provideHandleTransaction(initializeData),
   provideInitialize,
   initialize: provideInitialize(initializeData),
 };
