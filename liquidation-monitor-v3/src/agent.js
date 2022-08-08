@@ -333,12 +333,15 @@ function provideHandleBlock(data) {
           }
         });
         console.debug(`User: ${user} Liquidity: ${userValue.liquidity} borrowed: ${userValue.principal}`);
-        const risk = userValue.principal.mul(liquidationRiskScale).div(userValue.liquidity);
-        console.debug(`User: ${user} has a liquidation risk of ${risk}%`);
-        // User is above risk tolerance, marking them for on-chain check
-        if (risk.gt(minimumLiquidationRisk)) {
+        // Protect against division by zero
+        if (userValue.liquidity.gt(0)) {
+          const risk = userValue.principal.mul(liquidationRiskScale).div(userValue.liquidity);
+          console.debug(`User: ${user} has a liquidation risk of ${risk}%`);
+          // User is above risk tolerance, marking them for on-chain check
+          if (risk.gt(minimumLiquidationRisk)) {
           // eslint-disable-next-line no-param-reassign
-          userValue.atRisk = true;
+            userValue.atRisk = true;
+          }
         }
       }
     });
