@@ -27,28 +27,6 @@ let mockCompLiquidCollateralFactor = '700000000000000000'; // 70%
 
 const mockNumAssets = 2;
 
-const mockBtcInfo = [
-  null,
-  mockBtcAddress,
-  mockBtcFeedAddress,
-  mockBtcScale,
-  null,
-  mockBtcLiquidCollateralFactor,
-  null,
-  null,
-];
-
-const mockCompInfo = [
-  null,
-  mockCompAddress,
-  mockCompFeedAddress,
-  mockCompScale,
-  null,
-  mockCompLiquidCollateralFactor,
-  null,
-  null,
-];
-
 const mockProvider = {
   getBlock: jest.fn(),
   getLogs: jest.fn(),
@@ -82,10 +60,10 @@ const {
   ethers, Finding, FindingType, FindingSeverity, BlockEvent,
 } = require('forta-agent');
 const config = require('../bot-config.json');
+const abi = require('../abi/comet.json');
+const { provideInitialize, provideHandleBlock } = require('./agent');
 
-const {
-  provideInitialize, provideHandleBlock,
-} = require('./agent');
+const iface = new ethers.utils.Interface(abi);
 
 // Convert the string numbers to ethers.BigNumber
 mockBtcPrice = ethers.BigNumber.from(mockBtcPrice);
@@ -97,6 +75,50 @@ mockUsdcScale = ethers.BigNumber.from(mockUsdcScale);
 mockBtcLiquidCollateralFactor = ethers.BigNumber.from(mockBtcLiquidCollateralFactor);
 mockCompLiquidCollateralFactor = ethers.BigNumber.from(mockCompLiquidCollateralFactor);
 const mockEthersZero = ethers.BigNumber.from(0);
+
+const assetInfoStruct = [
+  'uint8',
+  'address',
+  'address',
+  'uint64',
+  'uint64',
+  'uint64',
+  'uint64',
+  'uint128',
+];
+
+const mockTestInfo = [
+  1,
+  '0xcd113733263bF5BCd01CE6c2618CB59DC1618139',
+  '0x6135b13325bfC4B00278B4abC5e20bbce2D6580e',
+  ethers.BigNumber.from(0),
+  ethers.BigNumber.from(0),
+  ethers.BigNumber.from(0),
+  ethers.BigNumber.from(0),
+  ethers.BigNumber.from(0),
+];
+
+const mockBtcInfo = [
+  0,
+  mockBtcAddress,
+  mockBtcFeedAddress,
+  mockBtcScale,
+  ethers.BigNumber.from(0),
+  mockBtcLiquidCollateralFactor,
+  ethers.BigNumber.from(0),
+  ethers.BigNumber.from(0),
+];
+
+const mockCompInfo = [
+  1,
+  mockCompAddress,
+  mockCompFeedAddress,
+  mockCompScale,
+  ethers.BigNumber.from(0),
+  mockCompLiquidCollateralFactor,
+  ethers.BigNumber.from(0),
+  ethers.BigNumber.from(0),
+];
 
 // check the configuration file to verify the values
 describe('check agent configuration file', () => {
@@ -204,11 +226,16 @@ function setDefaultMocks() {
   // borrowBalanceOf.fn();
   numAssets.mockReturnValue(mockNumAssets);
   getAssetInfo.mockImplementation((id) => {
+    let encoded;
     switch (id) {
       case 0:
-        return mockBtcInfo;
+        // struct = ethers.utils.AbiCoder.prototype.encode(assetInfoStruct, mockBtcInfo);
+        encoded = iface.encodeFunctionResult('getAssetInfo', mockTestInfo);
+        return encoded;
       case 1:
-        return mockCompInfo;
+        // struct = ethers.utils.AbiCoder.prototype.encode(assetInfoStruct, mockCompInfo);
+        encoded = iface.encodeFunctionResult('getAssetInfo', [mockCompInfo]);
+        return encoded;
       default:
         return null;
     }
@@ -245,17 +272,27 @@ describe('initializeData', () => {
 
   it('should use contract calls', async () => {
     // Check counters from the initialize step.
-    //   Should setup the initial alert time
-    console.debug('baseTokenPriceFeed');
     console.debug(mockContract.baseTokenPriceFeed.mock.calls);
+
+    expect(mockContract.baseToken).toBeCalledTimes(1);
+    expect(initializeData.baseToken).toBe(mockUsdcAddress);
+    expect(mockContract.baseScale).toBeCalledTimes(1);
+    expect(initializeData.baseScale).toBe(mockUsdcScale);
+    expect(mockContract.baseTokenPriceFeed).toBeCalledTimes(1);
+    expect(initializeData.baseTokenPriceFeed).toBe(86400);
+    expect(mockContract.numAssets).toBeCalledTimes(1);
+    expect(mockContract.numAssets).toBeCalledTimes(1);
+    expect(mockContract.numAssets).toBeCalledTimes(1);
+    expect(mockContract.numAssets).toBeCalledTimes(1);
+    expect(mockContract.numAssets).toBeCalledTimes(1);
+    expect(mockContract.numAssets).toBeCalledTimes(1);
+    expect(mockContract.numAssets).toBeCalledTimes(1);
 
     expect(mockProvider.getBlock).toBeCalledTimes(1);
     expect(initializeData.nextAlertTime).toBe(86400);
-    // Should check BTC and Comp symbol, underlying, rates, and decimals
-    expect(mockContract.symbol).toBeCalledTimes(2);
-    expect(mockContract.underlying).toBeCalledTimes(2);
-    expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
-    expect(mockContract.decimals).toBeCalledTimes(4);
+
+    expect(mockProvider.getLogs).toBeCalledTimes(1);
+    expect(mockProvider.baseToken).toBeCalledTimes(1);
   });
   /*
 

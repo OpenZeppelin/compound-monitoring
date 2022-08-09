@@ -8,11 +8,8 @@ const config = require('../bot-config.json');
 const { BigNumber, Contract } = ethers;
 const { Interface } = ethers.utils;
 
-const cometAddress = '0xcC861650dc6f25cB5Ab4185d4657a70c923FDb27';
-
 // Check on chain for any account over this Liquidation Risk percentage.
 // 0 means to check every account on every block
-const minimumLiquidationRisk = 90;
 
 const initializeData = {};
 const liquidationRiskScale = 100;
@@ -125,6 +122,11 @@ async function updateAssetInfo(data, blockNumber) {
   const indexes = [...Array(data.numAssets).keys()];
   await Promise.all(indexes.map(async (index) => {
     const info = await cometContract.getAssetInfo(index);
+    // TS
+    console.debug(index);
+    console.debug(JSON.stringify(info));
+    console.debug(info);
+    console.debug(typeof info);
     const {
       asset,
       priceFeed,
@@ -141,6 +143,7 @@ async function updateAssetInfo(data, blockNumber) {
       liquidateCollateralFactor,
       // liquidationFactor,
     };
+    console.debug(assets[asset]);
   }));
   console.debug(`Finished updateAssetInfo in block ${blockNumber}`);
 }
@@ -181,17 +184,19 @@ function provideInitialize(data) {
     data.protocolName = config.protocolName;
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
+    data.cometAddress = config.liquidationMonitor.cometAddress;
+    data.minimumLiquidationRisk = config.liquidationMonitor.triggerLevels.minimumLiquidationRisk;
     data.alert = config.liquidationMonitor.alert;
-    data.minimumLiquidationInUSD = config.liquidationMonitor.triggerLevels.minimumLiquidationInUSD;
-    data.lowHealthThreshold = config.liquidationMonitor.triggerLevels.lowHealthThreshold;
 
     data.assets = {};
     data.users = {};
     data.findings = [];
     data.provider = getEthersProvider();
     data.cometInterface = new Interface(abi);
-    data.cometContract = new Contract(cometAddress, abi, getEthersProvider());
-    const { cometContract, cometInterface, provider } = data;
+    data.cometContract = new Contract(data.cometAddress, abi, getEthersProvider());
+    const {
+      cometAddress, cometContract, cometInterface, provider,
+    } = data;
 
     data.baseToken = await cometContract.baseToken();
     data.baseScale = await cometContract.baseScale();
@@ -253,7 +258,16 @@ function provideHandleBlock(data) {
     // Process the block
     const { number: blockNumber, timestamp } = blockEvent.block;
     const {
-      assets, baseScale, baseToken, cometContract, cometInterface, provider, topics, users,
+      assets,
+      baseScale,
+      baseToken,
+      cometAddress,
+      cometContract,
+      cometInterface,
+      provider,
+      topics,
+      users,
+      minimumLiquidationRisk,
     } = data;
 
     // Each await is initiated individually and references the most up to date info that it has
