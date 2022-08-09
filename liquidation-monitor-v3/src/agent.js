@@ -122,28 +122,18 @@ async function updateAssetInfo(data, blockNumber) {
   const indexes = [...Array(data.numAssets).keys()];
   await Promise.all(indexes.map(async (index) => {
     const info = await cometContract.getAssetInfo(index);
-    // TS
-    console.debug(index);
-    console.debug(JSON.stringify(info));
-    console.debug(info);
-    console.debug(typeof info);
     const {
       asset,
       priceFeed,
       scale,
-      // borrowCollateralFactor,
       liquidateCollateralFactor,
-      // liquidationFactor,
     } = info;
     assets[asset] = {
       price: BigNumber.from(0),
       priceFeed,
       scale,
-      // borrowCollateralFactor,
       liquidateCollateralFactor,
-      // liquidationFactor,
     };
-    console.debug(assets[asset]);
   }));
   console.debug(`Finished updateAssetInfo in block ${blockNumber}`);
 }
@@ -151,10 +141,7 @@ async function updateAssetInfo(data, blockNumber) {
 async function updatePrices(data, blockNumber) {
   const { assets, cometContract } = data;
   await Promise.all(Object.entries(assets).map(async ([asset, value]) => {
-    console.debug(asset);
-    console.debug(value.priceFeed);
     const price = await cometContract.getPrice(value.priceFeed);
-    console.debug(price);
     if (price.gt(0)) {
       assets[asset].price = price;
     } else {
@@ -246,7 +233,6 @@ function provideInitialize(data) {
 
     // Update Asset priceFeed, scale, borrowCollateralFactor and liquidateCollateralFactor
     await updateAssetInfo(data, 0);
-    console.debug(data.assets);
 
     // Update Prices
     await updatePrices(data, 0);
