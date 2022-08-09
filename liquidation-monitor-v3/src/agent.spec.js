@@ -1,27 +1,53 @@
 // Simulated prices of:
 //   BTC = $30,000
-//   ETH = $3,000
+//   COMP = $3,000
 //   USDC = $1
 // Bot prices are tracked in USD denomination.
-let mockBtcPrice = '100000000000000000000000000000'; // 1 BTC = 10 ETH
-let mockEthPrice = '100000000000000000000000000000'; // 1 BTC = 10 ETH
-let mockUsdcPrice = '3300000000000000000000000'; // 1 USDC = 0.00033 ETH
-let mockBtcDecimals = 8;
-let mockEthDecimals = 8;
-let mockUsdcDecimals = 8;
+// ref: https://github.com/compound-finance/comet/blob/ad6a4205a96be36417632afba2417f25b6d574ad/contracts/Comet.sol#L499
+let mockBtcPrice = '3000000000000'; // 1 BTC = $30,000
+let mockCompPrice = '6000000000'; // 1 COMP = $60
+let mockUsdcPrice = '100000000'; // 1 USDC = $1
 const mockBorrower = `0x${'1'.repeat(40)}`; // 0x11111...
 const newBorrower = `0x${'2'.repeat(40)}`;
+const mockBorrowerBalance = '700000000000000000'; // 0x11111...
+const newBorrowerBalance = '700000000000000000';
 const mockBtcAddress = `0x${'4'.repeat(40)}`;
-const mockEthAddress = `0x${'5'.repeat(40)}`;
+const mockCompAddress = `0x${'5'.repeat(40)}`;
 const mockUsdcAddress = `0x${'6'.repeat(40)}`;
+
+// ref: https://github.com/compound-finance/comet/blob/ad6a4205a96be36417632afba2417f25b6d574ad/contracts/Comet.sol#L306
 const mockBtcFeedAddress = `0x${'7'.repeat(40)}`;
-const mockEthFeedAddress = `0x${'8'.repeat(40)}`;
+const mockCompFeedAddress = `0x${'8'.repeat(40)}`;
 const mockUsdcFeedAddress = `0x${'9'.repeat(40)}`;
+let mockBtcScale = '100000000';
+let mockCompScale = '1000000000000000000';
+let mockUsdcScale = '1000000';
+let mockBtcLiquidCollateralFactor = '750000000000000000'; // 75%
+let mockCompLiquidCollateralFactor = '700000000000000000'; // 70%
 
+const mockNumAssets = 2;
 
-// Ref https://compound.finance/docs/comptroller#collateral-factor
-let mockBtcCollateralFactor = '700000000000000000'; // 70%
-let mockEthCollateralFactor = '850000000000000000'; // 85%
+const mockBtcInfo = [
+  null,
+  mockBtcAddress,
+  mockBtcFeedAddress,
+  mockBtcScale,
+  null,
+  mockBtcLiquidCollateralFactor,
+  null,
+  null,
+];
+
+const mockCompInfo = [
+  null,
+  mockCompAddress,
+  mockCompFeedAddress,
+  mockCompScale,
+  null,
+  mockCompLiquidCollateralFactor,
+  null,
+  null,
+];
 
 const mockProvider = {
   getBlock: jest.fn(),
@@ -63,16 +89,13 @@ const {
 
 // Convert the string numbers to ethers.BigNumber
 mockBtcPrice = ethers.BigNumber.from(mockBtcPrice);
-mockEthPrice = ethers.BigNumber.from(mockEthPrice);
+mockCompPrice = ethers.BigNumber.from(mockCompPrice);
 mockUsdcPrice = ethers.BigNumber.from(mockUsdcPrice);
-mockCDecimals = ethers.BigNumber.from(mockCDecimals);
-mockBtcDecimals = ethers.BigNumber.from(mockBtcDecimals);
-mockEthDecimals = ethers.BigNumber.from(mockEthDecimals);
-mockUsdcDecimals = ethers.BigNumber.from(mockUsdcDecimals);
-mockBtcCollateralFactor = ethers.BigNumber.from(mockBtcCollateralFactor);
-mockEthCollateralFactor = ethers.BigNumber.from(mockEthCollateralFactor);
-mockBtcCTokenRate = ethers.BigNumber.from(mockBtcCTokenRate);
-mockEthCTokenRate = ethers.BigNumber.from(mockEthCTokenRate);
+mockBtcScale = ethers.BigNumber.from(mockBtcScale);
+mockCompScale = ethers.BigNumber.from(mockCompScale);
+mockUsdcScale = ethers.BigNumber.from(mockUsdcScale);
+mockBtcLiquidCollateralFactor = ethers.BigNumber.from(mockBtcLiquidCollateralFactor);
+mockCompLiquidCollateralFactor = ethers.BigNumber.from(mockCompLiquidCollateralFactor);
 const mockEthersZero = ethers.BigNumber.from(0);
 
 // check the configuration file to verify the values
@@ -101,28 +124,10 @@ describe('check agent configuration file', () => {
     expect(liquidationMonitor).not.toBe({});
   });
 
-  it('comptrollerAddress key required', () => {
-    const { liquidationMonitor: { comptrollerAddress } } = config;
-    expect(typeof (comptrollerAddress)).toBe('string');
-    expect(comptrollerAddress).not.toBe('');
-  });
-
-  it('comptrollerABI key required', () => {
-    const { liquidationMonitor: { comptrollerABI } } = config;
-    expect(typeof (comptrollerABI)).toBe('string');
-    expect(comptrollerABI).not.toBe('');
-  });
-
-  it('oneInchAddress key required', () => {
-    const { liquidationMonitor: { oneInchAddress } } = config;
-    expect(typeof (oneInchAddress)).toBe('string');
-    expect(oneInchAddress).not.toBe('');
-  });
-
-  it('comptrollerAddress key required', () => {
-    const { liquidationMonitor: { comptrollerAddress } } = config;
-    expect(typeof (comptrollerAddress)).toBe('string');
-    expect(comptrollerAddress).not.toBe('');
+  it('cometAddress key required', () => {
+    const { liquidationMonitor: { cometAddress } } = config;
+    expect(typeof (cometAddress)).toBe('string');
+    expect(cometAddress).not.toBe('');
   });
 
   it('triggerLevels key required', () => {
@@ -131,28 +136,10 @@ describe('check agent configuration file', () => {
     expect(triggerLevels).not.toBe({});
   });
 
-  it('maximumHealth key required', () => {
-    const { liquidationMonitor: { triggerLevels: { maximumHealth } } } = config;
-    expect(typeof (maximumHealth)).toBe('number');
-    expect(maximumHealth).not.toBe('');
-  });
-
-  it('minimumBorrowInETH key required', () => {
-    const { liquidationMonitor: { triggerLevels: { minimumBorrowInETH } } } = config;
-    expect(typeof (minimumBorrowInETH)).toBe('number');
-    expect(minimumBorrowInETH).not.toBe('');
-  });
-
-  it('minimumLiquidationInUSD key required', () => {
-    const { liquidationMonitor: { triggerLevels: { minimumLiquidationInUSD } } } = config;
-    expect(typeof (minimumLiquidationInUSD)).toBe('number');
-    expect(minimumLiquidationInUSD).not.toBe('');
-  });
-
-  it('lowHealthThreshold key required', () => {
-    const { liquidationMonitor: { triggerLevels: { lowHealthThreshold } } } = config;
-    expect(typeof (lowHealthThreshold)).toBe('number');
-    expect(lowHealthThreshold).not.toBe('');
+  it('minimumLiquidationRisk key required', () => {
+    const { liquidationMonitor: { triggerLevels: { minimumLiquidationRisk } } } = config;
+    expect(typeof (minimumLiquidationRisk)).toBe('number');
+    expect(minimumLiquidationRisk).not.toBe('');
   });
 
   it('alert key required', () => {
@@ -182,62 +169,67 @@ describe('check agent configuration file', () => {
 function setDefaultMocks() {
   // Set all default mocks
 
-  // Compound API
-  axios.post.mockResolvedValue(mockCompoundResponse);
-
   const {
-    getAssetsIn,
-    markets,
-    getAccountLiquidity,
-    getRateToEth,
-    decimals,
-    getAccountSnapshot,
-    symbol,
-    underlying,
-    exchangeRateStored,
+    baseToken,
+    baseScale,
+    baseTokenPriceFeed,
+    borrowBalanceOf,
+    numAssets,
+    getAssetInfo,
+    getPrice,
+    isLiquidatable,
+    userCollateral,
   } = mockContract;
 
-  // Comptroller
-  getAssetsIn.mockResolvedValue(mockGetAssetsIn);
-  markets.mockResolvedValue([true, mockBtcCollateralFactor, true]);
-  getAccountLiquidity.mockResolvedValue([mockEthersZero, mockEthersZero, mockEthersZero]);
-  // OneInch
-  getRateToEth.mockResolvedValue(mockBtcPrice);
-  // ERC20
-  decimals.mockResolvedValue(mockBtcDecimals);
-  getAccountSnapshot.mockResolvedValue(
-    [mockEthersZero, mockEthersZero, mockEthersZero, mockEthersZero],
-  );
-  symbol.mockResolvedValue('TOKEN');
-  underlying.mockResolvedValue('0x0');
-  exchangeRateStored.mockResolvedValue(mockBtcCTokenRate);
+  const { getBlock, getLogs } = mockProvider;
 
-  // Used in getBlock.timestamp for the initial alert timer
-  mockProvider.getBlock.mockResolvedValue({ timestamp: 1 });
+  // Clear all values and implementations
+  baseToken.mockReset();
+  baseScale.mockReset();
+  baseTokenPriceFeed.mockReset();
+  borrowBalanceOf.mockReset();
+  numAssets.mockReset();
+  getAssetInfo.mockReset();
+  getPrice.mockReset();
+  isLiquidatable.mockReset();
+  userCollateral.mockReset();
 
-  // Clear Mock counters before calling initialize
-  axios.post.mockClear();
-  symbol.mockClear();
-  underlying.mockClear();
-  exchangeRateStored.mockClear();
-  decimals.mockClear();
-  getAssetsIn.mockClear();
-  mockProvider.getBlock.mockClear();
-}
+  getBlock.mockReset();
+  getLogs.mockReset();
 
-function setVerifyTokenMocks(setSymbol, setUnderlying, setExchange, setDecimals) {
-  const {
-    decimals,
-    symbol,
-    underlying,
-    exchangeRateStored,
-  } = mockContract;
+  // Set implementations
+  baseToken.mockReturnValue(mockUsdcAddress);
+  baseScale.mockReturnValue(mockUsdcScale);
+  baseTokenPriceFeed.mockReturnValue(mockUsdcFeedAddress);
+  // borrowBalanceOf.fn();
+  numAssets.mockReturnValue(mockNumAssets);
+  getAssetInfo.mockImplementation((id) => {
+    switch (id) {
+      case 0:
+        return mockBtcInfo;
+      case 1:
+        return mockCompInfo;
+      default:
+        return null;
+    }
+  });
+  getPrice.mockImplementation((asset) => {
+    switch (asset) {
+      case mockBtcFeedAddress:
+        return mockBtcPrice;
+      case mockCompFeedAddress:
+        return mockCompPrice;
+      case mockUsdcFeedAddress:
+        return mockUsdcPrice;
+      default:
+        return null;
+    }
+  });
+  // isLiquidatable.fn();
+  // userCollateral.fn();
 
-  symbol.mockResolvedValueOnce(setSymbol);
-  underlying.mockResolvedValueOnce(setUnderlying);
-  exchangeRateStored.mockResolvedValueOnce(setExchange);
-  decimals.mockResolvedValueOnce(mockCDecimals)
-    .mockResolvedValueOnce(setDecimals);
+  getBlock.mockReturnValue(1);
+  getLogs.mockReturnValue([]);
 }
 
 // agent tests
@@ -248,30 +240,33 @@ describe('initializeData', () => {
     // Initialize
     initializeData = {};
     setDefaultMocks();
-    setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
-    setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
     await (provideInitialize(initializeData))();
   });
 
   it('should use contract calls', async () => {
     // Check counters from the initialize step.
     //   Should setup the initial alert time
+    console.debug('baseTokenPriceFeed');
+    console.debug(mockContract.baseTokenPriceFeed.mock.calls);
+
     expect(mockProvider.getBlock).toBeCalledTimes(1);
     expect(initializeData.nextAlertTime).toBe(86400);
-    // Should check BTC and ETH symbol, underlying, rates, and decimals
+    // Should check BTC and Comp symbol, underlying, rates, and decimals
     expect(mockContract.symbol).toBeCalledTimes(2);
     expect(mockContract.underlying).toBeCalledTimes(2);
     expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
     expect(mockContract.decimals).toBeCalledTimes(4);
   });
+  /*
+
   it('should set user data', async () => {
-    // In the compound API mock, the user supplied 0.85 BTC, and borrowed 10 ETH.
+    // In the compound API mock, the user supplied 0.85 BTC, and borrowed 10 Comp.
     //  to account for interest earned on supplied tokens, this is stored as cTokens.
-    // "When a market is launched, the cToken exchange rate (how much ETH one cETH is worth) begins
+    // "When a market is launched, the cToken exchange rate (how much Comp one cComp is worth) begins
     //  at 0.020000 — and increases at a rate equal to the compounding market interest rate"
     // Ref: https://compound.finance/docs/ctokens#introduction - Calculate Exchange Rate
-    // In this example 10 ETH * (1 cWETH / 0.02 ETH) = 500 cETH.
-    const actualSupply = initializeData.supply['0x0ceth']['0x1111'].toString();
+    // In this example 10 Comp * (1 cWComp / 0.02 Comp) = 500 cComp.
+    const actualSupply = initializeData.supply['0x0cComp']['0x1111'].toString();
     const expectedSupply = '500';
     const actualBorrow = initializeData.borrow['0x0cbtc']['0x1111'].toString();
     const expectedBorrow = '0.85';
@@ -289,14 +284,14 @@ describe('initializeData', () => {
     expect(actualBtcCDecimals).toBe(expectedBtcCDecimals);
   });
 
-  it('should set ETH token data', async () => {
-    // Check ETH stats
-    const actualEthDecimals = initializeData.tokens['0x0ceth'].tokenDecimals.toString();
-    const expectedEthDecimals = mockEthDecimals.toString();
-    const actualEthCDecimals = initializeData.tokens['0x0ceth'].cTokenDecimals.toString();
-    const expectedEthCDecimals = mockCDecimals.toString();
-    expect(actualEthDecimals).toBe(expectedEthDecimals);
-    expect(actualEthCDecimals).toBe(expectedEthCDecimals);
+  it('should set Comp token data', async () => {
+    // Check Comp stats
+    const actualCompDecimals = initializeData.tokens['0x0cComp'].tokenDecimals.toString();
+    const expectedCompDecimals = mockCompDecimals.toString();
+    const actualCompCDecimals = initializeData.tokens['0x0cComp'].cTokenDecimals.toString();
+    const expectedCompCDecimals = mockCDecimals.toString();
+    expect(actualCompDecimals).toBe(expectedCompDecimals);
+    expect(actualCompCDecimals).toBe(expectedCompCDecimals);
   });
 });
 
@@ -304,18 +299,18 @@ describe('initializeData', () => {
 function setPriceMocks(setPrice, setCollateralFactor, setCTokenRate) {
   const {
     markets,
-    getRateToEth,
+    getRateToComp,
     exchangeRateStored,
     getAccountLiquidity,
   } = mockContract;
 
   // Set the once mocks
-  getRateToEth.mockResolvedValueOnce(setPrice);
+  getRateToComp.mockResolvedValueOnce(setPrice);
   markets.mockResolvedValueOnce([true, setCollateralFactor, true]);
   exchangeRateStored.mockResolvedValueOnce(setCTokenRate);
 
   // Clear the counters
-  getRateToEth.mockClear();
+  getRateToComp.mockClear();
   markets.mockClear();
   exchangeRateStored.mockClear();
   getAccountLiquidity.mockClear();
@@ -340,7 +335,7 @@ describe('handleBlock', () => {
 
     setDefaultMocks();
     setVerifyTokenMocks('cBTC', '0x0wbtc', mockBtcCTokenRate, mockBtcDecimals);
-    setVerifyTokenMocks('cETH', '0x0weth', mockEthCTokenRate, mockEthDecimals);
+    setVerifyTokenMocks('cComp', '0x0wComp', mockCompCTokenRate, mockCompDecimals);
     await (provideInitialize(initializeData))();
 
     // Replace the imported thresholds with the test ones.
@@ -348,7 +343,7 @@ describe('handleBlock', () => {
     initializeData.lowHealthThreshold = setLowHealthThreshold;
 
     setPriceMocks(mockBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
-    setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
+    setPriceMocks(mockCompPrice, mockCompCollateralFactor, mockCompCTokenRate);
 
     // Initialize block time is 1 second since epoch. Then the next block is set for 15 seconds
     blockEvent = mockBlock(15);
@@ -357,7 +352,7 @@ describe('handleBlock', () => {
 
   it('should use contract calls', async () => {
     // Check counters from the block / price update step.
-    expect(mockContract.getRateToEth).toBeCalledTimes(2);
+    expect(mockContract.getRateToComp).toBeCalledTimes(2);
     expect(mockContract.markets).toBeCalledTimes(2);
     expect(mockContract.exchangeRateStored).toBeCalledTimes(2);
     expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
@@ -1026,4 +1021,5 @@ describe('process newBorrower', () => {
     // After processing newAccount, clear the array.
     expect(initializeData.newAccounts).toStrictEqual([]);
   });
+*/
 });

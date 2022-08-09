@@ -129,17 +129,17 @@ async function updateAssetInfo(data, blockNumber) {
       asset,
       priceFeed,
       scale,
-      borrowCollateralFactor,
+      // borrowCollateralFactor,
       liquidateCollateralFactor,
-      liquidationFactor,
+      // liquidationFactor,
     } = info;
     assets[asset] = {
       price: BigNumber.from(0),
       priceFeed,
       scale,
-      borrowCollateralFactor,
+      // borrowCollateralFactor,
       liquidateCollateralFactor,
-      liquidationFactor,
+      // liquidationFactor,
     };
   }));
   console.debug(`Finished updateAssetInfo in block ${blockNumber}`);
@@ -148,7 +148,10 @@ async function updateAssetInfo(data, blockNumber) {
 async function updatePrices(data, blockNumber) {
   const { assets, cometContract } = data;
   await Promise.all(Object.entries(assets).map(async ([asset, value]) => {
+    console.debug(asset);
+    console.debug(value.priceFeed);
     const price = await cometContract.getPrice(value.priceFeed);
+    console.debug(price);
     if (price.gt(0)) {
       assets[asset].price = price;
     } else {
@@ -238,6 +241,7 @@ function provideInitialize(data) {
 
     // Update Asset priceFeed, scale, borrowCollateralFactor and liquidateCollateralFactor
     await updateAssetInfo(data, 0);
+    console.debug(data.assets);
 
     // Update Prices
     await updatePrices(data, 0);
