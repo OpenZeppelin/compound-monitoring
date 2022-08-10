@@ -224,7 +224,14 @@ function provideInitialize(data) {
       address: cometAddress,
       topics,
     });
-    const parsedEvents = rawLogs.map((log) => cometInterface.parseLog(log));
+
+    // Workaround for skipping parsing for mocks
+    let parsedEvents;
+    if (rawLogs[0]?.args === undefined) {
+      parsedEvents = rawLogs.map((log) => cometInterface.parseLog(log));
+    } else {
+      parsedEvents = rawLogs;
+    }
 
     // Get initial state of all borrowers
     parsedEvents.forEach(async (event) => {
