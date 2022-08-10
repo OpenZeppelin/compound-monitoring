@@ -12,8 +12,8 @@ const mockUser1 = `0x${'1'.repeat(40)}`; // 0x11111...
 const mockUser2 = `0x${'2'.repeat(40)}`;
 let mockUser1Balance = '1000000000'; // $1,000
 let mockUser2Balance = '1000000000'; // $1,000
-let mockUser1BtcSupplied = '10000000'; // $1,000
-let mockUser2BtcSupplied = '10000000'; // $1,000
+let mockUser1BtcSupplied = '5000000'; // $1,500
+let mockUser2BtcSupplied = '5000000'; // $1,500
 
 const mockBtcAddress = `0x${'4'.repeat(40)}`;
 const mockCompAddress = `0x${'5'.repeat(40)}`;
@@ -49,9 +49,6 @@ const mockContract = {
   isLiquidatable: jest.fn(),
   userCollateral: jest.fn(),
 };
-
-// Don't parse, just return the original
-const mockInterface = { parseLog: jest.fn((x) => x) };
 
 // combine the mocked provider and contracts into the ethers import mock
 jest.mock('forta-agent', () => ({
@@ -442,7 +439,7 @@ describe('handleBlock', () => {
     expect(mockContract.baseTokenPriceFeed).toBeCalledTimes(0);
   });
 
-  it('should adjust token price and user balances when price increase', async () => {
+  it('should adjust token price and user balances when prices increase', async () => {
     const { assets } = initializeData;
     const changePriceBy = 110;
 
@@ -466,7 +463,7 @@ describe('handleBlock', () => {
     expect(assets[mockUsdcAddress].price).toBe(newUsdcPrice);
   });
 
-  it('should adjust token price and user balances when price decreases', async () => {
+  it('should adjust token price and user balances when prices decreases', async () => {
     const { assets } = initializeData;
     const changePriceBy = 90;
 
@@ -490,59 +487,25 @@ describe('handleBlock', () => {
     expect(assets[mockUsdcAddress].price).toBe(newUsdcPrice);
   });
 
-  it('asset prices should go up when price feed goes up', async () => {
+  it('returns no findings if collateral asset increases and health remains below minimumLiquidation threshold', async () => {
+    // BTC increases by 10%
+    const { users } = initializeData;
+    const user1 = users[mockUser1];
+    const changePriceBy = 90;
+    const samePrice = 100;
+    setPriceMocks(changePriceBy, samePrice, samePrice);
 
-  });
-
-  it('asset prices should go down when price feed goes down', async () => {
-
-  });
-
-  /*
-
-  it('returns no findings if borrowed asset increases and health remains below minimumLiquidation threshold', async () => {
-    // BTC increases by 1%
-    // Scaled to integer, because ethers.BigNumbers doesn't accept floats
-    let multiplier = 101;
-    const scale = 100;
-
-    // Starting values are BtcPrice = 10, UserBalance = 8.5 and health = 1
-    // All expected are rounded to 2 decimal points
-    const expectedBtcPrice = '10.1'; // In ETH value
-    // User borrowed BTC, so health is inversely affected by its price.
-    const expectedUserHealth = '0.99';
-    const expectedBorrowBalance = '8.59';
-    const expectedSupplyBalance = '8.5'; // Supply is unchanged
-
-    multiplier = ethers.BigNumber.from(multiplier);
-    const newBtcPrice = mockBtcPrice.mul(multiplier).div(scale);
-
-    const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
-
-    // Mock and process new block
-    setPriceMocks(newBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
-    setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
-    mockContract.getAccountLiquidity.mockResolvedValueOnce(
-      [mockEthersZero, mockEthersZero, shortfallUSD],
-    );
-    mockContract.getAccountLiquidity.mockClear();
     // Start the block with a block timestamp of 30 seconds
     blockEvent = mockBlock(30);
-    const findings = await handleBlock(blockEvent);
+    await handleBlock(blockEvent);
+    blockEvent = mockBlock(45);
+    await handleBlock(blockEvent);
 
-    const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
-    const actualBtcPrice = initializeData.tokens['0x0cbtc'].price.dp(2).toString();
-    const actualBorrowBalance = borrowBalance.dp(2).toString();
-    const actualSupplyBalance = supplyBalance.dp(2).toString();
-    const actualUserHealth = health.dp(2).toString();
+    expect(user1.liquidity.lt(mockBtcPrice)).toBe(true);
 
-    expect(actualBtcPrice).toBe(expectedBtcPrice);
-    expect(actualUserHealth).toBe(expectedUserHealth);
-    expect(actualBorrowBalance).toBe(expectedBorrowBalance);
-    expect(actualSupplyBalance).toBe(expectedSupplyBalance);
-    expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
-    expect(findings).toStrictEqual([]);
+    console.debug(initializeData.users);
   });
+/*
 
   it('returns findings if borrowed asset increases and account exceeds the minimumLiquidation threshold', async () => {
     // BTC increases by 2%
