@@ -134,9 +134,9 @@ describe('check agent configuration file', () => {
   });
 
   it('minimumLiquidationRisk key required', () => {
-    const { liquidationMonitor: { triggerLevels: { minimumLiquidationRisk } } } = config;
-    expect(typeof (minimumLiquidationRisk)).toBe('number');
-    expect(minimumLiquidationRisk).not.toBe('');
+    const { liquidationMonitor: { triggerLevels: { minimumLiquidationRisk: risk } } } = config;
+    expect(typeof (risk)).toBe('number');
+    expect(risk).not.toBe('');
   });
 
   it('alert key required', () => {
@@ -231,7 +231,7 @@ function setDefaultMocks() {
         return null;
     }
   });
-  // isLiquidatable.fn();
+  isLiquidatable.mockReturnValue(false);
   // eslint-disable-next-line no-unused-vars
   userCollateral.mockImplementation((user, asset) => {
     switch (user) {
@@ -505,9 +505,24 @@ describe('handleBlock', () => {
     setPriceMocks(changePriceBy, samePrice, samePrice);
 
     // Start block 2 with a block timestamp of 30 seconds
+    // Prices are set in this block
     blockEvent = mockBlock(2, 30);
     await handleBlock(blockEvent);
+
+    // Start block 3 with a block timestamp of 45 seconds
+    // Users are updated based on block 2 data. If a user is atRisk, then isLiquidatable is called.
+    // if isLiquidatable is true, then a finding is stored.
     blockEvent = mockBlock(3, 45);
+    await handleBlock(blockEvent);
+    expect(mockContract.isLiquidatable).toBeCalledTimes(1);
+
+    // Need at least a 1ms wait between blocks to allow async functions to finish
+    // eslint-disable-next-line no-promise-executor-return
+    await new Promise((r) => setTimeout(r, 100)); // Sleep for 100 milliseconds
+
+    // Start block 4 with a block timestamp of 60 seconds
+    // The block handler returns the stored findings (if any) from block 3.
+    blockEvent = mockBlock(4, 60);
     const findings = await handleBlock(blockEvent);
 
     // Not liquidatable, but above the risk
@@ -521,7 +536,6 @@ describe('handleBlock', () => {
     expect(calculatedRisk).toBe(expectedRisk);
     // calculatedRisk is above minimumLiquidationRisk, therefore atRisk should be true
     expect(user1.atRisk).toBe(true);
-    expect(mockContract.isLiquidatable).toBeCalledTimes(1);
     expect(findings).toStrictEqual([]);
   });
 
@@ -538,40 +552,55 @@ describe('handleBlock', () => {
     setPriceMocks(changePriceBy, samePrice, samePrice);
 
     // Start block 2 with a block timestamp of 30 seconds
+    // Prices are set in this block
     blockEvent = mockBlock(2, 30);
     await handleBlock(blockEvent);
+
+    // Start block 3 with a block timestamp of 45 seconds
+    // Users are updated based on block 2 data. If a user is atRisk, then isLiquidatable is called.
+    // if isLiquidatable is true, then a finding is stored.
     blockEvent = mockBlock(3, 45);
+    mockContract.isLiquidatable.mockReturnValueOnce(true);
+    await handleBlock(blockEvent);
+    expect(mockContract.isLiquidatable).toBeCalledTimes(1);
+
+    // Need at least a 1ms wait between blocks to allow async functions to finish
+    // eslint-disable-next-line no-promise-executor-return
+    await new Promise((r) => setTimeout(r, 100)); // Sleep for 100 milliseconds
+
+    // Start block 4 with a block timestamp of 60 seconds
+    // The block handler returns the stored findings (if any) from block 3.
+    blockEvent = mockBlock(4, 60);
     const findings = await handleBlock(blockEvent);
 
-    // Not liquidatable, but above the risk
-    const expectedRisk = '111';
+    // Liquidatable
+    const expectedRisk = 111;
+    const expectedBlock = 3;
     // Calculate risk, scaled to 100
-    const calculatedRisk = user1.principal.mul(100).div(user1.liquidity).toString();
+    const calculatedRisk = user1.principal.mul(100).div(user1.liquidity).toNumber();
 
     console.debug(user1);
+    console.debug(initializeData.findings);
     expect(user1[mockBtcAddress]).toStrictEqual(mockUser1BtcSupplied);
     expect(user1.possibleBorrower).toBe(true);
     expect(user1.borrowBalance).toBe(mockUser1Balance);
     expect(calculatedRisk).toBe(expectedRisk);
     // calculatedRisk is above minimumLiquidationRisk, therefore atRisk should be true
     expect(user1.atRisk).toBe(true);
-    expect(mockContract.isLiquidatable).toBeCalledTimes(1);
-    expect(findings).toStrictEqual([]);
 
+    const { protocolName, developerAbbreviation, protocolAbbreviation } = initializeData;
+    const { type, severity } = initializeData.alert;
 
     const expectedFinding = Finding.fromObject({
-      name: `${initializeData.protocolName} Liquidation Threshold Alert`,
-      description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
-        + `The account may be liquidated for: $${liquidationAmount} USD`,
-      alertId: `${initializeData.developerAbbreviation}-${initializeData.protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
-      type: FindingType[initializeData.alert.type],
-      severity: FindingSeverity[initializeData.alert.severity],
-      protocol: initializeData.protocolName,
+      name: `${protocolName} Liquidation Threshold Alert`,
+      description: `The address ${mockUser1} is liquidatable in block ${expectedBlock}`,
+      alertId: `${developerAbbreviation}-${protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+      type: FindingType[type],
+      severity: FindingSeverity[severity],
+      protocol: protocolName,
       metadata: {
-        borrowerAddress,
-        liquidationAmount,
-        shortfallAmount,
-        healthFactor,
+        borrowerAddress: mockUser1,
+        blockNumber: expectedBlock,
       },
     });
 

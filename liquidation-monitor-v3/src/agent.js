@@ -369,7 +369,9 @@ function provideHandleBlock(data) {
       const liquidatableUsers = filterUsers('isLiquidatable', users);
       // Create finding
       if (liquidatableUsers.length > 0) {
+        console.debug(`Found ${liquidatableUsers.length} liquidatableUsers in block ${blockNumber} `);
         liquidatableUsers.forEach((user) => {
+          console.debug('inside liquidatable code');
           const newFinding = createAlert(
             data.developerAbbreviation,
             data.protocolName,
@@ -383,13 +385,21 @@ function provideHandleBlock(data) {
           );
           // Check against no finding (undefined) and against filtered findings (null)
           if (newFinding !== undefined && newFinding !== null) {
+            console.debug('inside push code');
+            console.debug(newFinding);
+
             data.findings.push(newFinding);
           }
         });
       }
     }
+    console.debug(data.findings);
+
     checkLiquidatable();
 
+    // TS
+    console.debug(data.findings);
+    console.debug(blockNumber);
     // Report if any findings were found in previous async calls
     let findings = [];
     if (data.findings.length > 0) {
