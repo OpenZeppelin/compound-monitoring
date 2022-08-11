@@ -289,15 +289,15 @@ describe('initializeData', () => {
     // Check counters from the initialize step.
 
     // Provider calls
-    expect(mockProvider.getBlock).toBeCalledTimes(1);
+    expect(mockProvider.getBlock).toBeCalledTimes(1); // Called to set alarmTime
     expect(initializeData.nextAlertTime).toBe(86400);
 
     // Check asset calls
     expect(mockContract.numAssets).toBeCalledTimes(1);
-    expect(mockContract.getAssetInfo).toBeCalledTimes(2);
-    expect(mockContract.getPrice).toBeCalledTimes(3);
+    expect(mockContract.getAssetInfo).toBeCalledTimes(2); // for BTC and COMP
+    expect(mockContract.getPrice).toBeCalledTimes(3); // for BTC, COMP, and USDC
 
-    // Check user calls ( 1 user, 2 events )
+    // Check user calls
     expect(mockProvider.getLogs).toBeCalledTimes(1);
 
     // No liquidation checks should happen yet
@@ -349,12 +349,16 @@ describe('initializeData', () => {
 
     expect(user1[mockBtcAddress]).toStrictEqual(mockUser1BtcSupplied);
     expect(user1.possibleBorrower).toBe(true);
+    // Liquidity checks happen in the blockEvent
+    expect(user1.borrowBalance).toBe(undefined);
+    expect(user1.principal).toBe(undefined);
+    expect(user1.liquidity).toBe(undefined);
+    expect(user1.atRisk).toBe(undefined);
   });
 });
 
 // Mock helper function
 function setPriceMocks(btcChange, compChange, usdcChange) {
-  // Takes parameters in while
   const { getPrice } = mockContract;
   const changeScale = 100;
 
@@ -383,9 +387,9 @@ function setPriceMocks(btcChange, compChange, usdcChange) {
   };
 }
 
-function mockBlock(mockTimestamp) {
+function mockBlock(number, timestamp) {
   // create the mock blockEvent
-  const block = { timestamp: mockTimestamp };
+  const block = { number, timestamp };
   const mockBlockEvent = new BlockEvent(null, null, block);
   return mockBlockEvent;
 }
@@ -404,6 +408,8 @@ describe('handleBlock', () => {
     const { getLogs } = mockProvider;
 
     // Mock past events
+    // User1 Supplied $1500 of BTC
+    // User1 borrowed $1000 USDC
     logs.push(createUserEvent(mockUser1, 'SupplyCollateral', mockBtcAddress, mockUser1BtcSupplied));
     logs.push(createUserEvent(mockUser1, 'Withdraw', mockUsdcAddress, mockUser1Balance));
     getLogs.mockReturnValue(logs);
@@ -413,15 +419,14 @@ describe('handleBlock', () => {
     // Start block specific code
     handleBlock = provideHandleBlock(initializeData);
 
-    // Replace the imported thresholds with the test ones.
+    // Replace the imported threshold with the test one.
     initializeData.minimumLiquidationRisk = minimumLiquidationRisk;
-
-    // Initialize block time is 1 second since epoch. Then the next block is set for 15 seconds
-    blockEvent = mockBlock(15);
 
     // Reset the counters
     setDefaultMocks();
 
+    // Start block 1 with a block timestamp of 15 seconds
+    blockEvent = mockBlock(1, 15);
     await handleBlock(blockEvent);
   });
 
@@ -430,10 +435,10 @@ describe('handleBlock', () => {
     expect(mockProvider.getBlock).toBeCalledTimes(0);
 
     // Check asset calls
-    expect(mockContract.getAssetInfo).toBeCalledTimes(2);
-    expect(mockContract.getPrice).toBeCalledTimes(3);
+    expect(mockContract.getAssetInfo).toBeCalledTimes(2); // for BTC and COMP
+    expect(mockContract.getPrice).toBeCalledTimes(3); // for BTC, COMP and USDC
 
-    // BaseToken calls (only called on initialization)
+    // BaseToken calls (only called on initialization), so they should be zero
     expect(mockContract.baseToken).toBeCalledTimes(0);
     expect(mockContract.baseScale).toBeCalledTimes(0);
     expect(mockContract.baseTokenPriceFeed).toBeCalledTimes(0);
@@ -454,8 +459,8 @@ describe('handleBlock', () => {
     expect(newCompPrice.gt(mockCompPrice)).toBe(true);
     expect(newUsdcPrice.gt(mockUsdcPrice)).toBe(true);
 
-    // Start the block with a block timestamp of 30 seconds
-    blockEvent = mockBlock(30);
+    // Start block 2 with a block timestamp of 30 seconds
+    blockEvent = mockBlock(2, 30);
     await handleBlock(blockEvent);
 
     expect(assets[mockBtcAddress].price).toBe(newBtcPrice);
@@ -467,7 +472,7 @@ describe('handleBlock', () => {
     const { assets } = initializeData;
     const changePriceBy = 90;
 
-    // Increase prices by 10%
+    // Decrease prices by 10%
     const {
       newBtcPrice,
       newCompPrice,
@@ -478,8 +483,8 @@ describe('handleBlock', () => {
     expect(newCompPrice.lt(mockCompPrice)).toBe(true);
     expect(newUsdcPrice.lt(mockUsdcPrice)).toBe(true);
 
-    // Start the block with a block timestamp of 30 seconds
-    blockEvent = mockBlock(30);
+    // Start block 2 with a block timestamp of 30 seconds
+    blockEvent = mockBlock(2, 30);
     await handleBlock(blockEvent);
 
     expect(assets[mockBtcAddress].price).toBe(newBtcPrice);
@@ -487,62 +492,73 @@ describe('handleBlock', () => {
     expect(assets[mockUsdcAddress].price).toBe(newUsdcPrice);
   });
 
-  it('returns no findings if collateral asset increases and health remains below minimumLiquidation threshold', async () => {
-    // BTC increases by 10%
+  it('returns no findings if collateral asset decreases and health remains below the liquidation threshold', async () => {
+    // User Supplied $1500 of BTC
+    // User borrowed $1000 USDC (principal)
+    // BTC decreased by 10%
+    // New BTC value is $1350, of which, only 75% can be used for collateral.
+    // Principal is $1000. Collateral is $1012. Liquidation risk is 98%.
     const { users } = initializeData;
     const user1 = users[mockUser1];
     const changePriceBy = 90;
     const samePrice = 100;
     setPriceMocks(changePriceBy, samePrice, samePrice);
 
-    // Start the block with a block timestamp of 30 seconds
-    blockEvent = mockBlock(30);
+    // Start block 2 with a block timestamp of 30 seconds
+    blockEvent = mockBlock(2, 30);
     await handleBlock(blockEvent);
-    blockEvent = mockBlock(45);
-    await handleBlock(blockEvent);
-
-    expect(user1.liquidity.lt(mockBtcPrice)).toBe(true);
-
-    console.debug(initializeData.users);
-  });
-/*
-
-  it('returns findings if borrowed asset increases and account exceeds the minimumLiquidation threshold', async () => {
-    // BTC increases by 2%
-    // Scaled to integer, because ethers.BigNumbers doesn't accept floats
-    let multiplier = 102;
-    const scale = 100;
-
-    // Starting values are BtcPrice = 10, UserBalance = 8.5 and health = 1
-    // All expected are rounded to 2 decimal points
-    const expectedBtcPrice = '10.2'; // In ETH value
-    // User borrowed BTC, so health is inversely affected by its price.
-    const expectedUserHealth = '0.98';
-    const expectedBorrowBalance = '8.67';
-    const expectedSupplyBalance = '8.5'; // Supply is unchanged
-    const expectedLiquidationAmount = '515.15';
-
-    multiplier = ethers.BigNumber.from(multiplier);
-    const newBtcPrice = mockBtcPrice.mul(multiplier).div(scale);
-
-    const shortfallUSD = getShortFallUSD(expectedBorrowBalance, expectedSupplyBalance);
-
-    // Mock and process new block
-    setPriceMocks(newBtcPrice, mockBtcCollateralFactor, mockBtcCTokenRate);
-    setPriceMocks(mockEthPrice, mockEthCollateralFactor, mockEthCTokenRate);
-    mockContract.getAccountLiquidity.mockResolvedValueOnce(
-      [mockEthersZero, mockEthersZero, shortfallUSD],
-    );
-    mockContract.getAccountLiquidity.mockClear();
-    // Start the block with a block timestamp of 30 seconds
-    blockEvent = mockBlock(30);
+    blockEvent = mockBlock(3, 45);
     const findings = await handleBlock(blockEvent);
 
-    // Expected finding
-    const borrowerAddress = mockBorrower;
-    const liquidationAmount = expectedLiquidationAmount;
-    const shortfallAmount = expectedLiquidationAmount;
-    const healthFactor = expectedUserHealth;
+    // Not liquidatable, but above the risk
+    const expectedRisk = '98';
+    // Calculate risk, scaled to 100
+    const calculatedRisk = user1.principal.mul(100).div(user1.liquidity).toString();
+
+    expect(user1[mockBtcAddress]).toStrictEqual(mockUser1BtcSupplied);
+    expect(user1.possibleBorrower).toBe(true);
+    expect(user1.borrowBalance).toBe(mockUser1Balance);
+    expect(calculatedRisk).toBe(expectedRisk);
+    // calculatedRisk is above minimumLiquidationRisk, therefore atRisk should be true
+    expect(user1.atRisk).toBe(true);
+    expect(mockContract.isLiquidatable).toBeCalledTimes(1);
+    expect(findings).toStrictEqual([]);
+  });
+
+  it('returns findings if collateral asset decreases and account exceeds the liquidation threshold', async () => {
+    // User Supplied $1500 of BTC
+    // User borrowed $1000 USDC (principal)
+    // BTC decreased by 20%
+    // New BTC value is $1200, of which, only 75% can be used for collateral.
+    // Principal is $1000. Collateral is $900. Liquidation risk is 111%.
+    const { users } = initializeData;
+    const user1 = users[mockUser1];
+    const changePriceBy = 80;
+    const samePrice = 100;
+    setPriceMocks(changePriceBy, samePrice, samePrice);
+
+    // Start block 2 with a block timestamp of 30 seconds
+    blockEvent = mockBlock(2, 30);
+    await handleBlock(blockEvent);
+    blockEvent = mockBlock(3, 45);
+    const findings = await handleBlock(blockEvent);
+
+    // Not liquidatable, but above the risk
+    const expectedRisk = '111';
+    // Calculate risk, scaled to 100
+    const calculatedRisk = user1.principal.mul(100).div(user1.liquidity).toString();
+
+    console.debug(user1);
+    expect(user1[mockBtcAddress]).toStrictEqual(mockUser1BtcSupplied);
+    expect(user1.possibleBorrower).toBe(true);
+    expect(user1.borrowBalance).toBe(mockUser1Balance);
+    expect(calculatedRisk).toBe(expectedRisk);
+    // calculatedRisk is above minimumLiquidationRisk, therefore atRisk should be true
+    expect(user1.atRisk).toBe(true);
+    expect(mockContract.isLiquidatable).toBeCalledTimes(1);
+    expect(findings).toStrictEqual([]);
+
+
     const expectedFinding = Finding.fromObject({
       name: `${initializeData.protocolName} Liquidation Threshold Alert`,
       description: `The address ${mockBorrower} has dropped below the liquidation threshold. `
@@ -559,19 +575,9 @@ describe('handleBlock', () => {
       },
     });
 
-    const { borrowBalance, supplyBalance, health } = initializeData.accounts['0x1111'];
-    const actualBtcPrice = initializeData.tokens['0x0cbtc'].price.dp(2).toString();
-    const actualBorrowBalance = borrowBalance.dp(2).toString();
-    const actualSupplyBalance = supplyBalance.dp(2).toString();
-    const actualUserHealth = health.dp(2).toString();
-
-    expect(actualBtcPrice).toBe(expectedBtcPrice);
-    expect(actualUserHealth).toBe(expectedUserHealth);
-    expect(actualBorrowBalance).toBe(expectedBorrowBalance);
-    expect(actualSupplyBalance).toBe(expectedSupplyBalance);
-    expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
     expect(findings).toStrictEqual([expectedFinding]);
   });
+/*
 
   it('returns no findings if supplied asset increases and remains below minimumLiquidation threshold', async () => {
     // Supplied ETH increases 1% in value
