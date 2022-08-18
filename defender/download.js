@@ -115,7 +115,7 @@ function parseContractSentinel(item, notifications, autotasks) {
   }
   const eventConditions = [];
   const functionConditions = [];
-  let txConditions = '';
+  let txConditions = [];
 
   // for each notification found in the sentinel's configuration, parse the object so that it is
   // the correct format for deploying and replace the notificationId with the name of the
@@ -126,9 +126,9 @@ function parseContractSentinel(item, notifications, autotasks) {
     getConditions(condition.eventConditions, eventConditions, 'event');
     getConditions(condition.functionConditions, functionConditions, 'function');
 
-    // the txConditions should be identical across all conditions
-    if (condition.txConditions.length) {
-      [txConditions] = condition.txConditions;
+    // the txConditions will be identical across all conditions
+    if (condition.txConditions.length > 0) {
+      ({ txConditions } = condition);
     }
 
     // if a sentinel contains either an autotaskCondition or autotaskTrigger (or both), parse and
@@ -162,7 +162,7 @@ function parseContractSentinel(item, notifications, autotasks) {
     abi,
     functionConditions,
     eventConditions,
-    txCondition: txConditions,
+    txCondition: txConditions.length > 0 ? txConditions[0].expression : '',
     autotaskCondition,
     autotaskTrigger,
     ...notificationObject,
