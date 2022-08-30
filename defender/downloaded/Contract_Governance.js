@@ -116,10 +116,12 @@ async function createDiscordMessage(eventName, params, transactionHash) {
         proposalName = await getProposalTitle(id);
       }
       displayName = await getAccountDisplayName(proposer);
+      // Reference:
+      // https://discord.com/developers/docs/resources/channel#allowed-mentions-object-allowed-mentions-reference
       if (displayName === '') {
-        message = `**New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
+        message = `@here **New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
       } else {
-        message = `**New Proposal** ${proposalName} by ${displayName} ${etherscanLink}`;
+        message = `@here **New Proposal** ${proposalName} by ${displayName} ${etherscanLink}`;
       }
       message += `\nDetails: https://compound.finance/governance/proposals/${id}`;
       break;
