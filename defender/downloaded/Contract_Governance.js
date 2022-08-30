@@ -145,9 +145,9 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       if (votes.length > 18) {
         votes = votes.slice(0, votes.length - 18);
       } else {
-        // keep the most significant digit and add the appropriate
-        // number of zeros to create an accurate decimal representation
-        votes = `0.${'0'.repeat(18 - votes.length)}${votes[0]}`;
+        // do not display votes less than 1 COMP
+        console.debug(`Number of votes is less than 1 COMP, not displaying message: ${votes}`);
+        return undefined;
       }
       votes = internationalNumberFormat.format(votes);
 
@@ -235,6 +235,11 @@ exports.handler = async function (autotaskEvent) {
   let results = await Promise.allSettled(promises);
 
   const discordPromises = results.map((result) => {
+    // if the number of votes cast was less than 1 COMP, the resulting message will be undefined
+    if (result.value === undefined) {
+      // return early, do not attempt a POST request to Discord
+      return undefined;
+    }
     console.log(result.value);
     return postToDiscord(discordUrl, result.value);
   });
