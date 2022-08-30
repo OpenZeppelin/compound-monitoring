@@ -104,6 +104,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
 
   const noEntryEmoji = '⛔';
   const checkMarkEmoji = '✅';
+  const speakNoEvilEmoji = '🙊';
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
@@ -140,6 +141,8 @@ async function createDiscordMessage(eventName, params, transactionHash) {
         supportEmoji = noEntryEmoji;
       } else if (support === 1) {
         supportEmoji = checkMarkEmoji;
+      } else if (support === 2) {
+        supportEmoji = speakNoEvilEmoji; // abstain
       }
 
       if (votes.length > 18) {
