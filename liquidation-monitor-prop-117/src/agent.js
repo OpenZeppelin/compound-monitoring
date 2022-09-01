@@ -14,7 +14,7 @@ const { getAbi } = require('./utils');
 const initializeData = {};
 
 const exportDataFile = true;
-const dataFile = 'data.json';
+const dataFile = './data.json';
 const useImportedDataFile = true;
 
 const cEtherAddress = '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'.toLowerCase();
@@ -172,13 +172,12 @@ function provideInitialize(data) {
   return async function initialize() {
     // Import data from file
     if (useImportedDataFile === true) {
-      data = await fse.readJSON();
       try {
         console.log(`Importing data from ${dataFile}`);
         data = await fse.readJSON(dataFile);
         console.log('Data import completed');
-        // Assign the latestBlockNumber for the imported data to importedBlock
-        data.importedBlock = data.latestBlockNumber;
+        // Assign the latestBlockNumber for the imported data to importedBlock, if it exists
+        data.importedBlock = data?.latestBlockNumber ?? 0;
       } catch (err) {
         console.error(err);
       }
