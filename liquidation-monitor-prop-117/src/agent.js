@@ -144,6 +144,7 @@ async function getMarketBorrowers(provider, address, fromBlock, toBlock) {
 }
 
 async function getAllBorrowers(provider, comptrollerContract, fromBlock, toBlock) {
+  console.log(`Getting all logs from ${fromBlock} to ${toBlock}`);
   const borrowString = 'event Borrow(address borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows)';
   const marketAddresses = await comptrollerContract.getAllMarkets();
   const iface = new ethers.utils.Interface([borrowString]);
@@ -176,8 +177,6 @@ function provideInitialize(data) {
         console.log(`Importing data from ${dataFile}`);
         data = await fse.readJSON(dataFile);
         console.log('Data import completed');
-        // Assign the latestBlockNumber for the imported data to importedBlock, if it exists
-        data.importedBlock = data?.latestBlockNumber ?? 0;
       } catch (err) {
         console.error(err);
       }
@@ -198,11 +197,13 @@ function provideInitialize(data) {
     data.supply ??= {}; // qty of cTokens (not Tokens)
     data.borrow ??= {}; // qty of Tokens (not cTokens)
     data.tokens ??= {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
+    // Use the imported initializeBlockNumber as a starting point or use compoundDeploymentBlock
+    data.startfromBlock = data?.initializeBlockNumber ?? 7710671;
     data.newAccounts = []; // New account from transaction events
     data.totalNewAccounts = 0;
 
     const block = await data.provider.getBlock('latest');
-    const { number: latestBlockNumber, timestamp: latestBlockTimestamp } = block;
+    const { number: initializeBlockNumber, timestamp: latestBlockTimestamp } = block;
 
     //   Now minus seconds elapsed since midnight plus 1 day.
     data.nextAlertTime = latestBlockTimestamp - (latestBlockTimestamp % 86400) + 86400;
@@ -228,17 +229,16 @@ function provideInitialize(data) {
       data.provider,
     );
 
-    const compoundDeploymentBlock = 7710671;
     const borrowerAddresses = await getAllBorrowers(
       data.provider,
       data.comptrollerContract,
-      compoundDeploymentBlock,
-      latestBlockNumber,
+      data.startfromBlock,
+      initializeBlockNumber,
     );
 
     // initialize the Array of accounts with all borrower addresses
     data.newAccounts = Array.from(new Set(borrowerAddresses));
-    data.latestBlockNumber = latestBlockNumber;
+    data.initializeBlockNumber = initializeBlockNumber;
     console.log(`Finished initialization, ${data.newAccounts.length} accounts`);
   };
 }
@@ -292,6 +292,7 @@ function provideHandleBlock(data) {
       tokens,
       borrow,
       supply,
+      initializeBlockNumber,
     } = data;
 
     console.log('Initializing accounts. New accounts will get updated in the block section');
@@ -487,8 +488,15 @@ function provideHandleBlock(data) {
 
     if (exportDataFile === true) {
       console.log(`Exporting to ${dataFile}`);
+      const exportData = {
+        accounts,
+        tokens,
+        borrow,
+        supply,
+        initializeBlockNumber,
+      };
       try {
-        await fse.writeJson(dataFile, data);
+        await fse.writeJson(dataFile, exportData);
         console.log('success!');
       } catch (err) {
         console.error(err);
