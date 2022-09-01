@@ -12,6 +12,8 @@ const { getAbi } = require('./utils');
 // Stores information about each account
 const initializeData = {};
 
+const cEtherAddress = '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'.toLowerCase();
+
 // Global functions
 
 // This function will also filter previously alerted addresses.
@@ -191,10 +193,6 @@ function provideInitialize(data) {
     const {
       comptrollerAddress,
       oneInchAddress,
-      triggerLevels: {
-        maximumHealth,
-        minimumBorrowInETH,
-      },
     } = config.liquidationMonitor;
     const comptrollerABI = getAbi(config.liquidationMonitor.comptrollerABI);
     const oneInchABI = getAbi(config.liquidationMonitor.oneInchABI);
@@ -284,7 +282,7 @@ function provideHandleBlock(data) {
     console.log('Updating Balances on zero health accounts');
     const filteredAccounts = [];
     Object.entries(accounts).forEach(([currentAccount, entry]) => {
-      if (entry.health == null || entry.health === 0) {
+      if (entry.health == null || entry.health === 0 || entry.health === undefined) {
         filteredAccounts.push(currentAccount);
         // Zero account balances
         Object.values(supply).forEach((tokenEntry) => {
@@ -301,6 +299,8 @@ function provideHandleBlock(data) {
     let currentAccounts;
     let offset = 1000;
     let promises;
+    const accountsToRemove = [];
+    console.log(`Number of accounts before filtering: ${Object.keys(accounts).length}`);
     for (let i = 0; i < filteredAccounts.length; i += offset) {
       console.log(`Checking account indexes: ${i} to ${i + offset}`);
 
@@ -312,18 +312,37 @@ function provideHandleBlock(data) {
 
       promises = currentAccounts.map(async (currentAccount) => {
         const tempAssets = await comptrollerContract.getAssetsIn(currentAccount);
-        if (accounts[currentAccount] === undefined) {
-          accounts[currentAccount] = {};
+        try {
+          accounts[currentAccount].assetsIn = tempAssets.map((asset) => {
+            const address = asset.toLowerCase();
+            foundTokens.push(address);
+            return address;
+          });
+        } catch (error) {
+          console.error(`Issue with currentAccount: ${currentAccount}`);
+          throw error;
         }
-        accounts[currentAccount].assetsIn = tempAssets.map((asset) => {
-          const address = asset.toLowerCase();
-          foundTokens.push(address);
-          return address;
-        });
+
+        // create an Array of addresses for accounts that do not list cEther as an asset
+        if (accounts[currentAccount].assetsIn.includes(cEtherAddress) === false) {
+          accountsToRemove.push(currentAccount);
+        }
       });
       // eslint-disable-next-line no-await-in-loop
       await Promise.all(promises);
     }
+
+    // filter out accounts that do not have cEther listed as an asset
+    accountsToRemove.forEach((currentAccount) => {
+      delete accounts[currentAccount];
+      const index = filteredAccounts.indexOf(currentAccount);
+      if (index !== -1) {
+        // remove the element by modifying the Array in place
+        filteredAccounts.splice(index, 1);
+      }
+    });
+
+    console.log(`Number of accounts after filtering: ${Object.keys(accounts).length}`);
 
     // Use Array to Set to Array to remove duplicates
     const filteredTokens = Array.from(new Set(foundTokens));
@@ -399,7 +418,6 @@ function provideHandleBlock(data) {
         .dividedBy(exchangeDecimalsMult).dividedBy(entry.tokenDecimalsMult);
     }));
 
-    let numNonBorrowers = 0;
     console.log('Calculating health on all accounts');
     Object.keys(accounts).forEach((account) => {
       let borrowBalance = new BigNumber(0);
@@ -430,8 +448,8 @@ function provideHandleBlock(data) {
       });
 
       // Remove non-borrowers
+      // By definition, they cannot be liquidated
       if (borrowBalance.eq(0)) {
-        numNonBorrowers += 1;
         delete accounts[account];
       } else {
         accounts[account].supplyBalance = supplyBalance;
@@ -446,7 +464,6 @@ function provideHandleBlock(data) {
 
     console.log(`Total number of accounts: ${Object.keys(accounts).length}`);
     console.log(`Number of low health accounts: ${lowHealthAccounts.length}`);
-    console.log(`Number of non-borrowers removed: ${numNonBorrowers}`);
 
     /*
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
