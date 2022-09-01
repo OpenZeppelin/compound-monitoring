@@ -2,25 +2,29 @@
 
 ## Description
 
-This bot detects when an account on Compound is able to be liquidated.
+This Bot is a modified version of the Compound Liquidatable Positions Monitor Bot. This Bot checks for all accounts on Compound that have cEther listed as an asset and have a non-zero borrow amount.
 
-## Optimizations
+## Initialization
 
-- Although there are ~400k accounts using Compound, limiting the search to 1 wei ETH borrowed reduces the tracked accounts down to just over 9000. A nearly 98% reduction in assets being tracked.
-- Lowering the maxHealth setting will further reduce this list.
-- Initial account information can be obtained from Compound API.
-- Account balances only need to be updated/added if they perform a negative health action such as removing collateral or borrowing tokens.
-- Tracking qty of cTokens for supplied is preferred because it is static and the value includes interest earned per block.
-- Likewise, qty of Tokens for borrowed is preferred because borrowed tokens do not earn interest.
-### To-Do
-- Initial import can be done from onchain activity.
+- This Bot checks for all Borrow events that have ever occurred on the Compound protocol (uses eth_getLogs).
+- Borrow events are used to determine which accounts have performed borrows.
+- Due to the number of Borrow events that have occurred, the initialization of this Bot may take approximately 4-5 minutes.
+
+## Operation
+
+- Transactions are checked for Borrow and MarketExited events. These events indicate that an account's health factor may have been negatively affected and should be recalculated. The account is then added to an Array for calculation during the block handler execution.
+- The block handler will calculate the health factor for all accounts that have not had it calculated yet. For the first execution of the block handler, this will be for ALL accounts found in the initialization step.
+- For subsequent executions of the block handler, the number of accounts that need to have their health factor calculated should be very small (likely zero for most blocks).
+- Accounts that do not list cEther are removed.
 
 ### Limitations
+
 - The supplied tokens are tracked accurately and gain value over time. The borrowed tokens have a variable interest rate that changes per block, which is not accounted for in this bot implementation. To compensate for the borrowed skew, the `lowHealthThreshold` in the `bot-config.json` can be increased. Additionally, restarting the bot will pull the most current account balances.
 
 ## Supported Chains
 
 - Ethereum
+
 ## Alerts
 
 <!-- -->
