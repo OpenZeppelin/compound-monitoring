@@ -5,12 +5,17 @@ const {
   ethers,
   getEthersBatchProvider,
 } = require('forta-agent');
+const fse = require('fs-extra');
 const BigNumber = require('bignumber.js');
 const config = require('../bot-config.json');
 const { getAbi } = require('./utils');
 
 // Stores information about each account
 const initializeData = {};
+
+const exportDataFile = true;
+const dataFile = 'data.json';
+const useImportedDataFile = true;
 
 const cEtherAddress = '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'.toLowerCase();
 
@@ -165,6 +170,20 @@ async function getAllBorrowers(provider, comptrollerContract, fromBlock, toBlock
 // Initializes data required for handler
 function provideInitialize(data) {
   return async function initialize() {
+    // Import data from file
+    if (useImportedDataFile === true) {
+      data = await fse.readJSON();
+      try {
+        console.log(`Importing data from ${dataFile}`);
+        data = await fse.readJSON(dataFile);
+        console.log('Data import completed');
+        // Assign the latestBlockNumber for the imported data to importedBlock
+        data.importedBlock = data.latestBlockNumber;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     // Assign configurable fields
     data.processingBlock = false;
     data.protocolName = config.protocolName;
@@ -175,10 +194,11 @@ function provideInitialize(data) {
     data.lowHealthThreshold = config.liquidationMonitor.triggerLevels.lowHealthThreshold;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersBatchProvider();
-    data.accounts = {}; // Health of all accounts, calcHealth, lastUpdated, [assetsIn addresses]
-    data.supply = {}; // qty of cTokens (not Tokens)
-    data.borrow = {}; // qty of Tokens (not cTokens)
-    data.tokens = {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
+    // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_nullish_assignment
+    data.accounts ??= {}; // Health of all accounts, calcHealth, lastUpdated, [assetsIn addresses]
+    data.supply ??= {}; // qty of cTokens (not Tokens)
+    data.borrow ??= {}; // qty of Tokens (not cTokens)
+    data.tokens ??= {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
     data.newAccounts = []; // New account from transaction events
     data.totalNewAccounts = 0;
 
@@ -258,6 +278,7 @@ function provideHandleTransaction(data) {
 }
 
 function provideHandleBlock(data) {
+  // eslint-disable-next-line no-unused-vars
   return async function handleBlock(blockEvent) {
     if (data.processingBlock === true) {
       return [];
@@ -465,6 +486,21 @@ function provideHandleBlock(data) {
     console.log(`Total number of accounts: ${Object.keys(accounts).length}`);
     console.log(`Number of low health accounts: ${lowHealthAccounts.length}`);
 
+    if (exportDataFile === true) {
+      console.log(`Exporting to ${dataFile}`);
+      try {
+        await fse.writeJson(dataFile, data);
+        console.log('success!');
+      } catch (err) {
+        console.error(err);
+      }
+      console.log('Finished writing');
+    }
+
+    await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
+      console.log(`${currentAccount} has a health of ${accounts[currentAccount].health}`);
+      // Should we re-scan accounts that are near liquidation? If so, change their health to zero
+    }));
     /*
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
       // Get Account Liquidity
