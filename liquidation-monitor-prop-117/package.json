@@ -26,8 +26,8 @@
     "axios": "0.27.2",
     "bignumber.js": "9.0.2",
     "forta-agent": "0.1.9",
-    "fs-extra": "^10.1.0",
-    "nodemon": "^2.0.19"
+    "fs-extra": "10.1.0",
+    "nodemon": "2.0.19"
   },
   "devDependencies": {
     "eslint": "8.16.0",

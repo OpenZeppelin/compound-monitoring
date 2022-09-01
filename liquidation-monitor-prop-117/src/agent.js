@@ -13,7 +13,7 @@ const { getAbi } = require('./utils');
 // Stores information about each account
 const initializeData = {};
 
-const exportDataFile = true;
+const exportDataFile = false;
 const dataFile = './data.json';
 const useImportedDataFile = true;
 
@@ -172,10 +172,14 @@ async function getAllBorrowers(provider, comptrollerContract, fromBlock, toBlock
 function provideInitialize(data) {
   return async function initialize() {
     // Import data from file
+    let temp;
     if (useImportedDataFile === true) {
       try {
         console.log(`Importing data from ${dataFile}`);
-        data = await fse.readJSON(dataFile);
+        temp = await fse.readJSON(dataFile);
+        Object.entries(temp).forEach(([key, value]) => {
+          data[key] = value;
+        });
         console.log('Data import completed');
       } catch (err) {
         console.error(err);
@@ -196,7 +200,38 @@ function provideInitialize(data) {
     data.accounts ??= {}; // Health of all accounts, calcHealth, lastUpdated, [assetsIn addresses]
     data.supply ??= {}; // qty of cTokens (not Tokens)
     data.borrow ??= {}; // qty of Tokens (not cTokens)
-    data.tokens ??= {}; // each cToken's address, symbol, contract, ratio, price, lastUpdatePrice
+    data.tokens ??= {};
+
+    if (useImportedDataFile === true) {
+      // reestablish token contracts
+      let foundTokens = [];
+      Object.values(data.accounts).forEach((entry) => {
+        if (entry.assetsIn !== undefined && entry.assetsIn.length > 0) {
+          foundTokens.push(...entry.assetsIn);
+        }
+      });
+      foundTokens = Array.from(new Set(foundTokens));
+      data.tokens = {};
+      console.log('Initializing token objects');
+      await Promise.all(foundTokens.map(async (token) => {
+        await verifyToken(data, token);
+      }));
+
+      // reestablish BigNumber values
+      Object.values(data.supply).forEach((entry) => {
+        Object.entries(entry).forEach(([accountAddress, value]) => {
+          entry[accountAddress] = new BigNumber(value);
+        });
+      });
+
+      // reestablish BigNumber values
+      Object.values(data.borrow).forEach((entry) => {
+        Object.entries(entry).forEach(([accountAddress, value]) => {
+          entry[accountAddress] = new BigNumber(value);
+        });
+      });
+    }
+
     // Use the imported initializeBlockNumber as a starting point or use compoundDeploymentBlock
     data.startfromBlock = data?.initializeBlockNumber ?? 7710671;
     data.newAccounts = []; // New account from transaction events
@@ -504,10 +539,31 @@ function provideHandleBlock(data) {
       console.log('Finished writing');
     }
 
+    // const e18Multiplier = new BigNumber(10).pow(18);
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
       console.log(`${currentAccount} has a health of ${accounts[currentAccount].health}`);
+      console.log(`\tand a borrow balance of ${accounts[currentAccount].borrowBalance}`);
+      console.log(`\tand a supply balance of ${accounts[currentAccount].supplyBalance}`);
       // Should we re-scan accounts that are near liquidation? If so, change their health to zero
     }));
+
+    const tempAddress = '0x68995e1d2830c8d3c5c5434eecdf286589dbedd9';
+    // const tempAddress = '0xb985c243e9a2a4e7f60514de536fb3dbe31fe577';
+    // const tempAddress = '0x208f27ba5003f330295174c163839f3249ea8da3';
+    const tempAccount = accounts[tempAddress];
+    tempAccount.assetsIn.forEach((tokenAddress) => {
+      console.log(`token: ${tokenAddress}`);
+      if (supply[tokenAddress][tempAddress] !== undefined) {
+        console.log(`supply: ${supply[tokenAddress][tempAddress]}`);
+      }
+      if (borrow[tokenAddress][tempAddress] !== undefined) {
+        console.log(`borrow: ${borrow[tokenAddress][tempAddress]}`);
+      }
+    });
+    console.log(tempAccount.assetsIn);
+    console.log(tempAccount.supplyBalance.toString());
+    console.log(tempAccount.borrowBalance.toString());
+    console.log(tempAccount.health.toString());
     /*
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
       // Get Account Liquidity
