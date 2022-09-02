@@ -1,12 +1,5 @@
-# Build stage: obfuscate Javascript (optional)
-# FROM node:14.15.5-alpine as builder
-# WORKDIR /app
-# COPY . .
-# RUN npm install -g javascript-obfuscator
-# RUN javascript-obfuscator ./src --output ./dist --split-strings true --split-strings-chunk-length 3
-
 # Final stage: install production dependencies
-FROM node:12-alpine
+FROM node:16.17.0-slim
 ENV NODE_ENV=production
 LABEL "network.forta.settings.agent-logs.enable"="true"
 WORKDIR /app
