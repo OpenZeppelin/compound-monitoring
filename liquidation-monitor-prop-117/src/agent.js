@@ -194,6 +194,7 @@ function provideInitialize(data) {
     data.alert = config.liquidationMonitor.alert;
     data.minimumLiquidationInUSD = config.liquidationMonitor.triggerLevels.minimumLiquidationInUSD;
     data.lowHealthThreshold = config.liquidationMonitor.triggerLevels.lowHealthThreshold;
+    data.minimumBorrowInETH = config.liquidationMonitor.triggerLevels.minimumBorrowInETH;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersBatchProvider();
     // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_nullish_assignment
@@ -427,7 +428,8 @@ function provideHandleBlock(data) {
             .dividedBy(tokens[currentToken].cTokenDecimalsMult);
 
           // update the borrow balance
-          borrow[currentToken][currentAccount] = new BigNumber(snapshot[2].toString());
+          borrow[currentToken][currentAccount] = new BigNumber(snapshot[2].toString())
+            .dividedBy(tokens[currentToken].tokenDecimalsMult);
         });
         await Promise.all(innerPromises);
       });
@@ -516,10 +518,11 @@ function provideHandleBlock(data) {
 
     const lowHealthAccounts = Object.keys(accounts).filter((key) => (
       accounts[key].health.lt(data.lowHealthThreshold)
+        && accounts[key].borrowBalance.gt(data.minimumBorrowInETH)
     ));
 
     console.log(`Total number of accounts: ${Object.keys(accounts).length}`);
-    console.log(`Number of low health accounts: ${lowHealthAccounts.length}`);
+    console.log(`Number of low health accounts above ${data.minimumBorrowInETH} ETH: ${lowHealthAccounts.length}`);
 
     if (exportDataFile === true) {
       console.log(`Exporting to ${dataFile}`);
@@ -541,15 +544,17 @@ function provideHandleBlock(data) {
 
     // const e18Multiplier = new BigNumber(10).pow(18);
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
-      console.log(`${currentAccount} has a health of ${accounts[currentAccount].health}`);
-      console.log(`\tand a borrow balance of ${accounts[currentAccount].borrowBalance}`);
-      console.log(`\tand a supply balance of ${accounts[currentAccount].supplyBalance}`);
+      const accountInfo = accounts[currentAccount];
+
+      console.log(`${currentAccount} has a health of ${accountInfo.health}`);
+      console.log(`\tand a borrow balance of ${accountInfo.borrowBalance}`);
+      console.log(`\tand a supply balance of ${accountInfo.supplyBalance}`);
       // Should we re-scan accounts that are near liquidation? If so, change their health to zero
     }));
 
-    const tempAddress = '0x68995e1d2830c8d3c5c5434eecdf286589dbedd9';
+    // const tempAddress = '0x68995e1d2830c8d3c5c5434eecdf286589dbedd9';
     // const tempAddress = '0xb985c243e9a2a4e7f60514de536fb3dbe31fe577';
-    // const tempAddress = '0x208f27ba5003f330295174c163839f3249ea8da3';
+    const tempAddress = '0x208f27ba5003f330295174c163839f3249ea8da3';
     const tempAccount = accounts[tempAddress];
     tempAccount.assetsIn.forEach((tokenAddress) => {
       console.log(`token: ${tokenAddress}`);

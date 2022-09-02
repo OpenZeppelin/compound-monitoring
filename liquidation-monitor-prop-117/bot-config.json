@@ -11,7 +11,7 @@
       "maximumHealth": 100,
       "minimumBorrowInETH": 0.1,
       "minimumLiquidationInUSD": 400,
-      "lowHealthThreshold": 1.03
+      "lowHealthThreshold": 1.02
     },
     "alert": {
       "type": "Info",
