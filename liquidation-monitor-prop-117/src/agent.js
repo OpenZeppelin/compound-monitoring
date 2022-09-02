@@ -28,40 +28,60 @@ function createAlert(
   protocolAbbreviation,
   type,
   severity,
-  borrowerAddress,
-  liquidationAmount,
-  shortfallAmount,
-  healthFactor,
+  lowHealthAccounts,
+  supplyBalancesETH,
+  borrowBalancesETH,
+  supplyBalancesUSD,
+  borrowBalancesUSD,
+  healthFactors,
   currentTimestamp,
   dataObject,
 ) {
   // Check the alertTimer
   if (currentTimestamp >= dataObject.nextAlertTime) {
-    // Add 1 day to the nextAlertTime and remove the previous alerted accounts.
-    const oneDay = 86400;
-    dataObject.nextAlertTime += oneDay;
+    // Add 1 hour to the nextAlertTime and remove the previous alerted accounts.
+    const oneHour = 3600;
+    dataObject.nextAlertTime += oneHour;
     dataObject.alertedAccounts = [];
   }
-  // Skip if the account has already been alerted in the last 24 hours.
-  if (dataObject.alertedAccounts.includes(borrowerAddress)) {
+
+  let index = 0;
+  while (index < lowHealthAccounts.length) {
+    if (dataObject.alertedAccounts.includes(lowHealthAccounts[index])) {
+      lowHealthAccounts.splice(index, 1);
+      supplyBalancesETH.splice(index, 1);
+      borrowBalancesETH.splice(index, 1);
+      supplyBalancesUSD.splice(index, 1);
+      borrowBalancesUSD.splice(index, 1);
+      healthFactors.splice(index, 1);
+    } else {
+      index += 1;
+    }
+  }
+
+  if (lowHealthAccounts.length === 0) {
     return null;
   }
 
   // Add account to the alertedAccounts array
-  dataObject.alertedAccounts.push(borrowerAddress);
+  dataObject.alertedAccounts.push(...lowHealthAccounts);
+
   return Finding.fromObject({
-    name: `${protocolName} Liquidation Threshold Alert`,
-    description: `The address ${borrowerAddress} has dropped below the liquidation threshold. `
-      + `The account may be liquidated for: $${liquidationAmount} USD`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-LIQUIDATION-THRESHOLD`,
+    name: `${protocolName} Liquidation Threshold Alert - Accounts Affected by Proposal 117`,
+    description: `${lowHealthAccounts.length} accounts with cETH asset listed, with health factors below ${dataObject.lowHealthThreshold}`
+      + `, and have borrowed the equivalent of at least ${dataObject.minimumBorrowInETH} ETH.`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-LIQUIDATION-THRESHOLD-PROP117`,
     type: FindingType[type],
     severity: FindingSeverity[severity],
     protocol: protocolName,
+    addresses: lowHealthAccounts,
     metadata: {
-      borrowerAddress,
-      liquidationAmount,
-      shortfallAmount,
-      healthFactor,
+      addresses: lowHealthAccounts.toString(),
+      supplyBalancesETH: supplyBalancesETH.toString(),
+      borrowBalancesETH: borrowBalancesETH.toString(),
+      supplyBalancesUSD: supplyBalancesUSD.toString(),
+      borrowBalancesUSD: borrowBalancesUSD.toString(),
+      healthFactors: healthFactors.toString(),
     },
   });
 }
@@ -545,8 +565,12 @@ function provideHandleBlock(data) {
       console.log('Finished writing');
     }
 
-    // const e18Multiplier = new BigNumber(10).pow(18);
-    await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
+    const supplyBalancesUSD = [];
+    const borrowBalancesUSD = [];
+    const supplyBalancesETH = [];
+    const borrowBalancesETH = [];
+    const healthFactors = [];
+    lowHealthAccounts.forEach((currentAccount) => {
       const accountInfo = accounts[currentAccount];
       // Prices from DAI
       const usdAddress = '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643'.toLowerCase();
@@ -554,86 +578,32 @@ function provideHandleBlock(data) {
       const borrowUSD = accountInfo.borrowBalance.dividedBy(usdRate).integerValue();
       const supplyUSD = accountInfo.supplyBalance.dividedBy(usdRate).integerValue();
 
-      console.log(`${currentAccount} has a health of ${accountInfo.health}`);
-      console.log(`\tand a borrow balance of ${accountInfo.borrowBalance.dp(3)} ETH ($${borrowUSD})`);
-      console.log(`\tand a supply balance of ${accountInfo.supplyBalance.dp(3)} ETH ($${supplyUSD})`);
-      // Should we re-scan accounts that are near liquidation? If so, change their health to zero
-    }));
-
-    /* Troubleshooting
-    // const tempAddress = '0x68995e1d2830c8d3c5c5434eecdf286589dbedd9';
-    // const tempAddress = '0xb985c243e9a2a4e7f60514de536fb3dbe31fe577';
-    const tempAddress = '0x208f27ba5003f330295174c163839f3249ea8da3';
-    const tempAccount = accounts[tempAddress];
-    tempAccount.assetsIn.forEach((tokenAddress) => {
-      console.log(`token: ${tokenAddress}`);
-      if (supply[tokenAddress][tempAddress] !== undefined) {
-        console.log(`supply: ${supply[tokenAddress][tempAddress]}`);
-      }
-      if (borrow[tokenAddress][tempAddress] !== undefined) {
-        console.log(`borrow: ${borrow[tokenAddress][tempAddress]}`);
-      }
+      supplyBalancesETH.push(accountInfo.supplyBalance.toString());
+      borrowBalancesETH.push(accountInfo.borrowBalance.toString());
+      supplyBalancesUSD.push(supplyUSD.toString());
+      borrowBalancesUSD.push(borrowUSD.toString());
+      healthFactors.push(accountInfo.health.toString());
     });
-    console.log(tempAccount.assetsIn);
-    console.log(tempAccount.supplyBalance.toString());
-    console.log(tempAccount.borrowBalance.toString());
-    console.log(tempAccount.health.toString());
-    */
 
-    /*
-    await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
-      // Get Account Liquidity
+    const newFinding = createAlert(
+      data.developerAbbreviation,
+      data.protocolName,
+      data.protocolAbbreviation,
+      data.alert.type,
+      data.alert.severity,
+      lowHealthAccounts,
+      supplyBalancesETH,
+      borrowBalancesETH,
+      supplyBalancesUSD,
+      borrowBalancesUSD,
+      healthFactors,
+      blockEvent.block.timestamp,
+      data,
+    );
 
-      // "Account Liquidity represents the USD value borrow-able by a user, before it reaches
-      //   liquidation. Users with a shortfall(negative liquidity) are subject to liquidation,
-      //   and can’t withdraw or borrow assets until Account Liquidity is positive again."
-
-      // "For each market the user has entered into, their supplied balance is multiplied by the
-      //   market’s collateral factor, and summed; borrow balances are then subtracted, to equal
-      //   Account Liquidity.Borrowing an asset reduces Account Liquidity for each USD borrowed;
-      //   withdrawing an asset reduces Account Liquidity by the asset’s collateral factor times
-      //   each USD withdrawn."
-      // Ref: https://compound.finance/docs/comptroller#account-liquidity
-      const liquidity = await comptrollerContract.getAccountLiquidity(currentAccount);
-      // Convert Ethers BigNumber to JS BigNumber and reduce 1e18 integer to decimal
-      const e18Multiplier = new BigNumber(10).pow(18);
-      const shortfallUSD = new BigNumber(liquidity[2].toString()).dividedBy(e18Multiplier);
-
-      // There are situations where the shortfall amount is greater than the supplied amount.
-      //   Therefore, it is not possible to liquidate the entire amount. Example: An account
-      //   has $10 of value supplied and $100 borrowed. Shortfall is $90. Since the supplied value
-      //   is less than the shortfall of $90. Only the supplied amount of $10 can be liquidated.
-      // The minimum of shortfall vs supplied will be the liquidationAmount.
-      // Given: "Supply / Borrow = HealthFactor" and "Borrow - Supply = Shortfall", then supply can
-      //   be expressed as: "Supply = Shortfall / ( 1 - HealthFactor) - Shortfall"
-      const supplyUSD = new BigNumber(
-        shortfallUSD.dividedBy(new BigNumber(1).minus(accounts[currentAccount].health)),
-      ).minus(shortfallUSD);
-      const liquidationAmount = BigNumber.minimum(shortfallUSD, supplyUSD);
-
-      // Create a finding if the liquidatable amount is below the threshold
-      // Shorten metadata to 2 decimal places
-      if (liquidationAmount.isGreaterThan(data.minimumLiquidationInUSD)) {
-        const newFinding = createAlert(
-          data.developerAbbreviation,
-          data.protocolName,
-          data.protocolAbbreviation,
-          data.alert.type,
-          data.alert.severity,
-          currentAccount,
-          liquidationAmount.dp(2).toString(),
-          shortfallUSD.dp(2).toString(),
-          accounts[currentAccount].health.dp(2).toString(),
-          blockEvent.block.timestamp,
-          data,
-        );
-        // Check against no finding (undefined) and against filtered findings (null)
-        if (newFinding !== undefined && newFinding !== null) {
-          findings.push(newFinding);
-        }
-      }
-    }));
-    */
+    if (newFinding !== null) {
+      findings.push(newFinding);
+    }
 
     data.processingBlock = false;
     return findings;
