@@ -69,6 +69,7 @@ async function createCTokenAlert(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
   emojiString,
 ) {
   const eventArgs = extractEventArgs(args);
@@ -84,6 +85,7 @@ async function createCTokenAlert(
       contractAddress,
       eventName,
       usdValue,
+      protocolVersion,
       ...eventArgs,
     },
   });
@@ -147,6 +149,8 @@ function provideInitialize(data) {
       Comptroller: comptroller,
       cTokens,
     } = config.contracts;
+    // Comptroller and cTokens contracts are only available in Compound V2
+    data.protocolVersion = '2';
 
     // from the Comptroller contract, get all of the cTokens
     const comptrollerAbi = getAbi(comptroller.abiFile);
@@ -194,6 +198,7 @@ function provideHandleTransaction(data) {
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     } = data;
 
     // first check that no additional cTokens have been added
@@ -245,6 +250,7 @@ function provideHandleTransaction(data) {
         protocolName,
         protocolAbbreviation,
         developerAbbreviation,
+        protocolVersion,
         emojiString,
       );
       return promise;

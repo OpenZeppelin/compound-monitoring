@@ -12,6 +12,7 @@ const mockMetadata = {
   underlyingAssetAddress: '0x6000000000000000000000000000000000000000',
   eventArgs_0: '0x9000000000000000000000000000000000000000',
   eventArgs_implementation: '0x9000000000000000000000000000000000000000',
+  protocolVersion: '2',
 };
 
 // mock the axios package
@@ -130,7 +131,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🆙 Underlying asset for the **cETH** cToken contract was upgraded"}';
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🆙 Underlying asset for the **cETH** cToken contract was upgraded (Compound v2)"}';
     const expectedLastCall = {
       url, headers, method, data,
     };

@@ -137,6 +137,7 @@ describe('monitor emitted events', () => {
     let developerAbbreviation;
     let protocolAbbreviation;
     let protocolName;
+    const protocolVersion = '2';
     let handleTransaction;
     let mockTxEvent;
     let iface;
@@ -317,6 +318,7 @@ describe('monitor emitted events', () => {
           contractAddress: validContractAddress,
           eventName: eventInConfig.name,
           usdValue: expectedValue,
+          protocolVersion,
           ...expectedMetaData,
         },
       })];
@@ -368,6 +370,7 @@ describe('monitor emitted events', () => {
           contractAddress: validContractAddress,
           eventName: eventInConfig.name,
           usdValue: expectedValue,
+          protocolVersion,
           ...expectedMetaData,
         },
       })];
@@ -445,6 +448,7 @@ describe('monitor emitted events', () => {
           contractAddress: newValidContractAddress,
           eventName: eventInConfig.name,
           usdValue: expectedValue,
+          protocolVersion,
           ...expectedMetaData,
         },
       })];
