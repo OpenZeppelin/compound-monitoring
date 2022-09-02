@@ -2,20 +2,22 @@
 
 ## Description
 
-This Bot is a modified version of the Compound Liquidatable Positions Monitor Bot. This Bot checks for all accounts on Compound that have cEther listed as an asset and have a non-zero borrow amount.
+This Bot is a modified version of the Compound Liquidatable Positions Monitor Bot. This Bot checks for all accounts on Compound that have:
+- cEther listed as an asset
+- A borrow amount greater than a threshold (set to the equivalent of `0.2 ETH` in `bot-config.json`)
+- A health factor below a threshold (set to `1.00` in `bot-config.json`)
 
 ## Initialization
 
-- This Bot checks for all Borrow events that have ever occurred on the Compound protocol (uses eth_getLogs).
-- Borrow events are used to determine which accounts have performed borrows.
-- Due to the number of Borrow events that have occurred, the initialization of this Bot may take approximately 4-5 minutes.
+- This Bot uses a data file that was compiled locally, containing data for all Compound accounts up to a particular block
+- When the Bot starts, it retrieves all logs that contain Borrow events from the block used in the data file until the current block
 
 ## Operation
 
 - Transactions are checked for Borrow and MarketExited events. These events indicate that an account's health factor may have been negatively affected and should be recalculated. The account is then added to an Array for calculation during the block handler execution.
-- The block handler will calculate the health factor for all accounts that have not had it calculated yet. For the first execution of the block handler, this will be for ALL accounts found in the initialization step.
-- For subsequent executions of the block handler, the number of accounts that need to have their health factor calculated should be very small (likely zero for most blocks).
-- Accounts that do not list cEther are removed.
+- The block handler will retrieve all account information for accounts the were found from recent Borrow events.
+- For any accounts found in the data file, all account information is already present, up to the block when that data file was created.
+- For all account, whether from the data file or newly discovered, the block handler will calculate the health factor.
 
 ### Limitations
 
@@ -28,22 +30,8 @@ This Bot is a modified version of the Compound Liquidatable Positions Monitor Bo
 ## Alerts
 
 <!-- -->
-- AE-COMP-LIQUIDATION-THRESHOLD
-  - Fired when an account on Compound has a liquidatable position due to price changes or other change in health factor.
-  - Severity is configurable in `agent-config.json`
-  - Type is configurable in `agent-config.json`
-  - Metadata field contains the borrower's address, liquidatable amount and total shortfall amount.
-
-## Autotask
-
-This Autotask sends alerts from Openzeppelin's Defender Forta Sentinels to Compound's Discord channel.
-
-### Testing
-
-The Autotask files contain code to facilitate development and testing of OpenZeppelin Defender Autotasks.
-
-Rather than creating Autotask scripts in the Defender Web App and then waiting for appropriate blockchain events to trigger a Forta Sentinel, this code allows a developer to specify a mocked finding alert. Those alerts are then fed directly into the Autotask in the same format that they would have if they were occurring live.
-
-### Autotask Setup
-- Create a .env file that contains the name of your discord webhook and the URL for it:
-  - ex.) `discordUrl = "discord_webhook_url"`
+- AE-COMP-LIQUIDATION-THRESHOLD-PROP117
+  - Fired when an account on Compound has a liquidatable position where the borrow amount is above a threshold and the account cannot currently be liquidated due to Proposal 117
+  - Severity is configurable in `bot-config.json`
+  - Type is configurable in `bot-config.json`
+  - Metadata field contains data for all accounts that meet the criteria

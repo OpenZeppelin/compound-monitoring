@@ -212,10 +212,8 @@ function provideInitialize(data) {
     data.protocolAbbreviation = config.protocolAbbreviation;
     data.developerAbbreviation = config.developerAbbreviation;
     data.alert = config.liquidationMonitor.alert;
-    data.minimumLiquidationInUSD = config.liquidationMonitor.triggerLevels.minimumLiquidationInUSD;
     data.lowHealthThreshold = config.liquidationMonitor.triggerLevels.lowHealthThreshold;
     data.minimumBorrowInETH = config.liquidationMonitor.triggerLevels.minimumBorrowInETH;
-    data.minimumHealth = config.liquidationMonitor.triggerLevels.minimumHealth;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersBatchProvider();
     // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_nullish_assignment
@@ -539,12 +537,11 @@ function provideHandleBlock(data) {
 
     const lowHealthAccounts = Object.keys(accounts).filter((key) => (
       accounts[key].health.lt(data.lowHealthThreshold)
-      && accounts[key].health.gt(data.minimumHealth)
       && accounts[key].borrowBalance.gt(data.minimumBorrowInETH)
     ));
 
     console.log(`Total number of accounts: ${Object.keys(accounts).length}`);
-    console.log(`Number of accounts between ${data.lowHealthThreshold} and ${data.minimumHealth} `
+    console.log(`Number of accounts below ${data.lowHealthThreshold} `
       + `health with at least ${data.minimumBorrowInETH} ETH borrowed: ${lowHealthAccounts.length}`);
 
     if (exportDataFile === true) {
