@@ -37,6 +37,42 @@ function getRandomInt(min, max) {
   return Math.floor((Math.random() * (max - min)) + min);
 }
 
+async function postToSlack(slackWebhook, message) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+
+  const body = {
+    text: message,
+  };
+
+  const slackObject = {
+    url: slackWebhook,
+    method: 'post',
+    headers,
+    data: body,
+  };
+
+  let response;
+  try {
+    // perform the POST request
+    response = await axios(slackObject);
+  } catch (err) {
+    if (err.response && err.response.status === 429) {
+      // rate-limited, retry
+      // after waiting a random amount of time between 2 and 120 seconds
+      const delay = getRandomInt(2000, 120000);
+      // eslint-disable-next-line no-promise-executor-return
+      const promise = new Promise((resolve) => setTimeout(resolve, delay));
+      await promise;
+      response = await axios(slackObject);
+    } else {
+      throw err;
+    }
+  }
+  return response;
+}
+
 async function postToDiscord(discordWebhook, message) {
   const headers = {
     'Content-Type': 'application/json',
@@ -255,9 +291,16 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { Proposal117DiscordUrl: discordUrl } = secrets;
+  const {
+    Proposal117DiscordUrl: discordUrl,
+    Proposal117SlackUrl: slackUrl,
+  } = secrets;
   if (discordUrl === undefined) {
     throw new Error('discordUrl undefined');
+  }
+
+  if (slackUrl === undefined) {
+    throw new Error('slackUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
@@ -351,7 +394,8 @@ exports.handler = async function (autotaskEvent) {
     // craft the Discord message that will provide account information for review
     // construct the Etherscan transaction link
     const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-    let message = `${etherscanLink} ⚠️⚠️⚠️ Account entered cEther market: ${accountAddress}\n`
+    const slackEtherscanLink = `<https://etherscan.io/tx/${transactionHash}|TX>`;
+    let message = `⚠️⚠️⚠️ Account entered cEther market: ${accountAddress}\n`
       + `\tHealth factor: ${results.health}\n`
       + `\tTotal Borrows: ${results.borrowBalance} ETH\n`
       + `\tTotal Supply : ${results.supplyBalance} ETH\n`
@@ -372,7 +416,10 @@ exports.handler = async function (autotaskEvent) {
     message += details;
 
     console.debug(`${message}`);
-    return postToDiscord(discordUrl, `${message}`);
+
+    await postToSlack(slackUrl, `${slackEtherscanLink} ${message}`);
+
+    return postToDiscord(discordUrl, `${etherscanLink} ${message}`);
   });
 
   // wait for the promises to settle
