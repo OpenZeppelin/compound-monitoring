@@ -1,7 +1,7 @@
 {
   "name": "forta-compound-finance-liquidation-monitor-prop-117",
   "version": "0.0.1",
-  "description": "Forta Bot that monitors Compound Finance for positions that can be liquidated, accounting for Proposal 117 issue",
+  "description": "Forta Bot that monitors Compound Finance for positions that could be liquidated, if not for Proposal 117 issue",
   "chainIds": [
     1
   ],
