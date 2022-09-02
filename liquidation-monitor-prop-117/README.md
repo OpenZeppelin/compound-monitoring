@@ -1,4 +1,4 @@
-# Compound Liquidation Monitor
+# Compound Liquidation Monitor - Accounts Affected by Proposal 117
 
 ## Description
 
