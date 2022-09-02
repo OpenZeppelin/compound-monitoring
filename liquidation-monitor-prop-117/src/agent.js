@@ -343,6 +343,7 @@ function provideHandleTransaction(data) {
 function provideHandleBlock(data) {
   // eslint-disable-next-line no-unused-vars
   return async function handleBlock(blockEvent) {
+    console.log(`Findings queue length at start of block handler: ${data.findingsQueue.length}`);
     if (data.processingBlock === true) {
       if (data.findingsQueue.length > 0) {
         return [data.findingsQueue.shift()];
@@ -605,6 +606,7 @@ function provideHandleBlock(data) {
       data.findingsQueue.push(...newFindings);
     }
 
+    console.log(`Findings queue length before returning: ${data.findingsQueue.length}`);
     data.processingBlock = false;
     if (data.findingsQueue.length > 0) {
       console.log('Returning findings from queue');
