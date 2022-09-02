@@ -66,24 +66,32 @@ function createAlert(
   // Add account to the alertedAccounts array
   dataObject.alertedAccounts.push(...lowHealthAccounts);
 
-  return Finding.fromObject({
-    name: `${protocolName} Liquidation Threshold Alert - Accounts Affected by Proposal 117`,
-    description: `${lowHealthAccounts.length} accounts with cETH asset listed, with health factors below ${dataObject.lowHealthThreshold}`
-      + `, and have borrowed the equivalent of at least ${dataObject.minimumBorrowInETH} ETH.`,
-    alertId: `${developerAbbreviation}-${protocolAbbreviation}-LIQUIDATION-THRESHOLD-PROP117`,
-    type: FindingType[type],
-    severity: FindingSeverity[severity],
-    protocol: protocolName,
-    addresses: lowHealthAccounts,
-    metadata: {
-      addresses: lowHealthAccounts.toString(),
-      supplyBalancesETH: supplyBalancesETH.toString(),
-      borrowBalancesETH: borrowBalancesETH.toString(),
-      supplyBalancesUSD: supplyBalancesUSD.toString(),
-      borrowBalancesUSD: borrowBalancesUSD.toString(),
-      healthFactors: healthFactors.toString(),
-    },
-  });
+  // chunk the alerts up into 200 address blocks
+  const addressesPerAlert = 200;
+  const newFindings = [];
+  let tempAccounts;
+  for (let i = 0; i < lowHealthAccounts.length; i += addressesPerAlert) {
+    tempAccounts = lowHealthAccounts.slice(i, i + addressesPerAlert);
+    newFindings.push(Finding.fromObject({
+      name: `${protocolName} Liquidation Threshold Alert - Accounts Affected by Proposal 117`,
+      description: `${tempAccounts.length} accounts with cETH asset listed, with health factors below ${dataObject.lowHealthThreshold}`
+        + `, and have borrowed the equivalent of at least ${dataObject.minimumBorrowInETH} ETH.`,
+      alertId: `${developerAbbreviation}-${protocolAbbreviation}-LIQUIDATION-THRESHOLD-PROP117`,
+      type: FindingType[type],
+      severity: FindingSeverity[severity],
+      protocol: protocolName,
+      addresses: tempAccounts.toString(),
+      metadata: {
+        addresses: tempAccounts.toString(),
+        supplyBalancesETH: supplyBalancesETH.slice(i, i + addressesPerAlert).toString(),
+        borrowBalancesETH: borrowBalancesETH.slice(i, i + addressesPerAlert).toString(),
+        supplyBalancesUSD: supplyBalancesUSD.slice(i, i + addressesPerAlert).toString(),
+        borrowBalancesUSD: borrowBalancesUSD.slice(i, i + addressesPerAlert).toString(),
+        healthFactors: healthFactors.slice(i, i + addressesPerAlert).toString(),
+      },
+    }));
+  }
+  return newFindings;
 }
 
 async function verifyToken(data, tokenAddressImport) {
@@ -216,6 +224,7 @@ function provideInitialize(data) {
     data.minimumBorrowInETH = config.liquidationMonitor.triggerLevels.minimumBorrowInETH;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersBatchProvider();
+    data.findingsQueue = [];
     // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_nullish_assignment
     data.accounts ??= {}; // Health of all accounts, calcHealth, lastUpdated, [assetsIn addresses]
     data.supply ??= {}; // qty of cTokens (not Tokens)
@@ -335,11 +344,13 @@ function provideHandleBlock(data) {
   // eslint-disable-next-line no-unused-vars
   return async function handleBlock(blockEvent) {
     if (data.processingBlock === true) {
+      if (data.findingsQueue.length > 0) {
+        return [data.findingsQueue.shift()];
+      }
       return [];
     }
     data.processingBlock = true;
 
-    const findings = [];
     const {
       comptrollerContract,
       oneInchContract,
@@ -379,12 +390,7 @@ function provideHandleBlock(data) {
     console.log(`Number of accounts before filtering: ${Object.keys(accounts).length}`);
     for (let i = 0; i < filteredAccounts.length; i += offset) {
       console.log(`Checking account indexes: ${i} to ${i + offset}`);
-
-      if (i + offset >= filteredAccounts.length) {
-        currentAccounts = filteredAccounts.slice(i);
-      } else {
-        currentAccounts = filteredAccounts.slice(i, i + offset);
-      }
+      currentAccounts = filteredAccounts.slice(i, i + offset);
 
       promises = currentAccounts.map(async (currentAccount) => {
         const tempAssets = await comptrollerContract.getAssetsIn(currentAccount);
@@ -431,11 +437,7 @@ function provideHandleBlock(data) {
     offset = 100;
     for (let i = 0; i < filteredAccounts.length; i += offset) {
       console.log(`Grabbing token balances from on-chain for indexes: ${i} to ${i + offset}`);
-      if (i + offset >= filteredAccounts.length) {
-        currentAccounts = filteredAccounts.slice(i);
-      } else {
-        currentAccounts = filteredAccounts.slice(i, i + offset);
-      }
+      currentAccounts = filteredAccounts.slice(i, i + offset);
 
       // loop through all assets for an account
       promises = currentAccounts.map(async (currentAccount) => {
@@ -582,7 +584,7 @@ function provideHandleBlock(data) {
       healthFactors.push(accountInfo.health.toString());
     });
 
-    const newFinding = createAlert(
+    const newFindings = createAlert(
       data.developerAbbreviation,
       data.protocolName,
       data.protocolAbbreviation,
@@ -598,12 +600,15 @@ function provideHandleBlock(data) {
       data,
     );
 
-    if (newFinding !== null) {
-      findings.push(newFinding);
+    if (newFindings !== null) {
+      data.findingsQueue.push(...newFindings);
     }
 
     data.processingBlock = false;
-    return findings;
+    if (data.findingsQueue.length > 0) {
+      return [data.findingsQueue.shift()];
+    }
+    return [];
   };
 }
 
