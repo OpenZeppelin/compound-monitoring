@@ -8,7 +8,7 @@
     "oneInchAddress": "0x07D91f5fb9Bf7798734C3f606dB065549F6893bb",
     "oneInchABI": "OneInch.json",
     "triggerLevels": {
-      "minimumBorrowInETH": 0.2,
+      "minimumBorrowInETH": 0.01,
       "lowHealthThreshold": 1.00
     },
     "alert": {

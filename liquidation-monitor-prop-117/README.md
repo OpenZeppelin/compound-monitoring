@@ -4,7 +4,7 @@
 
 This Bot is a modified version of the Compound Liquidatable Positions Monitor Bot. This Bot checks for all accounts on Compound that have:
 - cEther listed as an asset
-- A borrow amount greater than a threshold (set to the equivalent of `0.2 ETH` in `bot-config.json`)
+- A borrow amount greater than a threshold (set to the equivalent of `0.01 ETH` in `bot-config.json`)
 - A health factor below a threshold (set to `1.00` in `bot-config.json`)
 
 ## Initialization
