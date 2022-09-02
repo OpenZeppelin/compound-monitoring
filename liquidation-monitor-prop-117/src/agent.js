@@ -66,8 +66,8 @@ function createAlert(
   // Add account to the alertedAccounts array
   dataObject.alertedAccounts.push(...lowHealthAccounts);
 
-  // chunk the alerts up into 200 address blocks
-  const addressesPerAlert = 200;
+  // chunk the alerts up into 100 address blocks
+  const addressesPerAlert = 100;
   const newFindings = [];
   let tempAccounts;
   for (let i = 0; i < lowHealthAccounts.length; i += addressesPerAlert) {
