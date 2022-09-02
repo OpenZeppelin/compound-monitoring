@@ -601,11 +601,13 @@ function provideHandleBlock(data) {
     );
 
     if (newFindings !== null) {
+      console.log(`Adding ${newFindings.length} findings to queue`);
       data.findingsQueue.push(...newFindings);
     }
 
     data.processingBlock = false;
     if (data.findingsQueue.length > 0) {
+      console.log('Returning findings from queue');
       return [data.findingsQueue.shift()];
     }
     return [];
