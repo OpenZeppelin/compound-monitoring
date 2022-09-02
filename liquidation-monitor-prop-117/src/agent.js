@@ -195,6 +195,7 @@ function provideInitialize(data) {
     data.minimumLiquidationInUSD = config.liquidationMonitor.triggerLevels.minimumLiquidationInUSD;
     data.lowHealthThreshold = config.liquidationMonitor.triggerLevels.lowHealthThreshold;
     data.minimumBorrowInETH = config.liquidationMonitor.triggerLevels.minimumBorrowInETH;
+    data.minimumHealth = config.liquidationMonitor.triggerLevels.minimumHealth;
     data.cTokenABI = getAbi('cErc20.json');
     data.provider = getEthersBatchProvider();
     // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Logical_nullish_assignment
@@ -234,7 +235,7 @@ function provideInitialize(data) {
     }
 
     // Use the imported initializeBlockNumber as a starting point or use compoundDeploymentBlock
-    data.startfromBlock = data?.initializeBlockNumber ?? 7710671;
+    data.startFromBlock = data?.initializeBlockNumber ?? 7710671;
     data.newAccounts = []; // New account from transaction events
     data.totalNewAccounts = 0;
 
@@ -268,7 +269,7 @@ function provideInitialize(data) {
     const borrowerAddresses = await getAllBorrowers(
       data.provider,
       data.comptrollerContract,
-      data.startfromBlock,
+      data.startFromBlock,
       initializeBlockNumber,
     );
 
@@ -518,11 +519,13 @@ function provideHandleBlock(data) {
 
     const lowHealthAccounts = Object.keys(accounts).filter((key) => (
       accounts[key].health.lt(data.lowHealthThreshold)
-        && accounts[key].borrowBalance.gt(data.minimumBorrowInETH)
+      && accounts[key].health.gt(data.minimumHealth)
+      && accounts[key].borrowBalance.gt(data.minimumBorrowInETH)
     ));
 
     console.log(`Total number of accounts: ${Object.keys(accounts).length}`);
-    console.log(`Number of low health accounts above ${data.minimumBorrowInETH} ETH: ${lowHealthAccounts.length}`);
+    console.log(`Number of accounts between ${data.lowHealthThreshold} and ${data.minimumHealth} `
+      + `health with at least ${data.minimumBorrowInETH} ETH borrowed: ${lowHealthAccounts.length}`);
 
     if (exportDataFile === true) {
       console.log(`Exporting to ${dataFile}`);
@@ -545,13 +548,19 @@ function provideHandleBlock(data) {
     // const e18Multiplier = new BigNumber(10).pow(18);
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
       const accountInfo = accounts[currentAccount];
+      // Prices from DAI
+      const usdAddress = '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643'.toLowerCase();
+      const usdRate = tokens[usdAddress].price;
+      const borrowUSD = accountInfo.borrowBalance.dividedBy(usdRate).integerValue();
+      const supplyUSD = accountInfo.supplyBalance.dividedBy(usdRate).integerValue();
 
       console.log(`${currentAccount} has a health of ${accountInfo.health}`);
-      console.log(`\tand a borrow balance of ${accountInfo.borrowBalance}`);
-      console.log(`\tand a supply balance of ${accountInfo.supplyBalance}`);
+      console.log(`\tand a borrow balance of ${accountInfo.borrowBalance.dp(3)} ETH ($${borrowUSD})`);
+      console.log(`\tand a supply balance of ${accountInfo.supplyBalance.dp(3)} ETH ($${supplyUSD})`);
       // Should we re-scan accounts that are near liquidation? If so, change their health to zero
     }));
 
+    /* Troubleshooting
     // const tempAddress = '0x68995e1d2830c8d3c5c5434eecdf286589dbedd9';
     // const tempAddress = '0xb985c243e9a2a4e7f60514de536fb3dbe31fe577';
     const tempAddress = '0x208f27ba5003f330295174c163839f3249ea8da3';
@@ -569,6 +578,8 @@ function provideHandleBlock(data) {
     console.log(tempAccount.supplyBalance.toString());
     console.log(tempAccount.borrowBalance.toString());
     console.log(tempAccount.health.toString());
+    */
+
     /*
     await Promise.all(lowHealthAccounts.map(async (currentAccount) => {
       // Get Account Liquidity
