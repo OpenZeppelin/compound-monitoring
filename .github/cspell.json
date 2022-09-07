@@ -1,12 +1,11 @@
 {
   "ignorePaths": [
     "**/node_modules/**",
-    "**/vscode-extension/**",
     "**/.git/**",
-    ".vscode",
-    "megalinter",
+    "**/.github/**",
     "package-lock.json",
-    "report"
+    "megalinter-reports/**",
+    "cspell.json",
   ],
   "language": "en",
   "noConfigSearch": true,

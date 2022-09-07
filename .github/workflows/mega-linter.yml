@@ -2,19 +2,20 @@
 # MegaLinter GitHub Action configuration file
 # More info at https://megalinter.github.io
 name: MegaLinter
+
 # yamllint disable-line rule:truthy
 on:
-  # Trigger mega-linter at every push. Action will also be visible from Pull Requests to master
-  push: # Comment this line to trigger action only on pull-requests (not recommended if you don't pay for GH Actions)
+  workflow_dispatch:
   pull_request:
     branches: [master, main]
+    types: [opened, reopened, labeled]
 
 env: # Comment env block if you do not want to apply fixes
   # Apply linter fixes configuration
-  APPLY_FIXES: all
-  # Fixes will be available in the artifact
-  APPLY_FIXES_EVENT: none
-  APPLY_FIXES_MODE: pull_request
+  APPLY_FIXES: all # When active, APPLY_FIXES must also be defined as environment variable (in github/workflows/mega-linter.yml or other CI tool)
+  APPLY_FIXES_EVENT: pull_request # Decide which event triggers application of fixes in a commit or a PR (pull_request, push, all)
+  APPLY_FIXES_MODE: pull_request # If APPLY_FIXES is used, defines if the fixes are directly committed (commit) or posted in a PR ()
+  PRINT_ALL_FILES: true
 
 concurrency:
   group: ${{ github.ref }}-${{ github.workflow }}
@@ -24,6 +25,7 @@ jobs:
   build:
     name: MegaLinter
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       # Git Checkout
       - name: Checkout Code
@@ -35,23 +37,42 @@ jobs:
       # MegaLinter
       - name: MegaLinter
         id: ml
-        # You can override MegaLinter flavor used to have faster performances
         # More info at https://megalinter.github.io/flavors/
-        uses: megalinter/megalinter/flavors/javascript@v5
+        uses: oxsecurity/megalinter/flavors/javascript@v6
         env:
-          # All available variables are described in documentation
           # https://megalinter.github.io/configuration/
-          VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/main&#39; }} to validate only diff with main branch
+          VALIDATE_ALL_CODEBASE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
-          DISABLE: COPYPASTE
-          DISABLE_LINTERS: JAVASCRIPT_STANDARD,JSON_PRETTIER,YAML_PRETTIER,SPELL_MISSPELL,JAVASCRIPT_ES
+
+          # CUSTOM SETTINGS FOR MEGALINTER
+          REPORT_OUTPUT_FOLDER: megalinter-reports
+          FORMATTERS_DISABLE_ERRORS: true # Treat formatting as a warning
+          DISABLE: COPYPASTE # Disable categories of linters
+          DISABLE_LINTERS: JAVASCRIPT_STANDARD
+
           SHOW_ELAPSED_TIME: true
           FILEIO_REPORTER: false
-          SPELL_CSPELL_CONFIG_FILE: .github/.cspell.json
-          # Treat misspellings as a warning
-          SPELL_CSPELL_DISABLE_ERRORS: true
-          # DISABLE_ERRORS: true # Uncomment if you want MegaLinter to detect errors but not block CI to pass
+
+          # eslint
+          JAVASCRIPT_ES_CONFIG_FILE: .github/eslintrc.js
+          # cspell settings
+          SPELL_CSPELL_CONFIG_FILE: .github/cspell.json
+          SPELL_CSPELL_DISABLE_ERRORS: true # Treat misspellings as a warning
+          # proselint settings
+          SPELL_PROSELINT_CONFIG_FILE: .github/proselint.json
+          SPELL_PROSELINT_DISABLE_ERRORS: true # Treat misspellings as a warning
+          # markdownlint
+          MARKDOWN_MARKDOWNLINT_CONFIG_FILE: .github/markdownlint.json
+          # markdown link check
+          MARKDOWN_MARKDOWN_LINK_CHECK_CONFIG_FILE: .github/markdown-link-check.json
+          MARKDOWN_MARKDOWN_LINK_CHECK_DISABLE_ERRORS: true # Treat dead links as a warning
+          # Other linters
+          REPOSITORY_GIT_DIFF_DISABLE_ERRORS: true
+          COPYPASTE_JSCPD_DISABLE_ERRORS: true
+          ACTION_ACTIONLINT_FILTER_REGEX_EXCLUDE: (defender-sentinel-deployer.yml)
+          REPOSITORY_GITLEAKS_CONFIG_FILE: .github/gitleaks.toml
+          REPOSITORY_SECRETLINT_CONFIG_FILE: .github/secretlintrc.json
+          REPOSITORY_SECRETLINT_ARGUMENTS: --secretlintignores "**/megalinter-reports/**"
 
       # Upload MegaLinter artifacts
       - name: Archive production artifacts
@@ -60,5 +81,35 @@ jobs:
         with:
           name: MegaLinter reports
           path: |
-            report
-            mega-linter.log
+            megalinter-reports
+
+      # Create pull request if applicable
+      # Note: This step will fail if megalinter tries to modify any file in the .github/workflow
+      # directory. Github has a protection that workflows cant modify workflows. Please fix those
+      # files manually.
+      - name: Restore Workflow and github_conf Directories
+        if: ${{ always() }}
+        run: |
+          git restore .github/workflows/*.yml
+          sudo rm -rf github_conf
+
+      - name: Create Pull Request with applied fixes
+        id: cpr
+        if: ${{ always() }}
+        # Use head_ref when PR is created and ref_name when manually run
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        uses: peter-evans/create-pull-request@v4
+        with:
+          token: ${{ secrets.PAT || secrets.GITHUB_TOKEN }}
+          commit-message: "[MegaLinter] Apply linter automatic fixes"
+          title: "[MegaLinter] Fixes for ${{ env.BRANCH_NAME }}"
+          labels: bot
+          base: ${{ env.BRANCH_NAME }}
+          branch: auto-fix/${{ env.BRANCH_NAME }}
+          delete-branch: true # Deletes temp branch after close or merge.
+      - name: Create PR output
+        if: ${{ always() }}
+        run: |
+          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
+          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
