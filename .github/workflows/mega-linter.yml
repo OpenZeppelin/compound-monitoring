@@ -48,7 +48,7 @@ jobs:
           REPORT_OUTPUT_FOLDER: megalinter-reports
           FORMATTERS_DISABLE_ERRORS: true # Treat formatting as a warning
           DISABLE: COPYPASTE # Disable categories of linters
-          DISABLE_LINTERS: JAVASCRIPT_STANDARD
+          DISABLE_LINTERS: JAVASCRIPT_STANDARD,REPOSITORY_TRIVYf
 
           SHOW_ELAPSED_TIME: true
           FILEIO_REPORTER: false
