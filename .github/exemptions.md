@@ -29,3 +29,5 @@
 
 - secretlint --secretlintignores "**/megalinter-reports/**" - ignore output folder
 
+- checkov - CKV_DOCKER_3 - Default forta bot triggers Docker3 error
+

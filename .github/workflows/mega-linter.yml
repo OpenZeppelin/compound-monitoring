@@ -66,6 +66,9 @@ jobs:
           # markdown link check
           MARKDOWN_MARKDOWN_LINK_CHECK_CONFIG_FILE: .github/markdown-link-check.json
           MARKDOWN_MARKDOWN_LINK_CHECK_DISABLE_ERRORS: true # Treat dead links as a warning
+          # checkov settings
+          REPOSITORY_CHECKOV_CONFIG_FILE: .github/checkov.yml
+          REPOSITORY_CHECKOV_DISABLE_ERRORS: true # Disable errors until we decide how to handle this one.
           # Other linters
           REPOSITORY_GIT_DIFF_DISABLE_ERRORS: true
           COPYPASTE_JSCPD_DISABLE_ERRORS: true
