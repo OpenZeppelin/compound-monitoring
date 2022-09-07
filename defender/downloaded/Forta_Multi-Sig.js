@@ -260,7 +260,7 @@ exports.handler = async function (autotaskEvent) {
     hash,
     source: {
       transactionHash,
-      bot: {
+      agent: {
         id: botId,
       },
     },
@@ -290,8 +290,8 @@ exports.handler = async function (autotaskEvent) {
 
   // create promises for posting messages to Discord webhook
   const discordPromises = results.map((result) => {
-    console.log(`${etherscanLink} ${result.value}`);
-    return postToDiscord(discordUrl, `${etherscanLink} ${result.value}`);
+      console.log(`${etherscanLink} ${result.value}`);
+      return postToDiscord(discordUrl, `${etherscanLink} ${result.value}`);
   });
 
   // wait for the promises to settle
