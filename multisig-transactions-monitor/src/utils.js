@@ -340,6 +340,7 @@ function createActionPausedFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const { action } = log.args;
 
@@ -353,6 +354,7 @@ function createActionPausedFinding(
     metadata: {
       action,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -438,6 +440,7 @@ function createComptrollerFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      '2',
     );
   }
 
@@ -448,6 +451,51 @@ function createComptrollerFinding(
       protocolAbbreviation,
       developerAbbreviation,
     );
+  }
+  return finding;
+}
+
+function createCometFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+) {
+  let finding;
+
+  if (log.name === 'PauseAction') {
+    const actionsArgs = {
+      Supply: log.args.supplyPaused,
+      Transfer: log.args.transferPaused,
+      Withdraw: log.args.withdrawPaused,
+      Absorb: log.args.absorbPaused,
+      Buy: log.args.buyPaused,
+    };
+
+    let actionsList = Object.entries(actionsArgs).map(([k, v]) => {
+      if (v === true) { return k; }
+      return undefined;
+    });
+    actionsList = actionsList.filter(Boolean);
+    if (actionsList.length === 0) {
+      return finding;
+    }
+    const actionsString = actionsList.join(',');
+
+    finding = Finding.fromObject({
+      name: `${protocolName} Actions Paused`,
+      description: `Actions ${actionsString} were Paused by multisig ${multisigAddress}`,
+      alertId: `${developerAbbreviation}-${protocolAbbreviation}-ACTION-PAUSED-ALERT`,
+      protocol: protocolName,
+      type: FindingType.Info,
+      severity: FindingSeverity.Info,
+      metadata: {
+        actions: actionsString,
+        multisigAddress,
+        protocolVersion: '3',
+      },
+    });
+    return finding;
   }
   return finding;
 }
@@ -465,4 +513,5 @@ module.exports = {
   createGnosisFinding,
   createGovernanceFinding,
   createComptrollerFinding,
+  createCometFinding,
 };

@@ -40,6 +40,8 @@ function provideInitialize(data) {
         createFinding = utils.createGovernanceFinding;
       } else if (address === contracts.comptroller.address) {
         createFinding = utils.createComptrollerFinding;
+      } else if (address === contracts.comet_usdc.address) {
+        createFinding = utils.createCometFinding;
       }
 
       // create object to store and return necessary contract information
