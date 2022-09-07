@@ -6,9 +6,7 @@
       "type": "FORTA",
       "fortaConditions": {
         "severity": 1,
-        "alertIDs": [
-          "AE-COMP-CTOKEN-EVENT"
-        ],
+        "alertIDs": ["AE-COMP-CTOKEN-EVENT"],
         "minimumScannerCount": 1
       },
       "addresses": [],
@@ -25,9 +23,7 @@
       "type": "FORTA",
       "fortaConditions": {
         "severity": 1,
-        "alertIDs": [
-          "AE-COMP-MARKET-ATTACK-EVENT"
-        ],
+        "alertIDs": ["AE-COMP-MARKET-ATTACK-EVENT"],
         "minimumScannerCount": 1
       },
       "addresses": [],
@@ -95,9 +91,7 @@
       "type": "FORTA",
       "fortaConditions": {
         "severity": 1,
-        "alertIDs": [
-          "AE-COMP-GOVERNANCE-THRESHOLD"
-        ],
+        "alertIDs": ["AE-COMP-GOVERNANCE-THRESHOLD"],
         "minimumScannerCount": 1
       },
       "addresses": [],
@@ -144,9 +138,7 @@
       "confirmLevel": 1,
       "paused": false,
       "name": "cEther Monitor",
-      "addresses": [
-        "0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5"
-      ],
+      "addresses": ["0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5"],
       "abi": "./downloaded/cEther_Monitor_ABI.json",
       "functionConditions": [],
       "eventConditions": [
@@ -201,9 +193,7 @@
       "confirmLevel": 1,
       "paused": false,
       "name": "Contract Sentinel Governance",
-      "addresses": [
-        "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
-      ],
+      "addresses": ["0xc0Da02939E1441F497fd74F78cE7Decb17B66529"],
       "abi": "./downloaded/Contract_Sentinel_Governance_ABI.json",
       "functionConditions": [],
       "eventConditions": [
@@ -234,9 +224,7 @@
       "type": "FORTA",
       "fortaConditions": {
         "severity": 1,
-        "alertIDs": [
-          "AE-COMP-DISTRIBUTION-EVENT"
-        ],
+        "alertIDs": ["AE-COMP-DISTRIBUTION-EVENT"],
         "minimumScannerCount": 1
       },
       "addresses": [],
@@ -253,9 +241,7 @@
       "type": "FORTA",
       "fortaConditions": {
         "severity": 1,
-        "alertIDs": [
-          "AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD"
-        ],
+        "alertIDs": ["AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD"],
         "minimumScannerCount": 1
       },
       "addresses": [],
@@ -272,9 +258,7 @@
       "type": "FORTA",
       "fortaConditions": {
         "severity": 1,
-        "alertIDs": [
-          "AE-COMP-CTOKEN-PRICE-REJECTED"
-        ],
+        "alertIDs": ["AE-COMP-CTOKEN-PRICE-REJECTED"],
         "minimumScannerCount": 1
       },
       "addresses": [],
@@ -291,9 +275,7 @@
       "type": "FORTA",
       "fortaConditions": {
         "severity": 1,
-        "alertIDs": [
-          "AE-COMP-CTOKEN-ASSET-UPGRADED"
-        ],
+        "alertIDs": ["AE-COMP-CTOKEN-ASSET-UPGRADED"],
         "minimumScannerCount": 1
       },
       "addresses": [],
@@ -408,4 +390,3 @@
   ],
   "notificationChannels": []
 }
-
