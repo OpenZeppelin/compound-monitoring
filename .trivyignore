@@ -1,3 +1,0 @@
-# Megalinter can't specify the location of this file, so it will live here for now
-# Vulnerability in default docker containers https://avd.aquasec.com/misconfig/dockerfile/general/avd-ds-0002/
-AVD-DS-0002

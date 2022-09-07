@@ -72,6 +72,7 @@ jobs:
           # Other linters
           REPOSITORY_GIT_DIFF_DISABLE_ERRORS: true
           COPYPASTE_JSCPD_DISABLE_ERRORS: true
+          REPOSITORY_TRIVY_ARGUMENTS: --ignore-policy .github/trivy.rego
           ACTION_ACTIONLINT_FILTER_REGEX_EXCLUDE: (defender-sentinel-deployer.yml)
           REPOSITORY_GITLEAKS_CONFIG_FILE: .github/gitleaks.toml
           REPOSITORY_SECRETLINT_CONFIG_FILE: .github/secretlintrc.json
