@@ -1,6 +1,5 @@
 {
-  "abi":
-  [
+  "abi": [
     {
       "inputs": [
         {
@@ -13,16 +12,12 @@
       "type": "constructor"
     },
     {
-      "inputs": [
-        
-      ],
+      "inputs": [],
       "name": "CommitAlreadyExists",
       "type": "error"
     },
     {
-      "inputs": [
-        
-      ],
+      "inputs": [],
       "name": "CommitNotReady",
       "type": "error"
     },
@@ -102,9 +97,7 @@
       "type": "error"
     },
     {
-      "inputs": [
-        
-      ],
+      "inputs": [],
       "name": "StakeThresholdMaxLessOrEqualMin",
       "type": "error"
     },
@@ -438,9 +431,7 @@
         }
       ],
       "name": "approve",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -487,9 +478,7 @@
         }
       ],
       "name": "createAgent",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -507,9 +496,7 @@
         }
       ],
       "name": "disableAgent",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -527,16 +514,12 @@
         }
       ],
       "name": "enableAgent",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
     {
-      "inputs": [
-        
-      ],
+      "inputs": [],
       "name": "frontRunningDelay",
       "outputs": [
         {
@@ -631,9 +614,7 @@
       "type": "function"
     },
     {
-      "inputs": [
-        
-      ],
+      "inputs": [],
       "name": "getAgentCount",
       "outputs": [
         {
@@ -747,9 +728,7 @@
       "type": "function"
     },
     {
-      "inputs": [
-        
-      ],
+      "inputs": [],
       "name": "getStakeController",
       "outputs": [
         {
@@ -821,9 +800,7 @@
         }
       ],
       "name": "initialize",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -947,9 +924,7 @@
       "type": "function"
     },
     {
-      "inputs": [
-        
-      ],
+      "inputs": [],
       "name": "name",
       "outputs": [
         {
@@ -989,9 +964,7 @@
         }
       ],
       "name": "prepareAgent",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1014,9 +987,7 @@
         }
       ],
       "name": "safeTransferFrom",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1044,9 +1015,7 @@
         }
       ],
       "name": "safeTransferFrom",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1059,9 +1028,7 @@
         }
       ],
       "name": "setAccessManager",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1079,9 +1046,7 @@
         }
       ],
       "name": "setApprovalForAll",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1094,9 +1059,7 @@
         }
       ],
       "name": "setFrontRunningDelay",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1114,9 +1077,7 @@
         }
       ],
       "name": "setName",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1129,9 +1090,7 @@
         }
       ],
       "name": "setRouter",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1144,9 +1103,7 @@
         }
       ],
       "name": "setStakeController",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1176,9 +1133,7 @@
         }
       ],
       "name": "setStakeThreshold",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1202,9 +1157,7 @@
       "type": "function"
     },
     {
-      "inputs": [
-        
-      ],
+      "inputs": [],
       "name": "symbol",
       "outputs": [
         {
@@ -1254,9 +1207,7 @@
         }
       ],
       "name": "transferFrom",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1279,9 +1230,7 @@
         }
       ],
       "name": "updateAgent",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1294,9 +1243,7 @@
         }
       ],
       "name": "upgradeTo",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -1314,16 +1261,12 @@
         }
       ],
       "name": "upgradeToAndCall",
-      "outputs": [
-        
-      ],
+      "outputs": [],
       "stateMutability": "payable",
       "type": "function"
     },
     {
-      "inputs": [
-        
-      ],
+      "inputs": [],
       "name": "version",
       "outputs": [
         {
