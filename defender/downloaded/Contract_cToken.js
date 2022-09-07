@@ -21,6 +21,9 @@ const saiTokenAddress = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'.toLowerCase
 const oddTokens = [makerTokenAddress, saiTokenAddress];
 const cEtherAddress = '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'.toLowerCase();
 
+// Temporary to account for Proposal 117 
+const oldOracleAddress = '0x65c816077C29b557BEE980ae3cC2dCE80204A0C5';
+
 const eventMapping = {
   Borrow: {
     amountKey: 'borrowAmount',
@@ -130,7 +133,7 @@ async function getTokenInfo(cTokenAddress, provider) {
 
   let decimals;
   let symbol;
-  if (oddTokens.includes(underlyingTokenAddress.toLowerCase())) {
+  if (oddTokens.indexOf(underlyingTokenAddress.toLowerCase()) !== -1) {
     const underlyingTokenContract = new ethers.Contract(
       underlyingTokenAddress,
       MAKER_TOKEN_ABI,
@@ -366,6 +369,13 @@ exports.handler = async function (autotaskEvent) {
 
   // create an ethers.js Contract for the Compound Oracle contract
   const oracleContract = await getOracleContract(provider);
+  
+  // Temporary due to Proposal 117
+  const oldOracleContract = new ethers.Contract(
+    oldOracleAddress,
+    oracleAbi,
+    provider,
+  );
 
   // create messages for Discord
   const promises = matchReasons.map(async (reason) => {
@@ -375,7 +385,7 @@ exports.handler = async function (autotaskEvent) {
     // to make that determination
     const cTokenAddress = getAddressForMatchReason(reason, logs, abi);
     if (cTokenAddress === undefined) {
-      throw new Error('unable to get address for match reason');
+        throw new Error('unable to get address for match reason');
     }
 
     // determine the type of event it was
@@ -386,11 +396,26 @@ exports.handler = async function (autotaskEvent) {
       symbol,
     } = await getTokenInfo(cTokenAddress, provider);
 
-    // get the conversion rate for this token to USD
-    const {
-      usdPerTokenBN,
-      usdPerTokenDecimals,
-    } = await getTokenPrice(oracleContract, cTokenAddress, decimals);
+    let usdPerTokenBN;
+    let usdPerTokenDecimals;
+    try {
+      // get the conversion rate for this token to USD
+      ({
+        usdPerTokenBN,
+        usdPerTokenDecimals,
+      } = await getTokenPrice(oracleContract, cTokenAddress, decimals));
+    } catch (error) {
+      console.debug(`Error using oracle, falling back to old oracle`);
+      if (cTokenAddress.toLowerCase() !== cEtherAddress) {
+        console.error(`cToken address is not cEther: ${cTokenAddress}`);
+        throw error;
+      }
+      // get the conversion rate for this token to USD using the old Oracle
+      ({
+        usdPerTokenBN,
+        usdPerTokenDecimals,
+      } = await getTokenPrice(oldOracleContract, cTokenAddress, decimals));
+    }
 
     // craft the Discord message
     return createDiscordMessage(
@@ -410,8 +435,8 @@ exports.handler = async function (autotaskEvent) {
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   const discordPromises = messages.map((message) => {
-    console.log(`${etherscanLink} ${message}`);
-    return postToDiscord(discordUrl, `${etherscanLink} ${message}`);
+      console.log(`${etherscanLink} ${message}`);
+      return postToDiscord(discordUrl, `${etherscanLink} ${message}`);
   });
 
   // wait for the promises to settle

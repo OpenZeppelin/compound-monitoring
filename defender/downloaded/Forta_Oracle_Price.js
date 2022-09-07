@@ -32,7 +32,7 @@ async function getDecimalsAndSymbol(cTokenAddress, provider) {
 
   let decimals;
   let symbol;
-  if (oddTokens.includes(underlyingTokenAddress.toLowerCase())) {
+  if (oddTokens.indexOf(underlyingTokenAddress.toLowerCase()) !== -1) {
     const underlyingTokenContract = new ethers.Contract(
       underlyingTokenAddress,
       MAKER_TOKEN_ABI,
@@ -236,7 +236,7 @@ exports.handler = async function (autotaskEvent) {
   const {
     source: {
       transactionHash,
-      bot: {
+      agent: {
         id: botId,
       },
     },
@@ -244,7 +244,7 @@ exports.handler = async function (autotaskEvent) {
 
   // retrieve the metadata from the Forta public API
   const alerts = await getFortaAlerts(botId, transactionHash);
-
+  
   // use the relayer provider for JSON-RPC requests
   const provider = new DefenderRelayProvider(autotaskEvent);
 
@@ -265,8 +265,8 @@ exports.handler = async function (autotaskEvent) {
 
   // create promises for posting messages to Discord webhook
   const discordPromises = results.map((result) => {
-    console.log(`${result.value}`);
-    return postToDiscord(discordUrl, `${result.value}`);
+      console.log(`${result.value}`);
+      return postToDiscord(discordUrl, `${result.value}`);
   });
 
   // wait for the promises to settle
