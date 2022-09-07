@@ -59,7 +59,7 @@ jobs:
           SPELL_CSPELL_CONFIG_FILE: .github/cspell.json
           SPELL_CSPELL_DISABLE_ERRORS: true # Treat misspellings as a warning
           # proselint settings
-          SPELL_PROSELINT_CONFIG_FILE: .github/proselint.json
+          SPELL_PROSELINT_CONFIG_FILE: .github/proselintrc.json
           SPELL_PROSELINT_DISABLE_ERRORS: true # Treat misspellings as a warning
           # markdownlint
           MARKDOWN_MARKDOWNLINT_CONFIG_FILE: .github/markdownlint.json
@@ -88,7 +88,7 @@ jobs:
 
       # Create pull request if applicable
       # Note: This step will fail if megalinter tries to modify any file in the .github/workflow
-      # directory. Github has a protection that workflows cant modify workflows. Please fix those
+      # directory. Github has a protection that workflows can't modify workflows. Please fix those
       # files manually.
       - name: Restore Workflow and github_conf Directories
         if: ${{ always() }}

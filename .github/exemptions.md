@@ -7,11 +7,11 @@
 
 ## Specific linter exemptions
 
-- cspell - "ignoreRegExpList": "/[0-9a-f]{8}.js/gi" - scripts/downlaod.js will save files with this name
-- cspell - "ignoreRegExpList": "/[0-9a-f]{8}\\_ABI.json/gi" - scripts/downlaod.js will save files with this name
+- cspell - "ignoreRegExpList": "/[0-9a-f]{8}.js/gi" - scripts/download.js will save files with this name
+- cspell - "ignoreRegExpList": "/[0-9a-f]{8}\\_ABI.json/gi" - scripts/download.js will save files with this name
 - cspell - "ignoreRegExpList": "/0x[0-9a-f]{40}/gi" - ignore ETH addresses
 - cspell - "ignoreRegExpList": "/Qm[0-9a-zA-Z]{44}/g" - ignore IPFS CIDv0 addresses
-- cspell - "ignoreRegExpList": "/bafy[0-9a-zA-Z]{40}[0-9a-zA-Z]+/g" - ignore IPFS CIDv1 addresses
+- cspell - "ignoreRegExpList": "/bafy[0-9a-zA-Z]{40}[0-9a-zA-Z]+/g" - ignore a subset of IPFS CIDv1 addresses
 
 - cspell - "words" - various industry words
 
