@@ -11,23 +11,19 @@
       "abiFile": "cErc20.json"
     }
   },
-  "excludeAddresses": [
-    "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5"
-  ],
+  "excludeAddresses": ["0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5"],
   "proxyPatterns": [
     {
       "name": "OwnedUpgradeabilityProxy",
       "findingType": "Suspicious",
       "findingSeverity": "High",
       "functionSignatures": [
-        "implementation()",        
+        "implementation()",
         "upgradeTo(address)",
         "transferProxyOwnership(address)"
       ],
-      "eventSignatures": [
-        "event Upgraded(address indexed implementation)"
-      ]
-    },    
+      "eventSignatures": ["event Upgraded(address indexed implementation)"]
+    },
     {
       "name": "OZ_TransparentUpgradableProxy",
       "findingType": "Suspicious",
@@ -51,22 +47,18 @@
         "upgradeTo(address)",
         "proxiableUUID()"
       ],
-      "eventSignatures": [
-        "event Upgraded(address indexed implementation)"
-      ]
+      "eventSignatures": ["event Upgraded(address indexed implementation)"]
     },
     {
       "name": "OZ_UpgradeableUsingInternalStorageProxy",
       "findingType": "Suspicious",
       "findingSeverity": "High",
       "functionSignatures": [
-        "implementation()",        
+        "implementation()",
         "UpgradeabilityProxy(string)",
         "upgradeTo(string)"
       ],
-      "eventSignatures": [
-        "event Upgraded(address indexed implementation)"
-      ]
-    }  
+      "eventSignatures": ["event Upgraded(address indexed implementation)"]
+    }
   ]
 }

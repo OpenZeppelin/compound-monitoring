@@ -1,4 +1,3 @@
-
 {
   "developerAbbreviation": "AE",
   "protocolName": "Compound",
@@ -12,7 +11,5 @@
       "abiFile": "cErc20.json"
     }
   },
-  "excludeAddresses": [
-    "0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5"
-  ]
+  "excludeAddresses": ["0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5"]
 }
