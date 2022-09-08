@@ -102,6 +102,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
   let eta;
   const internationalNumberFormat = new Intl.NumberFormat('en-US');
 
+  let voteTypeString;
   const noEntryEmoji = '⛔';
   const checkMarkEmoji = '✅';
   const speakNoEvilEmoji = '🙊';
@@ -139,10 +140,13 @@ async function createDiscordMessage(eventName, params, transactionHash) {
 
       if (support === 0) {
         supportEmoji = noEntryEmoji;
+        voteTypeString = '**Vote**';
       } else if (support === 1) {
         supportEmoji = checkMarkEmoji;
+        voteTypeString = '**Vote**';
       } else if (support === 2) {
         supportEmoji = speakNoEvilEmoji; // abstain
+        voteTypeString = '**Abstain**';
       }
 
       if (votes.length > 18) {
@@ -156,9 +160,9 @@ async function createDiscordMessage(eventName, params, transactionHash) {
 
       proposalName = await getProposalTitle(proposalId);
       if (displayName !== '') {
-        message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${displayName} ${etherscanLink}`;
+        message = `${voteTypeString} ${proposalName} ${supportEmoji} ${votes} by ${displayName} ${etherscanLink}`;
       } else {
-        message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${voter.slice(0, 6)} ${etherscanLink}`;
+        message = `${voteTypeString} ${proposalName} ${supportEmoji} ${votes} by ${voter.slice(0, 6)} ${etherscanLink}`;
       }
 
       if (reason !== '') {
