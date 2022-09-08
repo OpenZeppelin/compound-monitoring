@@ -324,7 +324,6 @@ exports.handler = async function (autotaskEvent) {
               tags: [
                 `botid:${botId}`,
                 `scannerid:${scannerId}`,
-                `botname:${botIdsToNames[botId]}`,
               ],
               type: 0,
               points,
