@@ -1,0 +1,9 @@
+# You can see all available properties here: https://github.com/bridgecrewio/checkov#configuration-using-a-config-file
+quiet: true
+skip-check:
+  - CKV_DOCKER_2
+  # Default forta bot triggers Docker3 error
+  # ref: https://docs.bridgecrew.io/docs/ensure-that-a-user-for-the-container-has-been-created
+  - CKV_DOCKER_3
+  # GHA7 errors on custom Action triggers that we have in our repo.
+  - CKV_GHA_7
