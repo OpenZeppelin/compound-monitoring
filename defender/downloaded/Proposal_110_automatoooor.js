@@ -1,71 +1,71 @@
-const { ethers } = require("ethers");
+const { ethers } = require('ethers');
 const {
   DefenderRelayProvider,
   DefenderRelaySigner,
-} = require("defender-relay-client/lib/ethers");
-const { KeyValueStoreClient } = require("defender-kvstore-client");
+} = require('defender-relay-client/lib/ethers');
+const { KeyValueStoreClient } = require('defender-kvstore-client');
 
 const GovernorBravo = {
-  address: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529", // Compound governor address (replace if needed)
+  address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529', // Compound governor address (replace if needed)
   ABI: [
     {
       constant: true,
-      inputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-      name: "proposals",
+      inputs: [{ internalType: 'uint256', name: '', type: 'uint256' }],
+      name: 'proposals',
       outputs: [
-        { internalType: "uint256", name: "id", type: "uint256" },
-        { internalType: "address", name: "proposer", type: "address" },
-        { internalType: "uint256", name: "eta", type: "uint256" },
-        { internalType: "uint256", name: "startBlock", type: "uint256" },
-        { internalType: "uint256", name: "endBlock", type: "uint256" },
-        { internalType: "uint256", name: "forVotes", type: "uint256" },
-        { internalType: "uint256", name: "againstVotes", type: "uint256" },
-        { internalType: "uint256", name: "abstainVotes", type: "uint256" },
-        { internalType: "bool", name: "canceled", type: "bool" },
-        { internalType: "bool", name: "executed", type: "bool" },
+        { internalType: 'uint256', name: 'id', type: 'uint256' },
+        { internalType: 'address', name: 'proposer', type: 'address' },
+        { internalType: 'uint256', name: 'eta', type: 'uint256' },
+        { internalType: 'uint256', name: 'startBlock', type: 'uint256' },
+        { internalType: 'uint256', name: 'endBlock', type: 'uint256' },
+        { internalType: 'uint256', name: 'forVotes', type: 'uint256' },
+        { internalType: 'uint256', name: 'againstVotes', type: 'uint256' },
+        { internalType: 'uint256', name: 'abstainVotes', type: 'uint256' },
+        { internalType: 'bool', name: 'canceled', type: 'bool' },
+        { internalType: 'bool', name: 'executed', type: 'bool' },
       ],
       payable: false,
-      stateMutability: "view",
-      type: "function",
+      stateMutability: 'view',
+      type: 'function',
     },
     {
       constant: true,
       inputs: [
-        { internalType: "uint256", name: "proposalId", type: "uint256" },
+        { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
       ],
-      name: "state",
+      name: 'state',
       outputs: [
         {
-          internalType: "enum GovernorBravoDelegateStorageV1.ProposalState",
-          name: "",
-          type: "uint8",
+          internalType: 'enum GovernorBravoDelegateStorageV1.ProposalState',
+          name: '',
+          type: 'uint8',
         },
       ],
       payable: false,
-      stateMutability: "view",
-      type: "function",
+      stateMutability: 'view',
+      type: 'function',
     },
     {
       constant: false,
       inputs: [
-        { internalType: "uint256", name: "proposalId", type: "uint256" },
+        { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
       ],
-      name: "queue",
+      name: 'queue',
       outputs: [],
       payable: false,
-      stateMutability: "nonpayable",
-      type: "function",
+      stateMutability: 'nonpayable',
+      type: 'function',
     },
     {
       constant: false,
       inputs: [
-        { internalType: "uint256", name: "proposalId", type: "uint256" },
+        { internalType: 'uint256', name: 'proposalId', type: 'uint256' },
       ],
-      name: "execute",
+      name: 'execute',
       outputs: [],
       payable: true,
-      stateMutability: "payable",
-      type: "function",
+      stateMutability: 'payable',
+      type: 'function',
     },
   ],
 };
@@ -81,29 +81,28 @@ const ProposalStates = {
   Executed: 7,
 };
 
-const QueueTxSentPrefix = "QueueTxSent";
-const ExecuteTxSentPrefix = "ExecuteTxSent";
+const QueueTxSentPrefix = 'QueueTxSent';
+const ExecuteTxSentPrefix = 'ExecuteTxSent';
 
 // Don't update manually, it's automatically updated when creating via API
-const proposalId = "110";
+const proposalId = '110';
 
 exports.handler = async function (event) {
   const provider = new DefenderRelayProvider(event);
-  const signer = new DefenderRelaySigner(event, provider, { speed: "fastest" });
+  const signer = new DefenderRelaySigner(event, provider, { speed: 'fastest' });
   const store = new KeyValueStoreClient(event);
 
   const GovernorContract = new ethers.Contract(
     GovernorBravo.address,
     GovernorBravo.ABI,
-    signer
+    signer,
   );
 
-  //Check proposal state, if proposalId doesn't exist yet, just skip
+  // Check proposal state, if proposalId doesn't exist yet, just skip
   let state;
   try {
     state = await GovernorContract.state(proposalId);
-  }
-  catch(err) {
+  } catch (err) {
     return {
       message: `proposalId: ${proposalId} does not exist`,
     };
@@ -112,14 +111,14 @@ exports.handler = async function (event) {
   switch (state) {
     case ProposalStates.Succeeded: {
       const wasPreviouslyQueued = await store.get(
-        `${QueueTxSentPrefix}-${proposalId}`
+        `${QueueTxSentPrefix}-${proposalId}`,
       );
 
       if (!wasPreviouslyQueued) {
         await GovernorContract.queue(proposalId);
         await store.put(`${QueueTxSentPrefix}-${proposalId}`, true);
         return {
-          message: "Queue tx sent",
+          message: 'Queue tx sent',
         };
       }
       break;
@@ -131,14 +130,14 @@ exports.handler = async function (event) {
       if (currentDate > etaDate) {
         // Only execute when `eta` has passed
         const wasPreviouslyExecuted = await store.get(
-          `${ExecuteTxSentPrefix}-${proposalId}`
+          `${ExecuteTxSentPrefix}-${proposalId}`,
         );
         if (!wasPreviouslyExecuted) {
           await GovernorContract.execute(proposalId);
           await store.put(`${ExecuteTxSentPrefix}-${proposalId}`, true);
         }
         return {
-          message: "Execution tx sent",
+          message: 'Execution tx sent',
         };
       }
       break;
@@ -151,6 +150,6 @@ exports.handler = async function (event) {
   }
 
   return {
-    message: "Executed with no operation",
+    message: 'Executed with no operation',
   };
 };

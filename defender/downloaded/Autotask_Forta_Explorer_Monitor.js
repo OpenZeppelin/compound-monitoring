@@ -121,8 +121,8 @@ function parseMetricsResponse(response, currentTimestamp) {
     metric.scanners.forEach((scanner) => {
       // scanner id
       const scannerId = scanner.key;
-      let records = scanner.interval;
-      
+      const records = scanner.interval;
+
       // don't filter records
       // sum the sums and take the maximum of the maximums
       let sum = 0;
@@ -134,7 +134,7 @@ function parseMetricsResponse(response, currentTimestamp) {
           max = temp;
         }
       });
-      
+
       // actual data
       //   key: Epoch timestamp, in milliseconds
       //   sum: sum of metric over the interval
@@ -312,7 +312,7 @@ exports.handler = async function (autotaskEvent) {
   // retrieve
   const currentTimestamp = (new Date()).getTime();
   console.debug(`currentTimestamp: ${currentTimestamp.toString()}`);
-  
+
   console.debug(JSON.stringify(autotaskEvent, null, 2));
 
   let firstRun = false;
@@ -348,7 +348,7 @@ exports.handler = async function (autotaskEvent) {
   }
   console.debug(`lastUpdateTimestamp: ${lastUpdateTimestamp.toString()}`);
 
-  const timeFrame = 'hour'
+  const timeFrame = 'hour';
   console.debug(`Calculated timeFrame for queries: ${timeFrame}`);
 
   const promises = botIds.map(async (botId) => {

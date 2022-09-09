@@ -112,7 +112,7 @@ exports.handler = async function handler(autotaskEvent) {
         // intentionally allow fall-through so that a successfully queued proposal has the
         // opportunity to be executed as soon as possible
         // eslint-disable-next-line no-fallthrough
-      /*
+        /*
       case 5: // Queued
         // check for the ability to call execute()
         console.debug(`Checking if proposal ID ${proposalId} is ready to execute`);
