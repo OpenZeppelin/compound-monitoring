@@ -58,7 +58,7 @@ function parseAlertsResponse(response) {
     } = alert;
 
     const title = botIdsToNames[botId];
-    
+
     const output = {
       date_happened: (new Date(timestamp).valueOf()) / 1000,
       host: title,
@@ -180,14 +180,14 @@ exports.handler = async function (autotaskEvent) {
   // retrieve
   const currentTimestamp = (new Date()).getTime();
   console.debug(`currentTimestamp: ${currentTimestamp.toString()}`);
-  
+
   console.debug(JSON.stringify(autotaskEvent, null, 2));
-  
+
   const { secrets } = autotaskEvent;
   if (secrets === undefined) {
     throw new Error('secrets undefined');
   }
-  
+
   const { DatadogApiKey: datadogApiKey } = secrets;
   if (datadogApiKey === undefined) {
     throw new Error('Datadog API key undefined');
@@ -251,6 +251,6 @@ exports.handler = async function (autotaskEvent) {
   });
 
   await Promise.all(alertsPromises);
- 
+
   return {};
 };

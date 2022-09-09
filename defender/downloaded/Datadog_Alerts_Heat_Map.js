@@ -55,14 +55,14 @@ function parseAlertsResponse(response) {
     } = alert;
 
     const timestamp = new Date(dateTimestamp).valueOf();
-    
+
     // force the x-axis value (timestamp) passed with the data to be the timestamp at the start of the week
     const weeksElapsed = Math.floor((timestamp - fortaExplorerEarliestTimestamp) / (1000 * 60 * 60 * 24 * 7));
     const startOfWeekTimestamp = weeksElapsed * (7 * 24 * 60 * 60 * 1000);
-    
+
     // force the y-axis value to be the numbers 1 through 7, depending upon the day of the week
     const dayOfWeek = (new Date(timestamp).getDay()) + 1;
-    
+
     // use the transaction hash as a unique "tag"
     const tags = [
       `botid:${botId}`,
@@ -72,7 +72,7 @@ function parseAlertsResponse(response) {
       `weekselapsed:${weeksElapsed}`,
       `botname:${botIdsToNames[botId]}`,
     ];
-    
+
     const output = {
       metric: 'alertHeatMap',
       tags,
@@ -192,14 +192,14 @@ exports.handler = async function (autotaskEvent) {
   // retrieve
   const currentTimestamp = (new Date()).getTime();
   console.debug(`currentTimestamp: ${currentTimestamp.toString()}`);
-  
+
   console.debug(JSON.stringify(autotaskEvent, null, 2));
-  
+
   const { secrets } = autotaskEvent;
   if (secrets === undefined) {
     throw new Error('secrets undefined');
   }
-  
+
   const { DatadogApiKey: datadogApiKey } = secrets;
   if (datadogApiKey === undefined) {
     throw new Error('Datadog API key undefined');
@@ -253,15 +253,15 @@ exports.handler = async function (autotaskEvent) {
     if (alerts !== undefined) {
       console.debug(JSON.stringify(alerts, null, 2));
       return postToDatadog({ series: alerts }, datadogApiKey, datadogApiEndpoint);
-    } else {
-      console.debug('alerts is undefined');
     }
+    console.debug('alerts is undefined');
+
     return undefined;
   });
 
   alertsPromises = alertsPromises.filter((value) => value !== undefined);
-  
+
   await Promise.all(alertsPromises);
- 
+
   return {};
 };

@@ -243,7 +243,7 @@ exports.handler = async function (autotaskEvent) {
       // return early, do not attempt a POST request to Discord
       return undefined;
     }
-    
+
     console.log(result.value);
     return postToDiscord(discordUrl, result.value);
   });
