@@ -14,12 +14,6 @@ const compoundGovernanceAbi = [
   'function state(uint256 proposalId) view returns (uint8)',
 ];
 
-async function readyToExecute(contract, proposalId) {
-  const block = await contract.provider.getBlock('latest');
-  const proposal = await contract.proposals(ethers.BigNumber.from(proposalId));
-  return (block.timestamp > (proposal.eta).toNumber());
-}
-
 exports.handler = async function handler(autotaskEvent) {
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
@@ -91,7 +85,6 @@ exports.handler = async function handler(autotaskEvent) {
 
   const promises = proposalsToCheck.map(async (proposalId) => {
     const state = await governanceContract.state(proposalId);
-    let callExecute;
     switch (state) {
       case 0: // Pending
       case 1: // Active
