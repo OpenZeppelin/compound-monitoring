@@ -141,13 +141,9 @@ describe('check autotask', () => {
   });
 
   it('calls axios for proposals that are active', async () => {
-    const expectedData = '{"content":"Compound Governance: Proposal '
-    + '[1 - Prop1](https://compound.finance/governance/proposals/1) is active with:\\n\\t'
-    + 'FOR votes vs quorum threshold: 0%\\n\\t'
-    + '👍 (for) votes:     0\\n\\t'
-    + '👎 (against) votes: 0\\n\\t'
-    + '🙊 (abstain) votes: 0\\n\\t'
-    + 'Time left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) "}';
+    const expectedData = {
+      content: 'Compound Governance: Proposal [1 - Prop1](https://compound.finance/governance/proposals/1) is active with:\n\tFOR votes vs quorum threshold: 0%\n\t👍 (for) votes:     0\n\t👎 (against) votes: 0\n\t🙊 (abstain) votes: 0\n\tTime left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) ',
+    };
 
     mockContract.initialProposalId = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(0));
     mockContract.proposalCount = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(1));
@@ -165,20 +161,13 @@ describe('check autotask', () => {
   });
 
   it('handles multiple calls proposals', async () => {
-    const expectedData0 = '{"content":"Compound Governance: Proposal '
-    + '[1 - Prop1](https://compound.finance/governance/proposals/1) is active with:\\n\\t'
-    + 'FOR votes vs quorum threshold: 0%\\n\\t'
-    + '👍 (for) votes:     0\\n\\t'
-    + '👎 (against) votes: 0\\n\\t'
-    + '🙊 (abstain) votes: 0\\n\\t'
-    + 'Time left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) "}';
-    const expectedData1 = '{"content":"Compound Governance: Proposal '
-    + '[2 - Prop2](https://compound.finance/governance/proposals/2) is active with:\\n\\t'
-    + 'FOR votes vs quorum threshold: 10%\\n\\t'
-    + '👍 (for) votes:     10\\n\\t'
-    + '👎 (against) votes: 10\\n\\t'
-    + '🙊 (abstain) votes: 10\\n\\t'
-    + 'Time left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) "}';
+    const expectedData0 = {
+      content: 'Compound Governance: Proposal [1 - Prop1](https://compound.finance/governance/proposals/1) is active with:\n\tFOR votes vs quorum threshold: 0%\n\t👍 (for) votes:     0\n\t👎 (against) votes: 0\n\t🙊 (abstain) votes: 0\n\tTime left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) ',
+    };
+
+    const expectedData1 = {
+      content: 'Compound Governance: Proposal [2 - Prop2](https://compound.finance/governance/proposals/2) is active with:\n\tFOR votes vs quorum threshold: 10%\n\t👍 (for) votes:     10\n\t👎 (against) votes: 10\n\t🙊 (abstain) votes: 10\n\tTime left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) ',
+    };
 
     const proposal0 = { ...exampleProposal };
     const proposal1 = { ...exampleProposal };
