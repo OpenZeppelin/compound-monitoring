@@ -56,7 +56,7 @@ jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
 const axios = require('axios');
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('./Forta_Oracle_Price');
+const { handler } = require('../downloaded/Forta_Oracle_Price');
 
 function createFortaSentinelEvent(finding, blockHash, txHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
