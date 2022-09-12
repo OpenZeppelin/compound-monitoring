@@ -58,7 +58,7 @@ if (discordSecretName !== discordEnvSecretName) {
 }
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('./Forta_Low_Liquidity');
+const { handler } = require('../downloaded/Forta_Low_Liquidity');
 
 function createFortaSentinelEvent(finding, blockHash, txHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
