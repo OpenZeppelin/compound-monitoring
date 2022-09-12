@@ -23,19 +23,6 @@ const botIds = Object.keys(botIdsToNames);
 const fortaExplorerApiEndpoint = 'https://explorer-api.forta.network/graphql';
 const datadogEventsApiEndpoint = 'https://api.datadoghq.com/api/v1/events';
 
-function camelize(str, delimiter) {
-  let output = '';
-  str.split(delimiter).forEach((element, index) => {
-    const add = element.toLowerCase();
-    if (index === 0) {
-      output += add;
-    } else {
-      output += add[0].toUpperCase() + add.slice(1);
-    }
-  });
-  return output;
-}
-
 // extract relevant information from the Forta Explorer response and create an Object that can
 // be submitted to the Datadog Events API endpoint
 function parseAlertsResponse(response) {

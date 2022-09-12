@@ -87,6 +87,7 @@ const ExecuteTxSentPrefix = 'ExecuteTxSent';
 // Don't update manually, it's automatically updated when creating via API
 const proposalId = '110';
 
+// eslint-disable-next-line func-names
 exports.handler = async function (event) {
   const provider = new DefenderRelayProvider(event);
   const signer = new DefenderRelaySigner(event, provider, { speed: 'fastest' });
@@ -108,6 +109,7 @@ exports.handler = async function (event) {
     };
   }
 
+  /* eslint-disable default-case */
   switch (state) {
     case ProposalStates.Succeeded: {
       const wasPreviouslyQueued = await store.get(

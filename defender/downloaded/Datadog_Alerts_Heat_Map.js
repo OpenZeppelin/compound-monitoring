@@ -43,7 +43,7 @@ function parseAlertsResponse(response) {
 
     const timestamp = new Date(dateTimestamp).valueOf();
 
-    // force the x-axis value (timestamp) passed with the data to be the timestamp at the 
+    // force the x-axis value (timestamp) passed with the data to be the timestamp at the
     // start of the week
     const msPerWeek = (1000 * 60 * 60 * 24 * 7);
     const weeksElapsed = Math.floor((timestamp - fortaExplorerEarliestTimestamp) / msPerWeek);
