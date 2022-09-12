@@ -23,19 +23,6 @@ const botIds = Object.keys(botIdsToNames);
 const fortaExplorerApiEndpoint = 'https://explorer-api.forta.network/graphql';
 const datadogApiEndpoint = 'https://api.datadoghq.com/api/v2/series';
 
-function camelize(str, delimiter) {
-  let output = '';
-  str.split(delimiter).forEach((element, index) => {
-    const add = element.toLowerCase();
-    if (index === 0) {
-      output += add;
-    } else {
-      output += add[0].toUpperCase() + add.slice(1);
-    }
-  });
-  return output;
-}
-
 // extract relevant information from the Forta Explorer response and create an Object that can
 // be submitted to the Datadog Events API endpoint
 function parseAlertsResponse(response) {
@@ -56,14 +43,16 @@ function parseAlertsResponse(response) {
 
     const timestamp = new Date(dateTimestamp).valueOf();
 
-    // force the x-axis value (timestamp) passed with the data to be the timestamp at the start of the week
-    const weeksElapsed = Math.floor((timestamp - fortaExplorerEarliestTimestamp) / (1000 * 60 * 60 * 24 * 7));
-    const startOfWeekTimestamp = weeksElapsed * (7 * 24 * 60 * 60 * 1000);
+    // force the x-axis value (timestamp) passed with the data to be the timestamp at the 
+    // start of the week
+    const msPerWeek = (1000 * 60 * 60 * 24 * 7);
+    const weeksElapsed = Math.floor((timestamp - fortaExplorerEarliestTimestamp) / msPerWeek);
 
     // force the y-axis value to be the numbers 1 through 7, depending upon the day of the week
     const dayOfWeek = (new Date(timestamp).getDay()) + 1;
 
     // use the transaction hash as a unique "tag"
+    // cSpell:disable
     const tags = [
       `botid:${botId}`,
       `protocol:${protocol}`,
@@ -72,6 +61,7 @@ function parseAlertsResponse(response) {
       `weekselapsed:${weeksElapsed}`,
       `botname:${botIdsToNames[botId]}`,
     ];
+    // cSpell:enable
 
     const output = {
       metric: 'alertHeatMap',
@@ -205,7 +195,6 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('Datadog API key undefined');
   }
 
-  let firstRun = false;
   const store = new KeyValueStoreClient(autotaskEvent);
 
   // load the latest timestamp that was stored
@@ -215,7 +204,6 @@ exports.handler = async function (autotaskEvent) {
   // of the last timestamp
   if (lastUpdateTimestamp === undefined || lastUpdateTimestamp === null) {
     console.debug('Autotask run for the first time, initializing lastUpdateTimestamp');
-    firstRun = true;
     lastUpdateTimestamp = fortaExplorerEarliestTimestamp;
   } else {
     console.debug('Retrieving existing value for lastUpdateTimestamp');
@@ -249,7 +237,7 @@ exports.handler = async function (autotaskEvent) {
 
   // check for available metrics
   let alertsPromises = data.map(async (output) => {
-    const { alerts, botId } = output;
+    const { alerts } = output;
     if (alerts !== undefined) {
       console.debug(JSON.stringify(alerts, null, 2));
       return postToDatadog({ series: alerts }, datadogApiKey, datadogApiEndpoint);

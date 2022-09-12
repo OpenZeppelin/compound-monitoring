@@ -1,392 +1,394 @@
+
+
 {
-    "sentinels": [
-      {
-        "name": "Forta cToken Monitor",
-        "paused": true,
-        "type": "FORTA",
-        "fortaConditions": {
-          "severity": 1,
-          "alertIDs": ["AE-COMP-CTOKEN-EVENT"],
-          "minimumScannerCount": 1
+  "sentinels": [
+    {
+      "name": "Forta cToken Monitor",
+      "paused": true,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": ["AE-COMP-CTOKEN-EVENT"],
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "autotaskTrigger": "Forta cToken",
+      "agentIDs": [
+        "0x125c36816fbad9974a452947bf6a98d975988ddf4342c159a986383b64765e22"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "name": "Forta Low Liquidity Attack",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": ["AE-COMP-MARKET-ATTACK-EVENT"],
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "autotaskTrigger": "Forta Low Liquidity",
+      "agentIDs": [
+        "0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "type": "BLOCK",
+      "network": "mainnet",
+      "confirmLevel": 1,
+      "paused": false,
+      "name": "cToken Monitor",
+      "addresses": [
+        "0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c",
+        "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
+        "0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4",
+        "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
+        "0x7713DD9Ca933848F6819F38B8352D9A15EA73F67",
+        "0xFAce851a4921ce59e912d19329929CE6da6EB0c7",
+        "0x95b4eF2869eBD94BEb4eEE400a99824BF5DC325b",
+        "0x158079Ee67Fce2f58472A96584A73C7Ab9AC95c1",
+        "0xF5DCe57282A584D2746FaF1593d3121Fcac444dC",
+        "0x4B0181102A0112A2ef11AbEE5563bb4a3176c9d7",
+        "0x12392F67bdf24faE0AF363c24aC620a2f67DAd86",
+        "0x35A18000230DA775CAc24873d00Ff85BccdeD550",
+        "0x39AA39c021dfbaE8faC545936693aC917d5E7563",
+        "0x041171993284df560249B57358F931D9eB7b925D",
+        "0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9",
+        "0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
+        "0xccF4429DB6322D5C611ee964527D42E5d685DD6a",
+        "0x80a2AE356fc9ef4305676f7a3E2Ed04e12C33946",
+        "0xB3319f5D18Bc0D84dD1b4825Dcde5d5f7266d407"
+      ],
+      "abi": "./downloaded/cToken_Monitor_ABI.json",
+      "functionConditions": [],
+      "eventConditions": [
+        {
+          "eventSignature": "Borrow(address,uint256,uint256,uint256)"
         },
-        "addresses": [],
-        "autotaskTrigger": "Forta cToken",
-        "agentIDs": [
-          "0x125c36816fbad9974a452947bf6a98d975988ddf4342c159a986383b64765e22"
+        {
+          "eventSignature": "LiquidateBorrow(address,address,uint256,address,uint256)"
+        },
+        {
+          "eventSignature": "Mint(address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "Redeem(address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "RepayBorrow(address,address,uint256,uint256,uint256)"
+        }
+      ],
+      "txCondition": "",
+      "autotaskTrigger": "Contract cToken",
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "name": "Forta Large Borrows Governance",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": ["AE-COMP-GOVERNANCE-THRESHOLD"],
+        "minimumScannerCount": 1
+      },
+      "addresses": [],
+      "autotaskTrigger": "Forta Large Borrows Governance",
+      "agentIDs": [
+        "0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "name": "Forta Multi-Sig Monitor",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": [
+          "AE-COMP-MULTISIG-OWNER-ADDED-ALERT",
+          "AE-COMP-MULTISIG-OWNER-REMOVED-ALERT",
+          "AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT",
+          "AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT",
+          "AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT",
+          "AE-COMP-GOVERNANCE-VOTE-CAST-ALERT",
+          "AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET-ALERT",
+          "AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT",
+          "AE-COMP-NEW-PAUSE-GUARDIAN-ALERT",
+          "AE-COMP-ACTION-PAUSED-ALERT",
+          "AE-COMP-NEW-BORROW-CAP-ALERT",
+          "AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT"
         ],
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
+        "minimumScannerCount": 1
       },
-      {
-        "name": "Forta Low Liquidity Attack",
-        "paused": false,
-        "type": "FORTA",
-        "fortaConditions": {
-          "severity": 1,
-          "alertIDs": ["AE-COMP-MARKET-ATTACK-EVENT"],
-          "minimumScannerCount": 1
+      "addresses": [],
+      "autotaskTrigger": "Forta Multi-Sig",
+      "agentIDs": [
+        "0x916603512086fcad84c35858d2fc5356c512f72b19c80e52e8f9c04d8122e2ba"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "type": "BLOCK",
+      "network": "mainnet",
+      "confirmLevel": 1,
+      "paused": false,
+      "name": "cEther Monitor",
+      "addresses": ["0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5"],
+      "abi": "./downloaded/cEther_Monitor_ABI.json",
+      "functionConditions": [],
+      "eventConditions": [
+        {
+          "eventSignature": "Borrow(address,uint256,uint256,uint256)"
         },
-        "addresses": [],
-        "autotaskTrigger": "Forta Low Liquidity",
-        "agentIDs": [
-          "0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714"
+        {
+          "eventSignature": "LiquidateBorrow(address,address,uint256,address,uint256)"
+        },
+        {
+          "eventSignature": "Mint(address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "Redeem(address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "RepayBorrow(address,address,uint256,uint256,uint256)"
+        }
+      ],
+      "txCondition": "",
+      "autotaskTrigger": "Contract cToken",
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "name": "Forta Governance Monitor",
+      "paused": true,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": [
+          "AE-COMP-GOVERNANCE-PROPOSAL-CREATED",
+          "AE-COMP-GOVERNANCE-VOTE-CAST",
+          "AE-COMP-GOVERNANCE-PROPOSAL-CANCELED",
+          "AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED",
+          "AE-COMP-GOVERNANCE-PROPOSAL-QUEUED",
+          "AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET"
         ],
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
+        "minimumScannerCount": 1
       },
-      {
-        "type": "BLOCK",
-        "network": "mainnet",
-        "confirmLevel": 1,
-        "paused": false,
-        "name": "cToken Monitor",
-        "addresses": [
-          "0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c",
-          "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E",
-          "0x70e36f6BF80a52b3B46b3aF8e106CC0ed743E8e4",
-          "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
-          "0x7713DD9Ca933848F6819F38B8352D9A15EA73F67",
-          "0xFAce851a4921ce59e912d19329929CE6da6EB0c7",
-          "0x95b4eF2869eBD94BEb4eEE400a99824BF5DC325b",
-          "0x158079Ee67Fce2f58472A96584A73C7Ab9AC95c1",
-          "0xF5DCe57282A584D2746FaF1593d3121Fcac444dC",
-          "0x4B0181102A0112A2ef11AbEE5563bb4a3176c9d7",
-          "0x12392F67bdf24faE0AF363c24aC620a2f67DAd86",
-          "0x35A18000230DA775CAc24873d00Ff85BccdeD550",
-          "0x39AA39c021dfbaE8faC545936693aC917d5E7563",
-          "0x041171993284df560249B57358F931D9eB7b925D",
-          "0xf650C3d88D12dB855b8bf7D11Be6C55A4e07dCC9",
-          "0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
-          "0xccF4429DB6322D5C611ee964527D42E5d685DD6a",
-          "0x80a2AE356fc9ef4305676f7a3E2Ed04e12C33946",
-          "0xB3319f5D18Bc0D84dD1b4825Dcde5d5f7266d407"
-        ],
-        "abi": "./downloaded/cToken_Monitor_ABI.json",
-        "functionConditions": [],
-        "eventConditions": [
-          {
-            "eventSignature": "Borrow(address,uint256,uint256,uint256)"
-          },
-          {
-            "eventSignature": "LiquidateBorrow(address,address,uint256,address,uint256)"
-          },
-          {
-            "eventSignature": "Mint(address,uint256,uint256)"
-          },
-          {
-            "eventSignature": "Redeem(address,uint256,uint256)"
-          },
-          {
-            "eventSignature": "RepayBorrow(address,address,uint256,uint256,uint256)"
-          }
-        ],
-        "txCondition": "",
-        "autotaskTrigger": "Contract cToken",
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
-      },
-      {
-        "name": "Forta Large Borrows Governance",
-        "paused": false,
-        "type": "FORTA",
-        "fortaConditions": {
-          "severity": 1,
-          "alertIDs": ["AE-COMP-GOVERNANCE-THRESHOLD"],
-          "minimumScannerCount": 1
+      "addresses": [],
+      "autotaskTrigger": "Forta Governance",
+      "agentIDs": [
+        "0xa0424dfee87cc34b9ff6a1dfa2cb22dbf1b20a238698ae0eeffbf07f869e5b39"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "type": "BLOCK",
+      "network": "mainnet",
+      "confirmLevel": 1,
+      "paused": false,
+      "name": "Contract Sentinel Governance",
+      "addresses": ["0xc0Da02939E1441F497fd74F78cE7Decb17B66529"],
+      "abi": "./downloaded/Contract_Sentinel_Governance_ABI.json",
+      "functionConditions": [],
+      "eventConditions": [
+        {
+          "eventSignature": "ProposalCanceled(uint256)"
         },
-        "addresses": [],
-        "autotaskTrigger": "Forta Large Borrows Governance",
-        "agentIDs": [
-          "0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339"
-        ],
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
-      },
-      {
-        "name": "Forta Multi-Sig Monitor",
-        "paused": false,
-        "type": "FORTA",
-        "fortaConditions": {
-          "severity": 1,
-          "alertIDs": [
-            "AE-COMP-MULTISIG-OWNER-ADDED-ALERT",
-            "AE-COMP-MULTISIG-OWNER-REMOVED-ALERT",
-            "AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT",
-            "AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT",
-            "AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT",
-            "AE-COMP-GOVERNANCE-VOTE-CAST-ALERT",
-            "AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET-ALERT",
-            "AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT",
-            "AE-COMP-NEW-PAUSE-GUARDIAN-ALERT",
-            "AE-COMP-ACTION-PAUSED-ALERT",
-            "AE-COMP-NEW-BORROW-CAP-ALERT",
-            "AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT"
-          ],
-          "minimumScannerCount": 1
+        {
+          "eventSignature": "ProposalCreated(uint256,address,address[],uint256[],string[],bytes[],uint256,uint256,string)"
         },
-        "addresses": [],
-        "autotaskTrigger": "Forta Multi-Sig",
-        "agentIDs": [
-          "0x916603512086fcad84c35858d2fc5356c512f72b19c80e52e8f9c04d8122e2ba"
-        ],
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
-      },
-      {
-        "type": "BLOCK",
-        "network": "mainnet",
-        "confirmLevel": 1,
-        "paused": false,
-        "name": "cEther Monitor",
-        "addresses": ["0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5"],
-        "abi": "./downloaded/cEther_Monitor_ABI.json",
-        "functionConditions": [],
-        "eventConditions": [
-          {
-            "eventSignature": "Borrow(address,uint256,uint256,uint256)"
-          },
-          {
-            "eventSignature": "LiquidateBorrow(address,address,uint256,address,uint256)"
-          },
-          {
-            "eventSignature": "Mint(address,uint256,uint256)"
-          },
-          {
-            "eventSignature": "Redeem(address,uint256,uint256)"
-          },
-          {
-            "eventSignature": "RepayBorrow(address,address,uint256,uint256,uint256)"
-          }
-        ],
-        "txCondition": "",
-        "autotaskTrigger": "Contract cToken",
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
-      },
-      {
-        "name": "Forta Governance Monitor",
-        "paused": true,
-        "type": "FORTA",
-        "fortaConditions": {
-          "severity": 1,
-          "alertIDs": [
-            "AE-COMP-GOVERNANCE-PROPOSAL-CREATED",
-            "AE-COMP-GOVERNANCE-VOTE-CAST",
-            "AE-COMP-GOVERNANCE-PROPOSAL-CANCELED",
-            "AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED",
-            "AE-COMP-GOVERNANCE-PROPOSAL-QUEUED",
-            "AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET"
-          ],
-          "minimumScannerCount": 1
+        {
+          "eventSignature": "ProposalExecuted(uint256)"
         },
-        "addresses": [],
-        "autotaskTrigger": "Forta Governance",
-        "agentIDs": [
-          "0xa0424dfee87cc34b9ff6a1dfa2cb22dbf1b20a238698ae0eeffbf07f869e5b39"
-        ],
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
-      },
-      {
-        "type": "BLOCK",
-        "network": "mainnet",
-        "confirmLevel": 1,
-        "paused": false,
-        "name": "Contract Sentinel Governance",
-        "addresses": ["0xc0Da02939E1441F497fd74F78cE7Decb17B66529"],
-        "abi": "./downloaded/Contract_Sentinel_Governance_ABI.json",
-        "functionConditions": [],
-        "eventConditions": [
-          {
-            "eventSignature": "ProposalCanceled(uint256)"
-          },
-          {
-            "eventSignature": "ProposalCreated(uint256,address,address[],uint256[],string[],bytes[],uint256,uint256,string)"
-          },
-          {
-            "eventSignature": "ProposalExecuted(uint256)"
-          },
-          {
-            "eventSignature": "ProposalQueued(uint256,uint256)"
-          },
-          {
-            "eventSignature": "VoteCast(address,uint256,uint8,uint256,string)"
-          }
-        ],
-        "txCondition": "",
-        "autotaskTrigger": "Contract Governance",
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
-      },
-      {
-        "name": "Forta Distribution Monitor",
-        "paused": true,
-        "type": "FORTA",
-        "fortaConditions": {
-          "severity": 1,
-          "alertIDs": ["AE-COMP-DISTRIBUTION-EVENT"],
-          "minimumScannerCount": 1
+        {
+          "eventSignature": "ProposalQueued(uint256,uint256)"
         },
-        "addresses": [],
-        "autotaskTrigger": "Forta Distributions",
-        "agentIDs": [
-          "0x34c27c43e0a45bced8f8a941b3d552f5e6feae62afd7e2e88b5024f7de5a8ba0"
-        ],
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
+        {
+          "eventSignature": "VoteCast(address,uint256,uint8,uint256,string)"
+        }
+      ],
+      "txCondition": "",
+      "autotaskTrigger": "Contract Governance",
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "name": "Forta Distribution Monitor",
+      "paused": true,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": ["AE-COMP-DISTRIBUTION-EVENT"],
+        "minimumScannerCount": 1
       },
-      {
-        "name": "Forta Large Delegations Monitor",
-        "paused": false,
-        "type": "FORTA",
-        "fortaConditions": {
-          "severity": 1,
-          "alertIDs": ["AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD"],
-          "minimumScannerCount": 1
-        },
-        "addresses": [],
-        "autotaskTrigger": "Forta Large Delegations",
-        "agentIDs": [
-          "0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53"
-        ],
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
+      "addresses": [],
+      "autotaskTrigger": "Forta Distributions",
+      "agentIDs": [
+        "0x34c27c43e0a45bced8f8a941b3d552f5e6feae62afd7e2e88b5024f7de5a8ba0"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "name": "Forta Large Delegations Monitor",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": ["AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD"],
+        "minimumScannerCount": 1
       },
-      {
-        "name": "Forta Oracle Price Monitor",
-        "paused": false,
-        "type": "FORTA",
-        "fortaConditions": {
-          "severity": 1,
-          "alertIDs": ["AE-COMP-CTOKEN-PRICE-REJECTED"],
-          "minimumScannerCount": 1
-        },
-        "addresses": [],
-        "autotaskTrigger": "Forta Oracle Price",
-        "agentIDs": [
-          "0xe200d890a67d51c3610520dd9fdfa9e2bd6dd341d41e32fa457601e73c4c6685"
-        ],
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
+      "addresses": [],
+      "autotaskTrigger": "Forta Large Delegations",
+      "agentIDs": [
+        "0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "name": "Forta Oracle Price Monitor",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": ["AE-COMP-CTOKEN-PRICE-REJECTED"],
+        "minimumScannerCount": 1
       },
-      {
-        "name": "Forta Underlying Asset Monitor",
-        "paused": false,
-        "type": "FORTA",
-        "fortaConditions": {
-          "severity": 1,
-          "alertIDs": ["AE-COMP-CTOKEN-ASSET-UPGRADED"],
-          "minimumScannerCount": 1
-        },
-        "addresses": [],
-        "autotaskTrigger": "Forta Underlying Asset",
-        "agentIDs": [
-          "0xf836bda7810aa2dd9df5bb7ac748f173b945863e922a15bb7c57da7b0e6dab05"
-        ],
-        "alertTimeoutMs": 0,
-        "notificationChannels": []
-      }
-    ],
-    "autotasks": [
-      {
-        "name": "Forta Governance",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": true,
-        "autotaskFilePath": "./downloaded/Forta_Governance.js"
+      "addresses": [],
+      "autotaskTrigger": "Forta Oracle Price",
+      "agentIDs": [
+        "0xe200d890a67d51c3610520dd9fdfa9e2bd6dd341d41e32fa457601e73c4c6685"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    },
+    {
+      "name": "Forta Underlying Asset Monitor",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "alertIDs": ["AE-COMP-CTOKEN-ASSET-UPGRADED"],
+        "minimumScannerCount": 1
       },
-      {
-        "name": "Forta Large Borrows Governance",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": false,
-        "autotaskFilePath": "./downloaded/Forta_Large_Borrows_Governance.js"
+      "addresses": [],
+      "autotaskTrigger": "Forta Underlying Asset",
+      "agentIDs": [
+        "0xf836bda7810aa2dd9df5bb7ac748f173b945863e922a15bb7c57da7b0e6dab05"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": []
+    }
+  ],
+  "autotasks": [
+    {
+      "name": "Forta Governance",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
       },
-      {
-        "name": "Forta Oracle Price",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": false,
-        "autotaskFilePath": "./downloaded/Forta_Oracle_Price.js"
+      "paused": true,
+      "autotaskFilePath": "./downloaded/Forta_Governance.js"
+    },
+    {
+      "name": "Forta Large Borrows Governance",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
       },
-      {
-        "name": "Forta Distributions",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": true,
-        "autotaskFilePath": "./downloaded/Forta_Distributions.js"
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Large_Borrows_Governance.js"
+    },
+    {
+      "name": "Forta Oracle Price",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
       },
-      {
-        "name": "Forta Underlying Asset",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": false,
-        "autotaskFilePath": "./downloaded/Forta_Underlying_Asset.js"
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Oracle_Price.js"
+    },
+    {
+      "name": "Forta Distributions",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
       },
-      {
-        "name": "Forta Low Liquidity",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": false,
-        "autotaskFilePath": "./downloaded/Forta_Low_Liquidity.js"
+      "paused": true,
+      "autotaskFilePath": "./downloaded/Forta_Distributions.js"
+    },
+    {
+      "name": "Forta Underlying Asset",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
       },
-      {
-        "name": "Forta Large Delegations",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": false,
-        "autotaskFilePath": "./downloaded/Forta_Large_Delegations.js"
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Underlying_Asset.js"
+    },
+    {
+      "name": "Forta Low Liquidity",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
       },
-      {
-        "name": "Contract cToken",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": false,
-        "autotaskFilePath": "./downloaded/Contract_cToken.js"
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Low_Liquidity.js"
+    },
+    {
+      "name": "Forta Large Delegations",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
       },
-      {
-        "name": "Forta Multi-Sig",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": false,
-        "autotaskFilePath": "./downloaded/Forta_Multi-Sig.js"
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Large_Delegations.js"
+    },
+    {
+      "name": "Contract cToken",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
       },
-      {
-        "name": "Contract Governance",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": false,
-        "autotaskFilePath": "./downloaded/Contract_Governance.js"
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Contract_cToken.js"
+    },
+    {
+      "name": "Forta Multi-Sig",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
       },
-      {
-        "name": "Forta cToken",
-        "trigger": {
-          "frequencyMinutes": 525600000,
-          "type": "schedule"
-        },
-        "paused": true,
-        "autotaskFilePath": "./downloaded/Forta_cToken.js"
-      }
-    ],
-    "notificationChannels": []
-  }
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Forta_Multi-Sig.js"
+    },
+    {
+      "name": "Contract Governance",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
+      },
+      "paused": false,
+      "autotaskFilePath": "./downloaded/Contract_Governance.js"
+    },
+    {
+      "name": "Forta cToken",
+      "trigger": {
+        "frequencyMinutes": 525600000,
+        "type": "schedule"
+      },
+      "paused": true,
+      "autotaskFilePath": "./downloaded/Forta_cToken.js"
+    }
+  ],
+  "notificationChannels": []
+}

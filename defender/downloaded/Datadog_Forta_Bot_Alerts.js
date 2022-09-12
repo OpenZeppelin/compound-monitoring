@@ -21,7 +21,6 @@ const botIdsToNames = {
 const botIds = Object.keys(botIdsToNames);
 
 const fortaExplorerApiEndpoint = 'https://explorer-api.forta.network/graphql';
-const datadogApiEndpoint = 'https://api.datadoghq.com/api/v2/series';
 const datadogEventsApiEndpoint = 'https://api.datadoghq.com/api/v1/events';
 
 function camelize(str, delimiter) {
@@ -44,7 +43,7 @@ function parseAlertsResponse(response) {
   const newAlerts = alerts.map((alert) => {
     const {
       protocol,
-      alertId: aggregation_key,
+      alertId: aggregationKey,
       description: text,
       severity,
       source: {
@@ -69,7 +68,7 @@ function parseAlertsResponse(response) {
         'version:4',
       ],
       text,
-      aggregation_key,
+      aggregationKey,
       title,
     };
     return output;
@@ -193,7 +192,6 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('Datadog API key undefined');
   }
 
-  let firstRun = false;
   const store = new KeyValueStoreClient(autotaskEvent);
 
   // load the latest timestamp that was stored
@@ -203,7 +201,6 @@ exports.handler = async function (autotaskEvent) {
   // of the last timestamp
   if (lastUpdateTimestamp === undefined || lastUpdateTimestamp === null) {
     console.debug('Autotask run for the first time, initializing lastUpdateTimestamp');
-    firstRun = true;
     lastUpdateTimestamp = fortaExplorerEarliestTimestamp;
   } else {
     console.debug('Retrieving existing value for lastUpdateTimestamp');
