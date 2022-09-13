@@ -16,6 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "axios": "0.27.2",
+    "axios-retry": "3.1.9",
     "defender-autotask-client": "1.24.0",
     "defender-kvstore-client": "1.24.0",
     "defender-relay-client": "1.21.3",
