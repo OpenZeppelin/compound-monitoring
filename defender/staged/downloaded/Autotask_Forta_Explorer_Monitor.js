@@ -162,7 +162,7 @@ function parseMetricsResponse(response, currentTimestamp) {
 function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
   const graphqlQuery = {
     operationName: 'Retrieve',
-    query: `query Retrive($getListInput: GetAlertsInput) {
+    query: `query Retrieve($getListInput: GetAlertsInput) {
       getList(input: $getListInput) {
         aggregations {
           severity {
