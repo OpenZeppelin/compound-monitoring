@@ -162,59 +162,60 @@ function parseMetricsResponse(response, currentTimestamp) {
 function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
   const graphqlQuery = {
     operationName: 'Retrieve',
-    query: `query Retrieve($getListInput: GetAlertsInput) {
+    query: `query Retrive($getListInput: GetAlertsInput) {
       getList(input: $getListInput) {
-        alerts {
-          hash
-          description
-          severity
-          protocol
-          name
-          everest_id
-          alert_id
-          scanner_count
-          source {
-            tx_hash
-            agent {
-              id
-              name
-            }
-            block {
-              chain_id
-              number
-              timestamp
-            }
+        aggregations {
+          severity {
+            key
+            doc_count
+            __typename
           }
-          projects {
-            id
-            name
+          alerts {
+            key
+            doc_count
+            __typename
           }
+          agents {
+            key
+            doc_count
+            __typename
+          }
+          interval {
+            key
+            doc_count
+            __typename
+          }
+          cardinalities {
+            agents
+            alerts
+            __typename
+          }
+          __typename
         }
-        nextPageValues {
-          blocknumber
-          id
-        }
-        currentPageValues {
-          blocknumber
-          id
-        }
+        __typename
       }
-    }`,
-    variables: {
+    }
+    `,
+    variable: {
       getListInput: {
         severity: [],
+        agents: [botId],
+        txHash: "",
+        text: "",
+        muted: [],
+        sort: "",
+        limit: 0,
+        project: "",
         startDate: (lastUpdateTimestamp + 1).toString(),
         endDate: currentTimestamp.toString(),
-        txHash: '',
-        text: '',
-        muted: [],
-        limit: 0,
-        sort: 'desc',
-        agents: [botId],
-        addresses: [],
-        project: '',
-      },
-    },
+        aggregations: {
+          severity: true,
+          interval: "day",
+          alerts: 6,
+          cardinalities:true
+        }
+      }
+    }
   };
   return graphqlQuery;
 }
