@@ -48,7 +48,7 @@ describe('Run the Autotask', () => {
     const alerts = [];
     const metrics = [];
     const getAgentInformation = [{}];
-    const mockAlertResponse = { data: { data: { getList: { alerts } } } };
+    const mockAlertResponse = { data: { data: { getList: { aggregations: { alerts } } } } };
     const mockMetricsResponse = { data: { data: { getAgentMetrics: { metrics } } } };
     const mockAgentInformationResponse = { data: { data: { getAgentInformation } } };
     axios.mockImplementation((inputObject) => {
@@ -107,7 +107,7 @@ describe('Run the Autotask', () => {
 
     const alerts = [];
     const metrics = [];
-    const mockAlertResponse = { data: { data: { getList: { alerts } } } };
+    const mockAlertResponse = { data: { data: { getList: { aggregations: { alerts } } } } };
     const mockMetricsResponse = { data: { data: { getAgentMetrics: { metrics } } } };
     axios.mockImplementation((inputObject) => {
       const { data: { query } } = inputObject;
@@ -166,7 +166,7 @@ describe('Run the Autotask', () => {
 
     const alerts = [];
     const metrics = [];
-    const mockAlertResponse = { data: { data: { getList: { alerts } } } };
+    const mockAlertResponse = { data: { data: { getList: { aggregations: { alerts } } } } };
     const mockMetricsResponse = { data: { data: { getAgentMetrics: { metrics } } } };
     axios.mockImplementation((inputObject) => {
       const { data: { query } } = inputObject;
@@ -259,7 +259,7 @@ describe('Run the Autotask', () => {
     ];
 
     const getAgentInformation = [{}];
-    const mockAlertResponse = { data: { data: { getList: { alerts } } } };
+    const mockAlertResponse = { data: { data: { getList: { aggregations: { alerts } } } } };
     const mockMetricsResponse = { data: { data: { getAgentMetrics: { metrics } } } };
     const mockAgentInformationResponse = { data: { data: { getAgentInformation } } };
     axios.mockImplementation((inputObject) => {
@@ -334,7 +334,7 @@ describe('Run the Autotask', () => {
 
     const metrics = [];
     const getAgentInformation = [{}];
-    const mockAlertResponse = { data: { data: { getList: { alerts } } } };
+    const mockAlertResponse = { data: { data: { getList: { aggregations: { alerts } } } } };
     const mockMetricsResponse = { data: { data: { getAgentMetrics: { metrics } } } };
     const mockAgentInformationResponse = { data: { data: { getAgentInformation } } };
     axios.mockImplementation((inputObject) => {
