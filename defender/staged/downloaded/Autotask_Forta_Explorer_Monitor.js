@@ -90,7 +90,7 @@ function parseAlertsResponse(response) {
     };
   }
 
-  const { data: { data: { getList: { alerts } } } } = response;
+  const { data: { data: { getList: { aggregations: { alerts } } } } } = response;
   const newAlerts = alerts.map((alert) => {
     const output = {};
     Object.entries(alert).forEach(([key, value]) => {
