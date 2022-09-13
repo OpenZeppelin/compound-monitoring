@@ -1,6 +1,6 @@
 {
   "name": "forta-compound-finance-liquidation-monitor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Forta Bot that monitors Compound Finance for positions that can be liquidated",
   "chainIds": [
     1
