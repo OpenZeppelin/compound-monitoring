@@ -79,8 +79,7 @@ function parseAlertsResponse(response) {
 // page for the Bot
 function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
   const graphqlQuery = {
-    operationName: 'Retrieve',
-    query: `query Retrieve($getListInput: GetAlertsInput) {
+    query: `query ($getListInput: GetAlertsInput) {
       getList(input: $getListInput) {
         alerts {
           hash
@@ -109,11 +108,11 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           }
         }
         nextPageValues {
-          blocknumber
+          timestamp
           id
         }
         currentPageValues {
-          blocknumber
+          timestamp
           id
         }
       }
@@ -125,6 +124,7 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
         endDate: currentTimestamp.toString(),
         txHash: '',
         text: '',
+        limit: 100,
         muted: [],
         sort: 'desc',
         agents: [botId],
@@ -234,7 +234,7 @@ exports.handler = async function (autotaskEvent) {
   let alertsPromises = data.map(async (output) => {
     const { alerts } = output;
     if (alerts !== undefined) {
-      console.debug(JSON.stringify(alerts, null, 2));
+      console.debug("alerts here", JSON.stringify(alerts, null, 2));
       return postToDatadog({ series: alerts }, datadogApiKey, datadogApiEndpoint);
     }
     console.debug('alerts is undefined');

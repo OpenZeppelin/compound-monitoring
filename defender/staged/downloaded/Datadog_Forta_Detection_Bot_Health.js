@@ -333,7 +333,7 @@ exports.handler = async function (autotaskEvent) {
         });
         return undefined;
       });
-      console.debug(JSON.stringify(series, null, 2));
+      console.debug("series data here", JSON.stringify(series, null, 2));
 
       // post to Datadog
       return postToDatadog({ series }, datadogApiKey);
