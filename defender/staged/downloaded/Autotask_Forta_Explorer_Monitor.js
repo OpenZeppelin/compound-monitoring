@@ -52,8 +52,7 @@ function parseAgentInformationResponse(response) {
 
   const output = {};
   Object.entries(getAgentInformation[0]).forEach(([key, value]) => {
-    const newKey = camelize(key, '_');
-    output[newKey] = value;
+    output[camelize(key, '_')] = value
   });
 
   return output;
@@ -133,7 +132,7 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
         }
       }
     }`,
-    variable: {
+    variables: {
       getListInput: {
         agents: [botId],
         limit: 100,
@@ -153,7 +152,7 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
 function createAgentInformationQuery(id) {
   const graphqlQuery = {
     operationName: 'Retrieve',
-    query: `query Retrive($getAgentInput: AgentInformation) {
+    query: `query Retrieve($getAgentInput: AgentInformation) {
       getAgentInformation(input: $getAgentInput) {
         id
         name
@@ -169,7 +168,6 @@ function createAgentInformationQuery(id) {
         image
         manifest_ipfs
         doc_ipfs
-        __typename
       }
     }`,
     variables: {
@@ -222,6 +220,7 @@ async function postQuery(graphqlQuery) {
     data: graphqlQuery,
   });
 
+  console.debug("look here for response", response.data)
   return response;
 }
 
