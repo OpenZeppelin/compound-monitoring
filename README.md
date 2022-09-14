@@ -72,9 +72,9 @@ This code allows users to deploy bots to the Forta network using Gnosis Safe mul
 
 ### Compound Governance Automation
 
-This Autotask runs periodically to check the Compound GovernorBravo contract for proposals that can be queued or executed. For proposals with a state of 
+This Autotask runs periodically to check the Compound GovernorBravo contract for proposals that can be queued or executed. For proposals with a state of
 Pending, Active, Canceled, Defeated, Expired, or Executed, no action is taken. Proposals with a state of Successful are queued and a check is immediately
-performed to determine if the proposal can be executed. If so, the proposal is executed. Proposals that already have a state of Queued are checked to 
+performed to determine if the proposal can be executed. If so, the proposal is executed. Proposals that already have a state of Queued are checked to
 determine if they are ready to execute, and if so, the proposals are executed.
 
 ### Underlying Asset Autotask
