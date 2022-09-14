@@ -88,7 +88,6 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           severity
           protocol
           name
-          everest_id
           alert_id
           scanner_count
           source {
