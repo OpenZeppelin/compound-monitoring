@@ -52,18 +52,57 @@ function parseAgentInformationResponse(response) {
 
   const output = {};
   Object.entries(getAgentInformation[0]).forEach(([key, value]) => {
-    output[camelize(key, '_')] = value
+    output[camelize(key, '_')] = value;
   });
 
   return output;
 }
 
 function parseAlertsResponse(response) {
-  const { data: { data: { getList: { aggregations: { alerts } } } } } = response;
+  function getBlock(block) {
+    return {
+      chainId: block.chain_id,
+      number: block.number,
+      timestamp: block.timestamp,
+    };
+  }
+
+  function getAgent(agent) {
+    return {
+      id: agent.id,
+      name: agent.name,
+    };
+  }
+
+  function getSource(value) {
+    return {
+      txHash: value.tx_hash,
+      agent: getAgent(value.agent),
+      block: getBlock(value.block),
+    };
+  }
+
+  function getProject(project) {
+    return {
+      id: project.id,
+      name: project.name,
+    };
+  }
+
+  const { data: { data: { getList: { alerts } } } } = response;
   const newAlerts = alerts.map((alert) => {
     const output = {};
     Object.entries(alert).forEach(([key, value]) => {
-      output[camelize(key, '_')] = value;
+      switch (key) {
+        case 'source':
+          output.source = getSource(value);
+          break;
+        case 'projects':
+          output.projects = value.map((project) => getProject(project));
+          break;
+        default:
+          output[camelize(key, '_')] = value;
+      }
     });
     return output;
   });
@@ -124,25 +163,55 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
     operationName: 'Retrieve',
     query: `query Retrieve($getListInput: GetAlertsInput) {
       getList(input: $getListInput) {
-        aggregations {
-          alerts {
-            key
-            doc_count
+        alerts {
+          hash
+          description
+          severity
+          protocol
+          name
+          alert_id
+          scanner_count
+          source {
+            tx_hash
+            agent {
+              id
+              name
+            }
+            block {
+              chain_id
+              number
+              timestamp
+            }
           }
+          projects {
+            id
+            name
+          }
+        }
+        nextPageValues {
+          timestamp
+          id
+        }
+        currentPageValues {
+          timestamp
+          id
         }
       }
     }`,
     variables: {
       getListInput: {
-        agents: [botId],
-        limit: 100,
+        severity: [],
         startDate: (lastUpdateTimestamp + 1).toString(),
         endDate: currentTimestamp.toString(),
-        aggregations: {
-          alerts: 100,
-        }
-      }
-    }
+        txHash: '',
+        text: '',
+        muted: [],
+        sort: 'desc',
+        agents: [botId],
+        addresses: [],
+        project: '',
+      },
+    },
   };
   return graphqlQuery;
 }
@@ -220,7 +289,6 @@ async function postQuery(graphqlQuery) {
     data: graphqlQuery,
   });
 
-  console.debug("look here for response", response.data)
   return response;
 }
 
