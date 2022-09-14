@@ -60,50 +60,11 @@ function parseAgentInformationResponse(response) {
 }
 
 function parseAlertsResponse(response) {
-  function getBlock(block) {
-    return {
-      chainId: block.chain_id,
-      number: block.number,
-      timestamp: block.timestamp,
-    };
-  }
-
-  function getAgent(agent) {
-    return {
-      id: agent.id,
-      name: agent.name,
-    };
-  }
-
-  function getSource(value) {
-    return {
-      txHash: value.tx_hash,
-      agent: getAgent(value.agent),
-      block: getBlock(value.block),
-    };
-  }
-
-  function getProject(project) {
-    return {
-      id: project.id,
-      name: project.name,
-    };
-  }
-
   const { data: { data: { getList: { aggregations: { alerts } } } } } = response;
   const newAlerts = alerts.map((alert) => {
     const output = {};
     Object.entries(alert).forEach(([key, value]) => {
-      switch (key) {
-        case 'source':
-          output.source = getSource(value);
-          break;
-        case 'projects':
-          output.projects = value.map((project) => getProject(project));
-          break;
-        default:
-          output[camelize(key, '_')] = value;
-      }
+      output[camelize(key, '_')] = value;
     });
     return output;
   });
@@ -165,54 +126,21 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
     query: `query Retrieve($getListInput: GetAlertsInput) {
       getList(input: $getListInput) {
         aggregations {
-          severity {
-            key
-            doc_count
-            __typename
-          }
           alerts {
             key
             doc_count
-            __typename
           }
-          agents {
-            key
-            doc_count
-            __typename
-          }
-          interval {
-            key
-            doc_count
-            __typename
-          }
-          cardinalities {
-            agents
-            alerts
-            __typename
-          }
-          __typename
         }
-        __typename
       }
-    }
-    `,
+    }`,
     variable: {
       getListInput: {
-        severity: [],
         agents: [botId],
-        txHash: "",
-        text: "",
-        muted: [],
-        sort: "",
-        limit: 0,
-        project: "",
+        limit: 100,
         startDate: (lastUpdateTimestamp + 1).toString(),
         endDate: currentTimestamp.toString(),
         aggregations: {
-          severity: true,
-          interval: "day",
-          alerts: 6,
-          cardinalities:true
+          alerts: 100,
         }
       }
     }
@@ -225,7 +153,7 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
 function createAgentInformationQuery(id) {
   const graphqlQuery = {
     operationName: 'Retrieve',
-    query: `query Retrieve($getAgentInput: AgentInformation) {
+    query: `query Retrive($getAgentInput: AgentInformation) {
       getAgentInformation(input: $getAgentInput) {
         id
         name
@@ -241,6 +169,7 @@ function createAgentInformationQuery(id) {
         image
         manifest_ipfs
         doc_ipfs
+        __typename
       }
     }`,
     variables: {
