@@ -233,7 +233,7 @@ exports.handler = async function (autotaskEvent) {
   let alertsPromises = data.map(async (output) => {
     const { alerts } = output;
     if (alerts !== undefined) {
-      console.debug('alerts here', JSON.stringify(alerts, null, 2));
+      console.debug(JSON.stringify(alerts, null, 2));
       return postToDatadog({ series: alerts }, datadogApiKey, datadogApiEndpoint);
     }
     console.debug('alerts is undefined');
