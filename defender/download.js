@@ -256,7 +256,7 @@ function parseContractSentinel(item, notifications, autotasks) {
       const filePath = path.join(__dirname, savedPath, fileName);
       console.log(`Saving sentinel ABI to file: ${filePath}`);
       if (sentinel.abi) {
-        fs.writeFileSync(filePath, sentinel.abi);
+        fs.writeFileSync(filePath, JSON.stringify(sentinel.abi, null, 2));
         // eslint-disable-next-line no-param-reassign
         sentinel.abi = `./${path.relative(__dirname, filePath)}`;
       }
