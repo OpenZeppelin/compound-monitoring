@@ -249,6 +249,7 @@ describe('monitor multisig contract transactions', () => {
         metadata: {
           owner: zeroAddress,
           multisigAddress,
+          protocolVersion: null,
         },
       });
 
@@ -345,6 +346,7 @@ describe('monitor multisig contract transactions', () => {
           oldPauseGuardian: testArgumentAddress,
           newPauseGuardian: zeroAddress,
           multisigAddress,
+          protocolVersion: '2',
         },
       });
 
@@ -373,7 +375,7 @@ describe('monitor multisig contract transactions', () => {
       mockTxEvent.addresses[multisigAddress] = true;
       mockTxEvent.addresses[cometAddress] = true;
 
-      // use NewPauseGuardian event to test
+      // use PauseAction event to test
       const log = createLog(
         cometInterface.getEvent(cometValidEventName),
         {
@@ -408,11 +410,17 @@ describe('monitor multisig contract transactions', () => {
     it('returns empty findings if multisig was not involved in a transaction, but a monitored comet(Compound V3) event was emitted', async () => {
       mockTxEvent.addresses[comptrollerAddress] = true;
 
-      // use NewAdmin event to test
+      // use PauseAction event to test
       const log = createLog(
         cometInterface.getEvent(cometValidEventName),
-        { oldPauseGuardian: testArgumentAddress, newPauseGuardian: zeroAddress },
-        { address: comptrollerAddress },
+        {
+          supplyPaused: true,
+          transferPaused: true,
+          withdrawPaused: false,
+          absorbPaused: false,
+          buyPaused: false,
+        },
+        { address: cometAddress },
       );
 
       mockTxEvent.logs = [log];
