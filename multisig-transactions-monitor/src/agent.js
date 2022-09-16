@@ -20,10 +20,13 @@ function provideInitialize(data) {
 
     const sigTypeFull = ethers.utils.FormatTypes.full;
 
+    const {v2Addresses} = config;
+    const {v3Addresses} = config;
+
     // get contracts' abi and monitored event signatures
     const { contracts } = config;
     data.contractsInfo = Object.entries(contracts).map(([name, entry]) => {
-      const { events: eventNames, address, abiFile } = entry;
+      const { events: eventNames, address, abiFile, protocolVersion } = entry;
       const file = utils.getAbi(abiFile);
       const contractInterface = new ethers.utils.Interface(file.abi);
       const eventSignatures = eventNames.map((eventName) => {
@@ -52,6 +55,9 @@ function provideInitialize(data) {
         eventSignatures,
         eventNames,
         interface: contractInterface,
+        v2Addresses,
+        v3Addresses,
+        protocolVersion,
       };
 
       return contract;
@@ -59,37 +65,34 @@ function provideInitialize(data) {
 
     // get contract address of multisig wallet
     data.multisigAddress = config.contracts.multisig.address.toLowerCase();
+    // DELETE THIS!!!
+    // Use GovBravo address as the multisig address for testing to allow Alerts to fire
+    data.multisigAddress = '0xc0da02939e1441f497fd74f78ce7decb17b66529'.toLowerCase();
+    // DELETE THIS!!!
   };
 }
-// TODO: Get these addresses dynamically
-const compoundV2Contracts = {
-  comptroller: '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B',
-  comp: '0xc00e94Cb662C3520282E6f5717214004A7f26888',
-};
 
-// TODO: Get these addresses dynamically
-const compoundV3Contracts = {
-  comet: '0xc3d688B66703497DAA19211EEdff47f25384cdc3',
-  configurator: '0x316f9708bB98af7dA9c68C1C3b5e79039cD336E3',
-  rewards: '0x1B0e765F6224C21223AeA2af16c1C46E38885a40',
-  bulker: '0x74a81F84268744a40FEBc48f8b812a1f188D80C3',
-};
+async function getGovernanceProtocolVersion(contractInfo, log) {
+  // Identify protocol versions effected by governance proposal
 
-async function parseCreateProposalLog(contractInfo, log) {
-  let proposalId;
-  if (log.args.id !== undefined) {
-    proposalId = log.args.id.toString();
-  } else if (log.args.proposalId !== undefined) {
-    proposalId = log.args.proposalId.toString();
-  } else {
-    console.debug('Could not locate proposal id in event arguments');
-    return;
-  }
-
+  // Get the list of effected targets(contract addresses)
   let targetList;
-  if (log.name === 'ProposalCreated') {
+  if (log.args.targets !== undefined) {
+    // targets defined in event arguments
     targetList = log.args.targets;
   } else {
+    // Get proposal id from event arguments
+    let proposalId;
+    if (log.args.id !== undefined) {
+      proposalId = log.args.id.toString();
+    } else if (log.args.proposalId !== undefined) {
+      proposalId = log.args.proposalId.toString();
+    } else {
+      console.debug('Could not locate proposal id in event arguments');
+      return;
+    }
+
+    // use the proposal id to query the governance contract for a list of targets
     const provider = getEthersProvider();
     const governanceContract = new ethers.Contract(
       contractInfo.address,
@@ -101,22 +104,22 @@ async function parseCreateProposalLog(contractInfo, log) {
 
   // Locate proposal addresses which map to known v2/v3 addresses
   const v2Addresses = targetList.filter(
-    (item) => Object.values(compoundV2Contracts).includes(item),
+    (item) => Object.values(contractInfo.v2Addresses).includes(item),
   );
   const v3Addresses = targetList.filter(
-    (item) => Object.values(compoundV3Contracts).includes(item),
+    (item) => Object.values(contractInfo.v3Addresses).includes(item),
   );
-
-  console.debug(`v2Addresses ${v2Addresses}`);
-  console.debug(`v3Addresses ${v3Addresses}`);
 
   // Set protocol version based on which addresses were found in the proposal
   let protocolVersion;
   if (v2Addresses.length > 0 && v3Addresses.length > 0) {
+    // Compound V2 and V3
     protocolVersion = '2,3';
   } else if (v3Addresses.length > 0) {
+    // Compound V3
     protocolVersion = '3';
   } else if (v2Addresses.length > 0) {
+    // Compound V2
     protocolVersion = '2';
   } else {
     console.debug(`No known contract addresses found in proposal, ${log.args.targets.join(',')}`);
@@ -126,20 +129,14 @@ async function parseCreateProposalLog(contractInfo, log) {
 }
 
 async function getProtocolVersion(contractInfo, log) {
-  let protocolVersion;
+  let { protocolVersion } = contractInfo;
 
-  switch (contractInfo.name) {
-    case 'governance':
-      protocolVersion = await parseCreateProposalLog(contractInfo, log);
-      break;
-    case 'comptroller':
-      protocolVersion = '2';
-      break;
-    case 'comet_usdc':
-      protocolVersion = '3';
-      break;
-    default:
-      protocolVersion = null;
+  if (protocolVersion === undefined) {
+    if (contractInfo.name === 'governance') {
+      protocolVersion = await getGovernanceProtocolVersion(contractInfo, log);
+    } else {
+      console.debug(`No protocol version defined for '${contractInfo.name}'`);
+    }
   }
 
   return protocolVersion;
@@ -162,7 +159,6 @@ function provideHandleTransaction(data) {
 
     // if the multisig was involved in a transaction, find out specifically which one
     if (txAddrs.indexOf(multisigAddress) !== -1) {
-    //if (true) {
       await Promise.all(contractsInfo.map(async (contract) => {
         // filter for which event and address the multisig transaction was involved in
         const parsedLogs = await txEvent.filterLog(contract.eventSignatures, contract.address);
