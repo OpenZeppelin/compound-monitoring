@@ -20,13 +20,15 @@ function provideInitialize(data) {
 
     const sigTypeFull = ethers.utils.FormatTypes.full;
 
-    const {v2Addresses} = config;
-    const {v3Addresses} = config;
+    const { v2Addresses } = config;
+    const { v3Addresses } = config;
 
     // get contracts' abi and monitored event signatures
     const { contracts } = config;
     data.contractsInfo = Object.entries(contracts).map(([name, entry]) => {
-      const { events: eventNames, address, abiFile, protocolVersion } = entry;
+      const {
+        events: eventNames, address, abiFile, protocolVersion,
+      } = entry;
       const file = utils.getAbi(abiFile);
       const contractInterface = new ethers.utils.Interface(file.abi);
       const eventSignatures = eventNames.map((eventName) => {
@@ -65,10 +67,6 @@ function provideInitialize(data) {
 
     // get contract address of multisig wallet
     data.multisigAddress = config.contracts.multisig.address.toLowerCase();
-    // DELETE THIS!!!
-    // Use GovBravo address as the multisig address for testing to allow Alerts to fire
-    data.multisigAddress = '0xc0da02939e1441f497fd74f78ce7decb17b66529'.toLowerCase();
-    // DELETE THIS!!!
   };
 }
 
@@ -89,7 +87,7 @@ async function getGovernanceProtocolVersion(contractInfo, log) {
       proposalId = log.args.proposalId.toString();
     } else {
       console.debug('Could not locate proposal id in event arguments');
-      return;
+      return undefined;
     }
 
     // use the proposal id to query the governance contract for a list of targets

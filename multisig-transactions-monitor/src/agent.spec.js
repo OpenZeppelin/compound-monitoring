@@ -249,7 +249,7 @@ describe('monitor multisig contract transactions', () => {
         metadata: {
           owner: zeroAddress,
           multisigAddress,
-          protocolVersion: null,
+          protocolVersion: undefined,
         },
       });
 
@@ -298,6 +298,7 @@ describe('monitor multisig contract transactions', () => {
           oldAdmin: zeroAddress,
           newAdmin: testArgumentAddress,
           multisigAddress,
+          protocolVersion: undefined,
         },
       });
 
@@ -347,6 +348,47 @@ describe('monitor multisig contract transactions', () => {
           newPauseGuardian: zeroAddress,
           multisigAddress,
           protocolVersion: '2',
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    // test for detecting v2/v3 address in new proposals events
+    it('returns findings if multisig was involved in a transaction and monitored a new proposal which includes v2/v3 addresses', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use NewPauseGuardian event to test
+      const log = createLog(
+        governanceInterface.getEvent('ProposalCreated'),
+        {
+          id: 1,
+          proposer: multisigAddress,
+          targets: [comptrollerAddress, cometAddress],
+          values: [],
+          signatures: [],
+          calldatas: [],
+          startBlock: 1,
+          endBlock: 2,
+          description: 'This proposal affects Compound v2 and v3.',
+        },
+        { address: govAddress },
+      );
+
+      mockTxEvent.logs = [log];
+
+      const findings = await handleTransaction(mockTxEvent);
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Proposal Created',
+        description: `Governance Proposal 1 was just created by multisig ${multisigAddress}`,
+        alertId: 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          proposalId: '1',
+          multisigAddress,
+          protocolVersion: '2,3',
         },
       });
 

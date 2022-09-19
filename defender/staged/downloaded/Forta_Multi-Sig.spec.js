@@ -22,16 +22,19 @@ const mockCreatedId = 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT';
 const mockCreatedMetadata = {
   proposalId: 101,
   multisigAddress: '0xbbf3f1421D886E9b2c5D716B5192aC998af2012c',
+  protocolVersion: '2,3', // test protocol version display
 };
 const mockExecutedId = 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT';
 const mockExecutedMetadata = {
   proposalId: 101,
   multisigAddress: '0xbbf3f1421D886E9b2c5D716B5192aC998af2012c',
+  protocolVersion: '2', // test protocol version display
 };
 const mockCanceledId = 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT';
 const mockCanceledMetadata = {
   proposalId: 101,
   multisigAddress: '0xbbf3f1421D886E9b2c5D716B5192aC998af2012c',
+  protocolVersion: '3', // test protocol version display
 };
 const mockCastId = 'AE-COMP-GOVERNANCE-VOTE-CAST-ALERT';
 const mockCastMetadata = {
@@ -232,7 +235,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 📄 **New Proposal** created by Community Multi-Sig\\nDetails: https://compound.finance/governance/proposals/101"}';
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 📄 **New Proposal** created by Community Multi-Sig\\nDetails: https://compound.finance/governance/proposals/101 (Compound v2/v3)"}';
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -250,7 +253,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 👏 **Executed Proposal** #101 by Community Multi-Sig"}';
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 👏 **Executed Proposal** #101 by Community Multi-Sig (Compound v2)"}';
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -268,7 +271,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ❌ **Canceled Proposal**  #101 by Community Multi-Sig"}';
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ❌ **Canceled Proposal**  #101 by Community Multi-Sig (Compound v3)"}';
     const expectedLastCall = {
       url, headers, method, data,
     };
