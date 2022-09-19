@@ -38,9 +38,7 @@
       "address": "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
       "abiFile": "Comet.json",
       "protocolVersion": "3",
-      "events": [
-        "PauseAction"
-      ]
+      "events": ["PauseAction"]
     }
   },
   "v2Addresses": {
