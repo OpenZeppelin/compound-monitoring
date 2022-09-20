@@ -118,7 +118,9 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const content = '[BLOCK](<https://etherscan.io/block/100>) - [ACCT](<https://etherscan.io/address/0x1111111111111111111111111111111111111111>) 📉💵🔥 **Comet V3 Liquidatable account detected** account 0x1111 is liquidatable in block 100';
+    const content = '[BLOCK](<https://etherscan.io/block/100>) - '
+      + '[ACCT](<https://etherscan.io/address/0x1111111111111111111111111111111111111111>) 📉💵🔥 '
+      + '**Liquidatable account detected** account 0x1111 is liquidatable in block 100 (Compound v3)';
 
     const data = {
       content,

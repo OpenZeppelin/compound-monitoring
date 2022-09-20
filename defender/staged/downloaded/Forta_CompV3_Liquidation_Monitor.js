@@ -90,8 +90,8 @@ if (alert === undefined) {
     blockNumber,
   } = metadata;
 
-  const message = `📉💵🔥 **Comet V3 Liquidatable account detected** account ${borrowerAddress.slice(0, 6)} `
-    + `is liquidatable in block ${blockNumber}`;
+  const message = `📉💵🔥 **Liquidatable account detected** account ${borrowerAddress.slice(0, 6)} `
+    + `is liquidatable in block ${blockNumber} (Compound v3)`;
 
   // construct the Etherscan transaction link
   let etherscanLink = `[BLOCK](<https://etherscan.io/block/${blockNumber}>)`;
