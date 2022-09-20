@@ -44,7 +44,7 @@ const { handler } = require('../downloaded/Forta_CompV3_Liquidation_Monitor');
 
 function createFortaSentinelEvent(finding, blockHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
-  //  with some metadata being added and removed along the way. This function will mimic
+  // with some metadata being added and removed along the way. This function will mimic
   // the Sentinel output with only Finding, block and transaction data.
 
   // Note: Much of the extra data here is superfluous but is left here just in case future bots
