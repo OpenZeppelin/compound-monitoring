@@ -68,8 +68,7 @@ function parseAlertsResponse(response) {
 // page for the Bot
 function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
   const graphqlQuery = {
-    operationName: 'Retrieve',
-    query: `query Retrieve($getListInput: GetAlertsInput) {
+    query: `query ($getListInput: GetAlertsInput) {
       getList(input: $getListInput) {
         alerts {
           hash
@@ -77,7 +76,6 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           severity
           protocol
           name
-          everest_id
           alert_id
           scanner_count
           source {
@@ -98,11 +96,11 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           }
         }
         nextPageValues {
-          blocknumber
+          timestamp
           id
         }
         currentPageValues {
-          blocknumber
+          timestamp
           id
         }
       }

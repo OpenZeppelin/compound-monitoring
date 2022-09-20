@@ -53,7 +53,7 @@ describe('Run the Autotask', () => {
     const mockAgentInformationResponse = { data: { data: { getAgentInformation } } };
     axios.mockImplementation((inputObject) => {
       const { data: { query } } = inputObject;
-      if (query.includes('alert_id')) {
+      if (query.includes('GetAlertsInput')) {
         return mockAlertResponse;
       }
 
@@ -111,7 +111,7 @@ describe('Run the Autotask', () => {
     const mockMetricsResponse = { data: { data: { getAgentMetrics: { metrics } } } };
     axios.mockImplementation((inputObject) => {
       const { data: { query } } = inputObject;
-      if (query.includes('alert_id')) {
+      if (query.includes('GetAlertsInput')) {
         return mockAlertResponse;
       }
 
@@ -170,7 +170,7 @@ describe('Run the Autotask', () => {
     const mockMetricsResponse = { data: { data: { getAgentMetrics: { metrics } } } };
     axios.mockImplementation((inputObject) => {
       const { data: { query } } = inputObject;
-      if (query.includes('alert_id')) {
+      if (query.includes('GetAlertsInput')) {
         return mockAlertResponse;
       }
 
@@ -264,7 +264,7 @@ describe('Run the Autotask', () => {
     const mockAgentInformationResponse = { data: { data: { getAgentInformation } } };
     axios.mockImplementation((inputObject) => {
       const { data: { query } } = inputObject;
-      if (query.includes('alert_id')) {
+      if (query.includes('GetAlertsInput')) {
         return mockAlertResponse;
       }
 
@@ -339,7 +339,7 @@ describe('Run the Autotask', () => {
     const mockAgentInformationResponse = { data: { data: { getAgentInformation } } };
     axios.mockImplementation((inputObject) => {
       const { data: { query } } = inputObject;
-      if (query.includes('alert_id')) {
+      if (query.includes('GetAlertsInput')) {
         return mockAlertResponse;
       }
 
