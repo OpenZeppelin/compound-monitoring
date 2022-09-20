@@ -12,7 +12,6 @@ module.exports = {
     ecmaVersion: 12,
   },
   rules: {
-    'no-console': ['error', { allow: ['error'] }],
   },
   overrides: [
     {
@@ -20,6 +19,7 @@ module.exports = {
       rules: {
         'no-plusplus': 'off',
         'no-continue': 'off',
+        'no-console': 'off',
       },
     },
   ],

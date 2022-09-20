@@ -20,8 +20,7 @@ function provideInitialize(data) {
 
     const sigTypeFull = ethers.utils.FormatTypes.full;
 
-    const { v2Addresses } = config;
-    const { v3Addresses } = config;
+    const { v2Addresses, v3Addresses } = config;
 
     // get contracts' abi and monitored event signatures
     const { contracts } = config;
@@ -73,7 +72,7 @@ function provideInitialize(data) {
 async function getGovernanceProtocolVersion(contractInfo, log) {
   // Identify protocol versions effected by governance proposal
 
-  // Get the list of effected targets(contract addresses)
+  // Get the list of affected targets(contract addresses)
   let targetList;
   if (log.args.targets !== undefined) {
     // targets defined in event arguments
@@ -104,6 +103,7 @@ async function getGovernanceProtocolVersion(contractInfo, log) {
   const v2Addresses = targetList.filter(
     (item) => Object.values(contractInfo.v2Addresses).includes(item),
   );
+  // ref: https://github.com/compound-finance/comet/blob/main/deployments/mainnet/usdc/roots.json
   const v3Addresses = targetList.filter(
     (item) => Object.values(contractInfo.v3Addresses).includes(item),
   );
