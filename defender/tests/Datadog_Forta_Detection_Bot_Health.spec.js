@@ -26,7 +26,7 @@ jest.mock('defender-kvstore-client', () => ({
   KeyValueStoreClient: jest.fn().mockReturnValue(mockKeyValueStore),
 }));
 
-const { handler } = require('./Datadog_Forta_Detection_Bot_Health');
+const { handler } = require('../downloaded/Datadog_Forta_Detection_Bot_Health');
 
 describe('Run the Autotask', () => {
   let outputObject;
