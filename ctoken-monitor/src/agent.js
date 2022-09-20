@@ -251,7 +251,7 @@ function provideHandleTransaction(data) {
     });
 
     const findings = await Promise.all(promises);
-
+    console.log(JSON.stringify(findings, null, 2));
     return findings;
   };
 }

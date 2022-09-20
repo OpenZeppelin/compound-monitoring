@@ -228,6 +228,7 @@ function provideHandleTransaction(data) {
     });
 
     const transferResults = await Promise.all(transferPromises);
+    console.log(JSON.stringify(transferResults.flat(), null, 2));
     return transferResults.flat();
   };
 }

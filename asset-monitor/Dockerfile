@@ -9,6 +9,7 @@
 FROM node:12-alpine
 ENV NODE_ENV=production
 WORKDIR /app
+LABEL "network.forta.settings.agent-logs.enable"="true"
 # if using obfuscated code from build stage:
 # COPY --from=builder /app/dist ./src
 # else if using unobfuscated code:
