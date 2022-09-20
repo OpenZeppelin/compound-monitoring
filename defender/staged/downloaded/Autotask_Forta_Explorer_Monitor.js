@@ -52,8 +52,7 @@ function parseAgentInformationResponse(response) {
 
   const output = {};
   Object.entries(getAgentInformation[0]).forEach(([key, value]) => {
-    const newKey = camelize(key, '_');
-    output[newKey] = value;
+    output[camelize(key, '_')] = value;
   });
 
   return output;
@@ -170,7 +169,6 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           severity
           protocol
           name
-          everest_id
           alert_id
           scanner_count
           source {
@@ -191,11 +189,11 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           }
         }
         nextPageValues {
-          blocknumber
+          timestamp
           id
         }
         currentPageValues {
-          blocknumber
+          timestamp
           id
         }
       }
@@ -208,7 +206,6 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
         txHash: '',
         text: '',
         muted: [],
-        limit: 0,
         sort: 'desc',
         agents: [botId],
         addresses: [],
