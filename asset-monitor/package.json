@@ -1,6 +1,6 @@
 {
   "name": "forta-ae-comp-asset-monitor",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "This bot monitors the underlying asset of a Compound Finance cToken.",
   "scripts": {
     "start": "npm run start:dev",

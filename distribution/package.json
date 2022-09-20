@@ -1,6 +1,6 @@
 {
   "name": "forta-ae-comp-distribution-bugs",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "This Bot monitors Compound distribution bugs.",
   "scripts": {
     "start": "npm run start:dev",

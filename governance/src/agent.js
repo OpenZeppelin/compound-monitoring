@@ -67,7 +67,7 @@ function provideHandleTransaction(data) {
       proposals,
     };
     const findings = await createGovernanceFindings(parsedLogs, governorBravoAddress, configFields);
-
+    console.log(JSON.stringify(findings, null, 2));
     return findings;
   };
 }
