@@ -1,6 +1,22 @@
 {
   "sentinels": [
     {
+      "name": "Compound v3 Liquidatable Positions",
+      "paused": false,
+      "type": "FORTA",
+      "fortaConditions": {
+        "severity": 1,
+        "minimumScannerCount": 2
+      },
+      "addresses": [],
+      "autotaskTrigger": "Compound v3 Liquidatable Positions Notification",
+      "agentIDs": [
+        "0x52b24dd829bf3aa7b18a74f23947377af6203f09b6553ef054df7c633f961210"
+      ],
+      "alertTimeoutMs": 0,
+      "notificationChannels": ["Nomad Discord"]
+    },
+    {
       "name": "Forta cToken Monitor",
       "paused": true,
       "type": "FORTA",
