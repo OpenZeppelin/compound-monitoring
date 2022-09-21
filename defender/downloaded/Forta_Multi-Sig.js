@@ -118,6 +118,14 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('source undefined');
   }
 
+  // extract the metadata from the alert Object
+  const { alertId, metadata } = alert;
+  if (metadata === undefined) {
+    throw new Error('metadata undefined');
+  }
+
+  const { protocolVersion } = metadata;
+
   let protocolVersionString = '';
   if (protocolVersion !== undefined) {
     if (protocolVersion === '2') {
@@ -127,6 +135,7 @@ exports.handler = async function (autotaskEvent) {
     } else if (protocolVersion === '2,3') {
       protocolVersionString = ' (Compound v2/v3)';
     }
+  }
 
   // extract the hashes from the source Object
   const {

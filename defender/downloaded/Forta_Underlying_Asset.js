@@ -124,6 +124,11 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('metadata undefined');
   }
 
+  // extract the hashes from the source Object
+  const {
+    transactionHash,
+  } = source;
+
   // Start of usual modifications to the autotask script
   // extract the metadata
   const {
@@ -134,13 +139,14 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('cTokenSymbol undefined');
   }
 
+  if (cTokenSymbol === undefined) {
+    throw new Error('cTokenSymbol undefined');
+  }
+
   // Handle older alerts which don't specify the protocol version
   let versionString = '';
   if (protocolVersion !== undefined) {
     versionString = ` (Compound v${protocolVersion})`;
-  }
-  if (cTokenSymbol === undefined) {
-    throw new Error('cTokenSymbol undefined');
   }
 
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
