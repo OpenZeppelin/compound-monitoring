@@ -1,243 +1,64 @@
-/* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
+// Set the name of the Secret set in Autotask
+const discordSecretName = 'DiscordUrl';
+
 const axios = require('axios');
-const ethers = require('ethers');
 
-// import the DefenderRelayProvider to interact with its JSON-RPC endpoint
-const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
-/* eslint-enable import/no-extraneous-dependencies,import/no-unresolved */
-
-const TOKEN_ABI = [
-  'function decimals() view returns (uint8)',
-  'function symbol() view returns (string)',
-];
-const MAKER_TOKEN_ABI = [
-  'function decimals() view returns (uint256)',
-  'function symbol() view returns (bytes32)',
-];
-const CTOKEN_ABI = ['function underlying() view returns (address)'];
-
-const makerTokenAddress = '0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'.toLowerCase();
-const saiTokenAddress = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'.toLowerCase();
-const oddTokens = [makerTokenAddress, saiTokenAddress];
-
-const fortaApiEndpoint = 'https://api.forta.network/graphql';
-
-const eventMapping = {
-  Borrow: {
-    amountKey: 'borrowAmount',
-    byKey: 'borrower',
-    action: 'borrow',
-  },
-  LiquidateBorrow: {
-    amountKey: 'repayAmount',
-    byKey: 'liquidator',
-    fromKey: 'borrower',
-    action: 'liquidate',
-  },
-  Mint: {
-    amountKey: 'mintAmount',
-    byKey: 'minter',
-    action: 'supply',
-  },
-  Redeem: {
-    amountKey: 'redeemAmount',
-    byKey: 'redeemer',
-    action: 'withdraw',
-  },
-  RepayBorrow: {
-    amountKey: 'repayAmount',
-    byKey: 'payer',
-    forKey: 'borrower',
-    action: 'repay',
-  },
-};
-
-async function getDecimalsAndSymbol(cTokenAddress, provider) {
-  const cTokenContract = new ethers.Contract(
-    cTokenAddress,
-    CTOKEN_ABI,
-    provider,
-  );
-  const underlyingTokenAddress = await cTokenContract.underlying();
-
-  let decimals;
-  let symbol;
-  if (oddTokens.indexOf(underlyingTokenAddress.toLowerCase()) !== -1) {
-    const underlyingTokenContract = new ethers.Contract(
-      underlyingTokenAddress,
-      MAKER_TOKEN_ABI,
-      provider,
-    );
-
-    decimals = await underlyingTokenContract.decimals();
-    // need to convert decimals from uint256 to uint8
-    decimals = parseInt(decimals.toString(), 10);
-
-    symbol = await underlyingTokenContract.symbol();
-    // need to convert symbol from bytes32 to string
-    symbol = ethers.utils.parseBytes32String(symbol);
-  } else {
-    const underlyingTokenContract = new ethers.Contract(
-      underlyingTokenAddress,
-      TOKEN_ABI,
-      provider,
-    );
-    decimals = await underlyingTokenContract.decimals();
-    symbol = await underlyingTokenContract.symbol();
-  }
-  return { decimals, symbol };
+async function post(url, method, headers, data) {
+  return axios({
+    url,
+    method,
+    headers,
+    data,
+  });
 }
 
-function formatAmountString(amount, decimals) {
-  const amountBN = ethers.BigNumber.from(amount);
-  const divisorBN = ethers.BigNumber.from(10).pow(decimals);
-
-  // the ethers BigNumber implementation will discard the decimal
-  // portion of the value when we perform the division
-  let resultString = amountBN.toString();
-  if (resultString.length <= decimals) {
-    resultString = `0.${'0'.repeat(decimals - resultString.length)}${resultString[0]}`;
-  } else {
-    resultString = amountBN.div(divisorBN).toString();
-  }
-
-  // format the number to have comma separators for powers of 1000
-  const internationalNumberFormat = new Intl.NumberFormat('en-US');
-  return internationalNumberFormat.format(resultString);
-}
-
-function createDiscordMessage(eventName, metadata, decimals, symbol, description) {
-  const eventObject = eventMapping[eventName];
-  if (eventObject !== undefined) {
-    const amount = metadata[eventObject.amountKey];
-    const amountString = formatAmountString(amount, decimals);
-    const byAddress = metadata[eventObject.byKey];
-    const { action } = eventObject;
-    let message = `**${amountString} ${symbol}** ${action}`;
-
-    if (action === 'liquidate') {
-      const fromAddress = metadata[eventObject.fromKey];
-      message += ` from ${fromAddress.slice(0, 6)} by ${byAddress.slice(0, 6)}`;
-    } else if (action === 'repayBorrow') {
-      const forAddress = metadata[eventObject.forKey];
-      message += ` by ${byAddress.slice(0, 6)}`;
-      if (forAddress !== byAddress) {
-        message += ` for ${forAddress.slice(0, 6)}`;
-      }
-    } else {
-      message += ` by ${byAddress.slice(0, 6)}`;
-    }
-
-    const emoji = description.slice(0, description.indexOf('-') - 1);
-
-    return `${emoji} ${message}`;
-  }
-  return undefined;
-}
-
-function getRandomInt(min, max) {
-  return Math.floor((Math.random() * (max - min)) + min);
-}
-
-async function postToDiscord(discordWebhook, message) {
+async function postToDiscord(url, message) {
+  const method = 'post';
   const headers = {
     'Content-Type': 'application/json',
   };
+  const data = JSON.stringify({ content: message });
 
-  const body = {
-    content: message,
-  };
-
-  const discordObject = {
-    url: discordWebhook,
-    method: 'post',
-    headers,
-    data: body,
-  };
   let response;
   try {
     // perform the POST request
-    response = await axios(discordObject);
-  } catch (err) {
-    if (err.response && err.response.status === 429) {
-      // rate-limited, retry
-      // after waiting a random amount of time between 2 and 15 seconds
-      const delay = getRandomInt(2000, 15000);
+    response = await post(url, method, headers, data);
+  } catch (error) {
+    // check if this is a "too many requests" error (HTTP status 429)
+    if (error.response && error.response.status === 429) {
+      // the request was made and a response was received
+      // try again after waiting 5 - 50 seconds, if retry_after value is received, use that.
+      let timeout;
+      // Discord Webhook API defaults to v6, and v6 returns retry_after value in ms. Later versions
+      // use seconds, so this will need to be updated when Discord changes their default API version
+      // Ref: https://discord.com/developers/docs/reference
+      if (error.response.data
+        && error.response.data.retry_after
+        && error.response.data.retry_after < 50000) {
+        // Wait the specified amount of time + a random number to reduce
+        // overlap with newer requests. Initial testing reveals that the Discord Webhook allows 5
+        // requests and then resets the counter after 2 seconds. With a 15 second range of 5-20,
+        // this function can reliably can handle batches of 15 requests. Increase the max variable
+        // below if you anticipate a larger number of requests.
+        // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+        const min = 5000;
+        const max = 30000;
+        timeout = Math.floor(Math.random() * (max - min) + min);
+        timeout += error.response.data.retry_after;
+      } else {
+        // If retry_after is larger than 50 seconds, then just wait 50 seconds.
+        timeout = 50000;
+      }
       // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, delay));
+      const promise = new Promise((resolve) => setTimeout(resolve, timeout));
       await promise;
-      response = await axios(discordObject);
+      response = await post(url, method, headers, data);
     } else {
-      throw err;
+      // re-throw the error if it's not from a 429 status
+      throw error;
     }
   }
   return response;
-}
-
-async function getFortaAlerts(botId, transactionHash) {
-  const headers = {
-    'content-type': 'application/json',
-  };
-
-  const graphqlQuery = {
-    operationName: 'recentAlerts',
-    query: `query recentAlerts($input: AlertsInput) {
-      alerts(input: $input) {
-        pageInfo {
-          hasNextPage
-          endCursor {
-            alertId
-            blockNumber
-          }
-        }
-        alerts {
-          createdAt
-          name
-          protocol
-          findingType
-          hash
-          source {
-            transactionHash
-            block {
-              number
-              chainId
-            }
-            bot {
-              id
-            }
-          }
-          severity
-      metadata
-      description
-        }
-      }
-    }`,
-    variables: {
-      input: {
-        first: 100,
-        bots: [botId],
-        transactionHash,
-        createdSince: 0,
-        chainId: 1,
-      },
-    },
-  };
-
-  // perform the POST request
-  const response = await axios({
-    url: fortaApiEndpoint,
-    method: 'post',
-    headers,
-    data: graphqlQuery,
-  });
-
-  const { data } = response;
-  if (data === undefined) {
-    return undefined;
-  }
-
-  const { data: { alerts: { alerts } } } = data;
-  return alerts;
 }
 
 // eslint-disable-next-line func-names
@@ -247,18 +68,34 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('autotaskEvent undefined');
   }
 
-  const { secrets, request } = autotaskEvent;
+  const { secrets } = autotaskEvent;
   if (secrets === undefined) {
     throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { DiscordUrl: discordUrl } = secrets;
+  const discordUrl = secrets[discordSecretName];
   if (discordUrl === undefined) {
-    throw new Error('DiscordUrl undefined');
+    throw new Error('discordUrl undefined');
+  }
+
+  // Ref: https://developer.mozilla.org/en-US/docs/Web/API/URL
+  function isValidUrl(string) {
+    let url;
+    try {
+      url = new URL(string);
+    } catch (_) {
+      return false;
+    }
+    return url.href;
+  }
+
+  if (isValidUrl(discordUrl) === false) {
+    throw new Error('discordUrl is not a valid URL');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
+  const { request } = autotaskEvent;
   if (request === undefined) {
     throw new Error('request undefined');
   }
@@ -275,58 +112,126 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('alert undefined');
   }
 
-  // extract the transaction hash and bot ID from the alert Object
+  // ensure that the alert key exists within the body Object
+  const { source } = body;
+  if (source === undefined) {
+    throw new Error('source undefined');
+  }
+
+  // extract the metadata from the alert Object
+  const { metadata } = alert;
+  if (source === undefined) {
+    throw new Error('metadata undefined');
+  }
+
+  // extract the hashes from the source Object
   const {
-    hash,
-    source: {
-      transactionHash,
-      bot: {
-        id: botId,
-      },
+    transactionHash,
+  } = source;
+
+  // Start of usual modifications to the autotask script
+  // extract the metadata
+  const {
+    cTokenSymbol,
+    eventName,
+    usdValue,
+    protocolVersion,
+  } = metadata;
+  if (usdValue === undefined) {
+    throw new Error('usdValue undefined, please use newer bot version');
+  }
+
+  // Handle older alerts which don't specify the protocol version
+  let versionString = '';
+  if (protocolVersion !== undefined) {
+    versionString = ` (Compound v${protocolVersion})`;
+  }
+
+  const eventMapping = {
+    Borrow: {
+      amountKey: 'borrowAmount',
+      byKey: 'borrower',
+      action: 'borrowed',
     },
-  } = alert;
+    LiquidateBorrow: {
+      amountKey: 'repayAmount',
+      byKey: 'liquidator',
+      fromKey: 'borrower',
+      action: 'liquidated',
+    },
+    Mint: {
+      amountKey: 'mintAmount',
+      byKey: 'minter',
+      action: 'supplied',
+    },
+    Redeem: {
+      amountKey: 'redeemAmount',
+      byKey: 'redeemer',
+      action: 'withdrew',
+    },
+    RepayBorrow: {
+      amountKey: 'repayAmount',
+      byKey: 'payer',
+      forKey: 'borrower',
+      action: 'repaid',
+    },
+  };
 
-  // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(botId, transactionHash);
-  alerts = alerts.filter((alertObject) => alertObject.hash === hash);
+  function emojiForEvent(eventType, usdValueString) {
+    // create the appropriate number of whale emoji for the value
+    // add one whale for each power of 1000
+    const numWhales = Math.floor((usdValueString.length - 1) / 3);
+    const whaleString = '🐳'.repeat(numWhales);
 
-  // use the relayer provider for JSON-RPC requests
-  const provider = new DefenderRelayProvider(autotaskEvent);
-
-  const promises = alerts.map(async (alertData) => {
-    const { metadata, description } = alertData;
-    const { eventName, contractAddress, cTokenSymbol } = metadata;
-    let decimals;
-    let symbol;
-    if (cTokenSymbol === 'cETH') {
-      decimals = 18;
-      symbol = 'ETH';
-    } else {
-      ({ decimals, symbol } = await getDecimalsAndSymbol(contractAddress, provider));
+    switch (eventType) {
+      case 'Borrow':
+        return whaleString.concat('📥');
+      case 'LiquidateBorrow':
+        return whaleString.concat('💔');
+      case 'Mint':
+        return whaleString.concat('📈');
+      case 'Redeem':
+        return whaleString.concat('📉');
+      case 'RepayBorrow':
+        return whaleString.concat('📤');
+      default:
+        return '';
     }
-    // craft the Discord message
-    return createDiscordMessage(eventName, metadata, decimals, symbol, description);
-  });
+  }
 
-  // wait for the promises to settle
-  let results = await Promise.allSettled(promises);
+  const eventEmoji = emojiForEvent(eventName, usdValue);
+
+  const internationalNumberFormat = new Intl.NumberFormat('en-US');
+  const amountString = internationalNumberFormat.format(usdValue);
+
+  const eventObject = eventMapping[eventName];
+  const byAddress = metadata[eventObject.byKey];
+
+  const { action } = eventObject;
+  let message = `${eventEmoji} **$${amountString} of ${cTokenSymbol}** ${action}`;
+
+  if (action === 'liquidated') {
+    const fromAddress = metadata[eventObject.fromKey];
+    message += ` from ${fromAddress.slice(0, 6)} by ${byAddress.slice(0, 6)}`;
+  } else if (action === 'repaid') {
+    const forAddress = metadata[eventObject.forKey];
+    message += ` by ${byAddress.slice(0, 6)}`;
+    if (forAddress !== byAddress) {
+      message += ` for ${forAddress.slice(0, 6)}`;
+    }
+  } else {
+    message += ` by ${byAddress.slice(0, 6)}`;
+  }
+
+  message += versionString;
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   // create promises for posting messages to Discord webhook
-  const discordPromises = results.map((result) => {
-    console.log(`${etherscanLink} ${result.value}`);
-    return postToDiscord(discordUrl, `${etherscanLink} ${result.value}`);
-  });
-
-  // wait for the promises to settle
-  results = await Promise.allSettled(discordPromises);
-  results = results.filter((result) => result.status === 'rejected');
-
-  if (results.length > 0) {
-    throw new Error(results[0].reason);
-  }
+  // with Log Forwarding enabled, this console.log will forward the text string to Dune Analytics
+  console.log(`${etherscanLink} ${message}`);
+  await postToDiscord(discordUrl, `${etherscanLink} ${message}`);
 
   return {};
 };

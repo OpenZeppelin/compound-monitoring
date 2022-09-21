@@ -1,19 +1,93 @@
-jest.mock('axios', () => jest.fn());
-const axios = require('axios');
+// Set the name of the Secret set in Autotask
+const discordSecretName = 'DiscordUrl';
+// Name of the Secret in the .env file
+const discordEnvSecretName = 'discordUrl';
 
-const mockContract = {
-  underlying: jest.fn(),
-  decimals: jest.fn(),
-  symbol: jest.fn(),
+// Mock the data from the Bot finding
+// Random block
+const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
+
+const mockBorrowTxHash = '0xf8d92b4b59c84bac00a57356f488dd9586f17e7034613c158372ef4375d7a502';
+const mockBorrowMeta = {
+  accountBorrows: '18500000000',
+  borrowAmount: '18500000000',
+  borrower: '0x87760d238Bc8A46d64990185aB357CAF99740d09',
+  cTokenSymbol: 'cUSDC',
+  contractAddress: '0x39aa39c021dfbae8fac545936693ac917d5e7563',
+  eventName: 'Borrow',
+  totalBorrows: '450187856880124',
+  usdValue: '18537',
+  protocolVersion: '2',
 };
 
-jest.mock('ethers', () => ({
-  ...jest.requireActual('ethers'),
-  Contract: jest.fn().mockReturnValue(mockContract),
-}));
+const mockLiquidateBorrowTxHash = '0x064228d15febb05b929e8aecbf3d828449bd8210df758d692b9b855355ed3560';
+const mockLiquidateBorrowMeta = {
+  borrower: '0xf1C6A281452fEdEAda164731895B1a38b5476516',
+  cTokenCollateral: '0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5',
+  cTokenSymbol: 'cUSDT',
+  contractAddress: '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9',
+  eventName: 'LiquidateBorrow',
+  liquidator: '0xD911560979B78821D7b045C79E36E9CbfC2F6C6F',
+  repayAmount: '880985666',
+  seizeTokens: '2710480386',
+  usdValue: '881',
+  protocolVersion: '2',
+};
+
+const mockMintTxHash = '0xff85476c183ef3cc0fb0623877abf5589197a773845f8acac341e48c42957a3e';
+const mockMintMeta = {
+  cTokenSymbol: 'cETH',
+  contractAddress: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5',
+  eventName: 'Mint',
+  mintAmount: '38307619381957671712',
+  mintTokens: '190925893578',
+  minter: '0x352E490bC98BB07AA908Cc2934b6Ca473a6b229d',
+  usdValue: '67721',
+  protocolVersion: '2',
+};
+
+const mockRedeemTxHash = '0x881d7f5b2804d144535f7b51f504ba6bcf14f3ccd53d57f4e59e0ad262bddeb5';
+const mockRedeemMeta = {
+  cTokenSymbol: 'cWBTC',
+  contractAddress: '0xccf4429db6322d5c611ee964527d42e5d685dd6a',
+  eventName: 'Redeem',
+  redeemAmount: '300000000',
+  redeemTokens: '14950771553',
+  redeemer: '0xF0163f66Ec80DDA288E753E0A62c8Eb71cd38684',
+  usdValue: '88512',
+  protocolVersion: '2',
+};
+
+const mockRepayBorrowTxHash = '0x57a36644b7440ad247a41222ad105d5a08d21b47e434025bcf4427b2c20f3dee';
+const mockRRepayBorrowMeta = {
+  accountBorrows: '1457196372779',
+  borrower: '0xF6aaadA76eA7f044ffA028565b028740Dce5389F',
+  cTokenSymbol: 'cUSDC',
+  contractAddress: '0x39aa39c021dfbae8fac545936693ac917d5e7563',
+  eventName: 'RepayBorrow',
+  payer: '0xF6aaadA76eA7f044ffA028565b028740Dce5389F',
+  repayAmount: '19985757121',
+  totalBorrows: '449947401135954',
+  usdValue: '19985',
+  protocolVersion: '2',
+};
+
+// mock the axios package
+const acceptedPost = {
+  status: 204,
+  statusText: 'No Content',
+};
+jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
+// eslint-disable-next-line import/no-extraneous-dependencies
+const axios = require('axios');
+
+const {
+  Finding, FindingType, FindingSeverity,
+} = require('forta-agent');
 
 // grab the existing keys before loading new content from the .env file
 const existingKeys = Object.keys(process.env);
+// eslint-disable-next-line import/no-unresolved
 require('dotenv').config();
 
 // now filter out all of the existing keys from what is currently in the process.env Object
@@ -23,154 +97,186 @@ newKeys.forEach((key) => {
   secrets[key] = process.env[key];
 });
 
-// create a provider that will be injected as the Defender Relayer provider
-jest.mock('defender-relay-client/lib/ethers', () => ({
-  DefenderRelayProvider: jest.fn(),
-}));
-
-const { handler } = require('../downloaded/Forta_cToken');
-
-const transactionHash = '0x123456789ABCDEF';
-
-const mockFortaAlert = {
-  data: {
-    data: {
-      alerts: {
-        pageInfo: {
-          hasNextPage: false,
-          endCursor: {
-            alertId: 'AE-COMP-CTOKEN-EVENT',
-            blockNumber: 0,
-          },
-        },
-        alerts: [
-          {
-            createdAt: '2022-03-31T22:02:20.812799122Z',
-            name: 'Compound cToken Event',
-            protocol: 'Compound',
-            findingType: 'Info',
-            hash: '0xcee8d4bd1c065260acdcfa51c955fc29c984145de2769b685f29701b6edf318f',
-            alertId: 'AE-COMP-CTOKEN-EVENT',
-            source: {
-              transactionHash,
-              block: {
-                number: 14496506,
-                chainId: 1,
-              },
-              bot: {
-                id: '0x3f02bee8b17edc945c5c1438015aede79225ac69c46e9cd6cff679bb71f35576',
-              },
-            },
-            severity: 'Info',
-            metadata: {
-              cTokenSymbol: 'cETH',
-              contractAddress: '0x4ddc2d193948926d02f9b1fe9e1daa0718270ed5',
-              eventName: 'Borrow',
-              borrower: '0xF2Ed7C200D77d6cf7D7f4bC43188354A4A48F43F',
-              borrowAmount: '1000000000000000000',
-              accountBorrows: '5976810657612268710',
-              totalBorrows: '28271212987753429814653',
-            },
-            description: '🐳📥 - The Borrow event was emitted by the cETH cToken contract',
-          },
-        ],
-      },
-    },
-  },
-};
-
-function createFortaSentinelEvents(botId) {
-  const { alerts } = mockFortaAlert.data.data.alerts;
-  const autotaskEvents = alerts.map((alert) => {
-    // augment the alert Object with additional fields
-    // admittedly, there is some hand-waving here because we have to mock some of the Sentinel
-    // fields that don't originate from the Forta Public API
-    // e.g. We have to specify the alertId in the Sentinel to perform filtering on what we get from
-    // the Forta Bot in the first place.
-    /* eslint-disable no-param-reassign */
-    alert.source.bot.name = 'N/A';
-    alert.source.block.chain_id = alert.source.block.chainId;
-    alert.source.tx_hash = alert.source.transactionHash;
-    alert.alertType = 'TX';
-    alert.alert_id = 'ALERT_ID_PLACEHOLDER';
-    alert.type = 'INFORMATION';
-    alert.scanner_count = 1;
-    /* eslint-enable no-param-reassign */
-
-    // populate the matchReasons Array with placeholders
-    const matchReasons = [
-      {
-        type: 'alert-id',
-        value: 'ALERT_ID_PLACEHOLDER',
-      },
-      {
-        type: 'severity',
-        value: 'INFO',
-      },
-    ];
-
-    // populate the sentinel Object with placeholders
-    // none of these are currently checked by any Autotasks in use
-    const sentinel = {
-      id: '8fe3d50b-9b52-44ff-b3fd-a304c66e1e56',
-      name: 'Sentinel Name Placeholder',
-      addresses: [],
-      bots: [botId],
-      network: 'mainnet',
-      chainId: 1,
-    };
-
-    const autotaskEvent = {
-      relayerARN: undefined,
-      kvstoreARN: undefined,
-      credentials: undefined,
-      tenantId: undefined,
-      secrets,
-      request: {
-        body: {
-          hash: alert.hash, // forta Bot hash
-          alert,
-          matchReasons,
-          sentinel,
-          type: 'FORTA',
-        },
-      },
-    };
-    return autotaskEvent;
-  });
-
-  return autotaskEvents;
+// Map the Env name to the Secret variable name
+if (discordSecretName !== discordEnvSecretName) {
+  secrets[discordSecretName] = secrets[discordEnvSecretName];
+  delete secrets[discordEnvSecretName];
 }
 
-it('Runs autotask against blocks in configuration file', async () => {
-  const results = [];
-  const mockBotId = '0x12345';
-  const autotaskEvents = createFortaSentinelEvents(mockBotId);
+// eslint-disable-next-line import/no-useless-path-segments
+const { handler } = require('../downloaded/Forta_cToken');
 
-  // pass the mocked Forta Bot alert into the function that will emulate a Forta Sentinel alert
-  // update the axios mock in preparation for capturing the Discord POST request
-  axios.mockResolvedValueOnce(mockFortaAlert).mockImplementationOnce((arg0) => results.push(arg0));
+function createFinding(metadata) {
+  return Finding.fromObject({
+    name: 'Placeholder Alert',
+    description: 'Placeholder description',
+    alertId: 'AE-ALERT-ID',
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    protocol: 'Protocol',
+    metadata,
+  });
+}
 
-  // set up the mocked contracts for the Autotask
-  mockContract.underlying.mockResolvedValue('0xUNDERLYINGADDRESS');
-  mockContract.decimals.mockResolvedValue(18);
-  mockContract.symbol.mockResolvedValue('ABCD');
+function createFortaSentinelEvent(finding, blockHash, txHash) {
+  // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
+  //  with some metadata being added and removed along the way. This function will mimic
+  // the Sentinel output with only Finding, block and transaction data.
 
-  // run the autotask on the events
-  const promises = autotaskEvents.map((autotaskEvent) => handler(autotaskEvent));
+  // Note: Much of the extra data here is superfluous but is left here just in case future bots
+  // want to reference any of the Sentinel data in the Discord output. It also mimics sentinel
+  // output more accurately.
 
-  await Promise.all(promises);
-
-  const expectedResults = [{
-    url: secrets.DiscordUrl,
-    method: 'post',
-    headers: {
-      'Content-Type': 'application/json',
+  // populate the matchReasons Array with placeholders
+  const matchReasons = [
+    {
+      type: 'alert-id',
+      value: 'ALERT_ID_PLACEHOLDER',
     },
-    data: {
-      content: `[TX](<https://etherscan.io/tx/${transactionHash}>) 🐳📥 **1 ETH** borrow by 0xF2Ed`,
+    {
+      type: 'severity',
+      value: 'INFO',
     },
-  }];
+  ];
 
-  expect(results).toStrictEqual(expectedResults);
+  // populate the sentinel Object with placeholders
+  const sentinel = {
+    id: '8fe3d50b-9b52-44ff-b3fd-a304c66e1e56',
+    name: 'Sentinel Name Placeholder',
+    addresses: [],
+    agents: [],
+    network: 'mainnet',
+    chainId: 1,
+  };
+
+  const autotaskEvent = {
+    relayerARN: undefined,
+    kvstoreARN: undefined,
+    credentials: undefined,
+    tenantId: undefined,
+    secrets,
+    request: {
+      body: {
+        hash: '0xAGENT-HASH', // forta Agent hash
+        alert: {
+          metadata: finding.metadata,
+        },
+        source: {
+          transactionHash: txHash,
+          block: {
+            hash: blockHash,
+          },
+        },
+        matchReasons,
+        sentinel,
+        type: 'FORTA',
+      },
+    },
+  };
+  return autotaskEvent;
+}
+
+describe('check autotask', () => {
+  const url = secrets[discordSecretName];
+  const headers = { 'Content-Type': 'application/json' };
+  const method = 'post';
+
+  beforeEach(async () => {
+    axios.mockClear();
+  });
+
+  it('Runs autotask against mock Borrow data and posts in Discord', async () => {
+    const mockFinding = createFinding(mockBorrowMeta);
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockBorrowTxHash);
+
+    // run the autotask on the events
+    await handler(autotaskEvent);
+
+    const data = `{"content":"[TX](<https://etherscan.io/tx/${mockBorrowTxHash}>) 🐳📥 **$18,537 of cUSDC** borrowed by 0x8776 (Compound v2)"}`;
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
+  });
+
+  it('Runs autotask against mock LiquidateBorrow data and posts in Discord', async () => {
+    const mockFinding = createFinding(mockLiquidateBorrowMeta);
+    const autotaskEvent = createFortaSentinelEvent(
+      mockFinding,
+      mockBlockHash,
+      mockLiquidateBorrowTxHash,
+    );
+
+    // run the autotask on the events
+    await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x064228d15febb05b929e8aecbf3d828449bd8210df758d692b9b855355ed3560>) 💔 **$881 of cUSDT** liquidated from 0xf1C6 by 0xD911 (Compound v2)"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
+  });
+
+  it('Runs autotask against mock Mint data and posts in Discord', async () => {
+    const mockFinding = createFinding(mockMintMeta);
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockMintTxHash);
+
+    // run the autotask on the events
+    await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0xff85476c183ef3cc0fb0623877abf5589197a773845f8acac341e48c42957a3e>) 🐳📈 **$67,721 of cETH** supplied by 0x352E (Compound v2)"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
+  });
+
+  it('Runs autotask against mock Redeem data and posts in Discord', async () => {
+    const mockFinding = createFinding(mockRedeemMeta);
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockRedeemTxHash);
+
+    // run the autotask on the events
+    await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x881d7f5b2804d144535f7b51f504ba6bcf14f3ccd53d57f4e59e0ad262bddeb5>) 🐳📉 **$88,512 of cWBTC** withdrew by 0xF016 (Compound v2)"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
+  });
+
+  it('Runs autotask against mock RepayBorrow data and posts in Discord', async () => {
+    const mockFinding = createFinding(mockRRepayBorrowMeta);
+    const autotaskEvent = createFortaSentinelEvent(
+      mockFinding,
+      mockBlockHash,
+      mockRepayBorrowTxHash,
+    );
+
+    // run the autotask on the events
+    await handler(autotaskEvent);
+
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x57a36644b7440ad247a41222ad105d5a08d21b47e434025bcf4427b2c20f3dee>) 🐳📤 **$19,985 of cUSDC** repaid by 0xF6aa (Compound v2)"}';
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
+  });
+
+  it('throws error if discordUrl is not valid', async () => {
+    // Use an invalid discord URL
+    secrets[discordSecretName] = 'http//zzzz';
+    const mockFinding = createFinding(mockRedeemMeta);
+    const autotaskEvent = createFortaSentinelEvent(mockFinding, mockBlockHash, mockRedeemTxHash);
+
+    // run the autotask on the events
+    await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
+
+    expect(axios).toBeCalledTimes(0);
+  });
 });

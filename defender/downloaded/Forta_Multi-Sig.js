@@ -1,220 +1,64 @@
-/* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
+// Set the name of the Secret set in Autotask
+const discordSecretName = 'SecurityAlertsDiscordUrl';
+
 const axios = require('axios');
-const ethers = require('ethers');
 
-// import the DefenderRelayProvider to interact with its JSON-RPC endpoint
-const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
-/* eslint-enable import/no-extraneous-dependencies,import/no-unresolved */
-
-const fortaApiEndpoint = 'https://api.forta.network/graphql';
-
-const CTOKEN_ABI = ['function symbol() view returns (string)'];
-
-function getRandomInt(min, max) {
-  return Math.floor((Math.random() * (max - min)) + min);
+async function post(url, method, headers, data) {
+  return axios({
+    url,
+    method,
+    headers,
+    data,
+  });
 }
 
-async function postToDiscord(discordWebhook, message) {
+async function postToDiscord(url, message) {
+  const method = 'post';
   const headers = {
     'Content-Type': 'application/json',
   };
-
-  const body = {
-    content: message,
-  };
-
-  const discordObject = {
-    url: discordWebhook,
-    method: 'post',
-    headers,
-    data: body,
-  };
+  const data = JSON.stringify({ content: message });
 
   let response;
   try {
     // perform the POST request
-    response = await axios(discordObject);
-  } catch (err) {
-    if (err.response && err.response.status === 429) {
-      // rate-limited, retry
-      // after waiting a random amount of time between 2 and 15 seconds
-      const delay = getRandomInt(2000, 15000);
+    response = await post(url, method, headers, data);
+  } catch (error) {
+    // check if this is a "too many requests" error (HTTP status 429)
+    if (error.response && error.response.status === 429) {
+      // the request was made and a response was received
+      // try again after waiting 5 - 50 seconds, if retry_after value is received, use that.
+      let timeout;
+      // Discord Webhook API defaults to v6, and v6 returns retry_after value in ms. Later versions
+      // use seconds, so this will need to be updated when Discord changes their default API version
+      // Ref: https://discord.com/developers/docs/reference
+      if (error.response.data
+        && error.response.data.retry_after
+        && error.response.data.retry_after < 50000) {
+        // Wait the specified amount of time + a random number to reduce
+        // overlap with newer requests. Initial testing reveals that the Discord Webhook allows 5
+        // requests and then resets the counter after 2 seconds. With a 15 second range of 5-20,
+        // this function can reliably can handle batches of 15 requests. Increase the max variable
+        // below if you anticipate a larger number of requests.
+        // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
+        const min = 5000;
+        const max = 30000;
+        timeout = Math.floor(Math.random() * (max - min) + min);
+        timeout += error.response.data.retry_after;
+      } else {
+        // If retry_after is larger than 50 seconds, then just wait 50 seconds.
+        timeout = 50000;
+      }
       // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, delay));
+      const promise = new Promise((resolve) => setTimeout(resolve, timeout));
       await promise;
-      response = await axios(discordObject);
+      response = await post(url, method, headers, data);
     } else {
-      throw err;
+      // re-throw the error if it's not from a 429 status
+      throw error;
     }
   }
   return response;
-}
-
-async function getFortaAlerts(botId, transactionHash) {
-  const headers = {
-    'content-type': 'application/json',
-  };
-
-  const graphqlQuery = {
-    operationName: 'recentAlerts',
-    query: `query recentAlerts($input: AlertsInput) {
-      alerts(input: $input) {
-        pageInfo {
-          hasNextPage
-          endCursor {
-            alertId
-            blockNumber
-          }
-        }
-        alerts {
-          alertId
-          createdAt
-          name
-          hash
-          protocol
-          findingType
-          source {
-            transactionHash
-            block {
-              number
-              chainId
-            }
-            bot {
-              id
-            }
-          }
-          severity
-          metadata
-          description
-        }
-      }
-    }`,
-    variables: {
-      input: {
-        first: 100,
-        bots: [botId],
-        transactionHash,
-        createdSince: 0,
-        chainId: 1,
-      },
-    },
-  };
-
-  // perform the POST request
-  const response = await axios({
-    url: fortaApiEndpoint,
-    method: 'post',
-    headers,
-    data: graphqlQuery,
-  });
-
-  const { data } = response;
-  if (data === undefined) {
-    return undefined;
-  }
-
-  const { data: { alerts: { alerts } } } = data;
-  return alerts;
-}
-
-async function getProposalTitle(proposalId) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposals';
-  const queryUrl = `?proposal_ids[]=${proposalId}`;
-  let title;
-  try {
-    const result = await axios.get(baseUrl + queryUrl);
-    title = result.data.proposals[0].title;
-    if (title === null) {
-      title = '';
-    }
-  } catch {
-    title = '';
-  }
-  return title;
-}
-
-async function createDiscordMessage(metadata, description, alertId, transactionHash, provider) {
-  let oldPauseGuardian;
-  let newPauseGuardian;
-  let action;
-  let oldAdmin;
-  let newAdmin;
-  let oldThreshold;
-  let newThreshold;
-  let oldBorrowCapGuardian;
-  let newBorrowCapGuardian;
-  let cToken;
-  let symbol;
-  let newBorrowCap;
-  let contract;
-  let proposalName;
-  let message;
-  let id;
-  let owner;
-
-  switch (alertId) {
-    case 'AE-COMP-MULTISIG-OWNER-ADDED-ALERT':
-      ({ owner } = metadata);
-      message = `🆕 **Added Owner** ${owner} to Community Multi-Sig`;
-      break;
-    case 'AE-COMP-MULTISIG-OWNER-REMOVED-ALERT':
-      ({ owner } = metadata);
-      message = `🙅‍♂️ **Removed Owner** ${owner} from Community Multi-Sig`;
-      break;
-    case 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT':
-      ({ proposalId: id } = metadata);
-      message = '📄 **New Proposal** created by Community Multi-Sig';
-      message += `\nDetails: https://compound.finance/governance/proposals/${id}`;
-      break;
-    case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT':
-      ({ proposalId: id } = metadata);
-      proposalName = await getProposalTitle(id);
-      message = `👏 **Executed Proposal** ${proposalName} by Community Multi-Sig`;
-      break;
-    case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT':
-      ({ proposalId: id } = metadata);
-      proposalName = await getProposalTitle(id);
-      message = `❌ **Canceled Proposal** ${proposalName} by Community Multi-Sig`;
-      break;
-    case 'AE-COMP-GOVERNANCE-VOTE-CAST-ALERT':
-      ({ proposalId: id } = metadata);
-      proposalName = await getProposalTitle(id);
-      message = `🗳️ **Vote Cast** on proposal ${proposalName} by Community Multi-Sig`;
-      break;
-    case 'AE-COMP-GOVERNANCE-THRESHOLD-SET-ALERT':
-      ({ oldThreshold, newThreshold } = metadata);
-      message = `📶 **Proposal Threshold Changed** from ${oldThreshold} to ${newThreshold} by Community Multi-Sig`;
-      break;
-    case 'AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT':
-      ({ oldAdmin, newAdmin } = metadata);
-      message = `🧑‍⚖️ **Admin Changed** from ${oldAdmin} to ${newAdmin} by Community Multi-Sig`;
-      break;
-    case 'AE-COMP-NEW-PAUSE-GUARDIAN-ALERT':
-      ({ oldPauseGuardian, newPauseGuardian } = metadata);
-      message = `⏸️ **Pause Guardian Changed** from ${oldPauseGuardian} to ${newPauseGuardian} by Community Multi-Sig`;
-      break;
-    case 'AE-COMP-ACTION-PAUSED-ALERT':
-      ({ action } = metadata);
-      message = `⏯️ **Pause on Action** ${action} by Community Multi-Sig`;
-      break;
-    case 'AE-COMP-NEW-BORROW-CAP-ALERT':
-      ({ cToken, newBorrowCap } = metadata);
-      contract = new ethers.Contract(
-        cToken,
-        CTOKEN_ABI,
-        provider,
-      );
-      symbol = await contract.symbol();
-      message = `🧢 **New Borrow Cap** for ${symbol} set to ${newBorrowCap} by Community Multi-Sig`;
-      break;
-    case 'AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT':
-      ({ oldBorrowCapGuardian, newBorrowCapGuardian } = metadata);
-      message = `👲 **New Borrow Cap Guardian** changed from ${oldBorrowCapGuardian} to ${newBorrowCapGuardian} by Community Multi-Sig`;
-      break;
-    default:
-      return undefined;
-  }
-  return message;
 }
 
 // eslint-disable-next-line func-names
@@ -224,21 +68,34 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('autotaskEvent undefined');
   }
 
-  // use the relayer provider for JSON-RPC requests
-  const provider = new DefenderRelayProvider(autotaskEvent);
-
-  const { secrets, request } = autotaskEvent;
+  const { secrets } = autotaskEvent;
   if (secrets === undefined) {
     throw new Error('secrets undefined');
   }
 
   // ensure that there is a DiscordUrl secret
-  const { SecurityAlertsDiscordUrl: discordUrl } = secrets;
+  const discordUrl = secrets[discordSecretName];
   if (discordUrl === undefined) {
-    throw new Error('SecurityAlertsDiscordUrl undefined');
+    throw new Error('discordUrl undefined');
+  }
+
+  // Ref: https://developer.mozilla.org/en-US/docs/Web/API/URL
+  function isValidUrl(string) {
+    let url;
+    try {
+      url = new URL(string);
+    } catch (_) {
+      return false;
+    }
+    return url.href;
+  }
+
+  if (isValidUrl(discordUrl) === false) {
+    throw new Error('discordUrl is not a valid URL');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
+  const { request } = autotaskEvent;
   if (request === undefined) {
     throw new Error('request undefined');
   }
@@ -255,52 +112,123 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('alert undefined');
   }
 
-  // extract the transaction hash and bot ID from the alert Object
+  // ensure that the alert key exists within the body Object
+  const { source } = body;
+  if (source === undefined) {
+    throw new Error('source undefined');
+  }
+
+  // extract the metadata from the alert Object
+  const { alertId, metadata } = alert;
+  if (source === undefined) {
+    throw new Error('metadata undefined');
+  }
+
+  // extract the hashes from the source Object
   const {
-    hash,
-    source: {
-      transactionHash,
-      bot: {
-        id: botId,
-      },
-    },
-  } = alert;
+    transactionHash,
+  } = source;
 
-  // retrieve the metadata from the Forta public API
-  let alerts = await getFortaAlerts(botId, transactionHash);
-  alerts = alerts.filter((alertObject) => alertObject.hash === hash);
+  // Start of usual modifications to the autotask script
+  // extract the metadata
+  const {
+    multisigAddress, protocolVersion,
+  } = metadata;
+  if (multisigAddress === undefined) {
+    throw new Error('multisigAddress undefined');
+  }
 
-  const promises = alerts.map(async (alertData) => {
-    const { metadata, description, alertId } = alertData;
-    const message = await createDiscordMessage(
-      metadata,
-      description,
-      alertId,
-      transactionHash,
-      provider,
-    );
-    return message;
-  });
+  let protocolVersionString = '';
+  if (protocolVersion !== undefined) {
+    if (protocolVersion === '2') {
+      protocolVersionString = ' (Compound v2)';
+    } else if (protocolVersion === '3') {
+      protocolVersionString = ' (Compound v3)';
+    } else if (protocolVersion === '2,3') {
+      protocolVersionString = ' (Compound v2/v3)';
+    }
+  }
 
-  // wait for the promises to settle
-  let results = await Promise.allSettled(promises);
+  const multisigAddressFormatted = multisigAddress.slice(0, 6);
 
-  // construct the Etherscan transaction link
+  let oldPauseGuardian;
+  let newPauseGuardian;
+  let action;
+  let oldAdmin;
+  let newAdmin;
+  let oldThreshold;
+  let newThreshold;
+  let oldBorrowCapGuardian;
+  let newBorrowCapGuardian;
+  let cToken;
+  let cTokenFormatted;
+  let newBorrowCap;
+  let message;
+  let id;
+  let owner;
+
+  switch (alertId) {
+    case 'AE-COMP-MULTISIG-OWNER-ADDED-ALERT':
+      ({ owner } = metadata);
+      message = `🆕 **Added Owner** ${owner} to Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-OWNER-REMOVED-ALERT':
+      ({ owner } = metadata);
+      message = `🙅‍♂️ **Removed Owner** ${owner} from Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT':
+      ({ proposalId: id } = metadata);
+      message = '📄 **New Proposal** created by Community Multi-Sig';
+      message += `\nDetails: https://compound.finance/governance/proposals/${id}${protocolVersionString}`;
+      break;
+    case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT':
+      ({ proposalId: id } = metadata);
+      message = `👏 **Executed Proposal** #${id} by Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT':
+      ({ proposalId: id } = metadata);
+      message = `❌ **Canceled Proposal**  #${id} by Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-GOVERNANCE-VOTE-CAST-ALERT':
+      ({ proposalId: id } = metadata);
+      message = `🗳️ **Vote Cast** on proposal #${id} by Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-GOVERNANCE-THRESHOLD-SET-ALERT':
+      ({ oldThreshold, newThreshold } = metadata);
+      message = `📶 **Proposal Threshold Changed** from ${oldThreshold} to ${newThreshold} by Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT':
+      ({ oldAdmin, newAdmin } = metadata);
+      message = `🧑‍⚖️ **Admin Changed** from ${oldAdmin} to ${newAdmin} by Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-NEW-PAUSE-GUARDIAN-ALERT':
+      ({ oldPauseGuardian, newPauseGuardian } = metadata);
+      message = `⏸️ **Pause Guardian Changed** from ${oldPauseGuardian} to ${newPauseGuardian} by Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-ACTION-PAUSED-ALERT':
+      ({ action } = metadata);
+      message = `⏯️ **Pause on Action** ${action} by Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-NEW-BORROW-CAP-ALERT':
+      ({ cToken, newBorrowCap } = metadata);
+      cTokenFormatted = cToken.slice(0, 6);
+      message = `🧢 **New Borrow Cap** for ${cTokenFormatted} set to ${newBorrowCap} by Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT':
+      ({ oldBorrowCapGuardian, newBorrowCapGuardian } = metadata);
+      message = `👲 **New Borrow Cap Guardian** changed from ${oldBorrowCapGuardian} to ${newBorrowCapGuardian} by Community Multi-Sig${protocolVersionString}`;
+      break;
+    default:
+      message = `📄 **Governance action** taken by **Community Multi-Sig** address **${multisigAddressFormatted}${protocolVersionString}**`;
+  }
+
+  // // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
   // create promises for posting messages to Discord webhook
-  const discordPromises = results.map((result) => {
-    console.log(`${etherscanLink} ${result.value}`);
-    return postToDiscord(discordUrl, `${etherscanLink} ${result.value}`);
-  });
-
-  // wait for the promises to settle
-  results = await Promise.allSettled(discordPromises);
-  results = results.filter((result) => result.status === 'rejected');
-
-  if (results.length > 0) {
-    throw new Error(results[0].reason);
-  }
+  // with Log Forwarding enabled, this console.log will forward the text string to Dune Analytics
+  console.log(`${etherscanLink} ${message}`);
+  await postToDiscord(discordUrl, `${etherscanLink} ${message}`);
 
   return {};
 };
