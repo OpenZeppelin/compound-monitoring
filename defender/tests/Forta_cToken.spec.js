@@ -81,10 +81,6 @@ jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
-const {
-  Finding, FindingType, FindingSeverity,
-} = require('forta-agent');
-
 // grab the existing keys before loading new content from the .env file
 const existingKeys = Object.keys(process.env);
 // eslint-disable-next-line import/no-unresolved

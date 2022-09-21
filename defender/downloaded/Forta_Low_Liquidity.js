@@ -17,7 +17,7 @@ async function postToDiscord(url, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
+  const data = { content: message };
 
   let response;
   try {
@@ -120,7 +120,7 @@ exports.handler = async function (autotaskEvent) {
 
   // extract the metadata from the alert Object
   const { metadata } = alert;
-  if (source === undefined) {
+  if (metadata === undefined) {
     throw new Error('metadata undefined');
   }
 

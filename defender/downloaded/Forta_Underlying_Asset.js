@@ -120,14 +120,9 @@ exports.handler = async function (autotaskEvent) {
 
   // extract the metadata from the alert Object
   const { metadata } = alert;
-  if (source === undefined) {
+  if (metadata === undefined) {
     throw new Error('metadata undefined');
   }
-
-  // extract the hashes from the source Object
-  const {
-    transactionHash,
-  } = source;
 
   // Start of usual modifications to the autotask script
   // extract the metadata
@@ -143,6 +138,9 @@ exports.handler = async function (autotaskEvent) {
   let versionString = '';
   if (protocolVersion !== undefined) {
     versionString = ` (Compound v${protocolVersion})`;
+  }
+  if (cTokenSymbol === undefined) {
+    throw new Error('cTokenSymbol undefined');
   }
 
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;

@@ -7,16 +7,18 @@ const { KeyValueStoreClient } = require('defender-kvstore-client');
 // it corresponds to 05-DEC-2021, presumably the launch date of Forta Explorer
 const fortaExplorerEarliestTimestamp = 1638721490212;
 
-const botIds = [
-  '0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714', // Forta Low Liquidity Attack
-  '0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339', // Forta Large Borrows Governance
-  '0x916603512086fcad84c35858d2fc5356c512f72b19c80e52e8f9c04d8122e2ba', // Forta Multi-Sig Monitor
-  '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53', // Forta Large Delegations Monitor
-  '0xe200d890a67d51c3610520dd9fdfa9e2bd6dd341d41e32fa457601e73c4c6685', // Forta Oracle Price Monitor
-  '0xf836bda7810aa2dd9df5bb7ac748f173b945863e922a15bb7c57da7b0e6dab05', // Forta Underlying Asset Monitor
-  '0x125c36816fbad9974a452947bf6a98d975988ddf4342c159a986383b64765e22', // Forta Compound cToken Monitor
-  '0xa0424dfee87cc34b9ff6a1dfa2cb22dbf1b20a238698ae0eeffbf07f869e5b39', // Forta Compound Governance Monitor
-];
+const botIdsToNames = {
+  '0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714': 'Low Liquidity Attack',
+  '0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339': 'Large Borrows Governance',
+  '0x916603512086fcad84c35858d2fc5356c512f72b19c80e52e8f9c04d8122e2ba': 'Community Multi-Sig',
+  '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53': 'Large Delegations',
+  '0xe200d890a67d51c3610520dd9fdfa9e2bd6dd341d41e32fa457601e73c4c6685': 'Oracle Price',
+  '0xf836bda7810aa2dd9df5bb7ac748f173b945863e922a15bb7c57da7b0e6dab05': 'Underlying Asset',
+  '0x125c36816fbad9974a452947bf6a98d975988ddf4342c159a986383b64765e22': 'Market Activity',
+  '0xa0424dfee87cc34b9ff6a1dfa2cb22dbf1b20a238698ae0eeffbf07f869e5b39': 'Governance Activity',
+};
+
+const botIds = Object.keys(botIdsToNames);
 
 const fortaExplorerApiEndpoint = 'https://explorer-api.forta.network/graphql';
 const datadogApiEndpoint = 'https://api.datadoghq.com/api/v2/series';
@@ -41,8 +43,8 @@ function parseAlertsResponse(response) {
 
     const timestamp = new Date(dateTimestamp).valueOf();
 
-    // force the x-axis value (timestamp) passed with the data to be the timestamp at the start of
-    // the week
+    // force the x-axis value (timestamp) passed with the data to be the timestamp at the
+    // start of the week
     const msPerWeek = (1000 * 60 * 60 * 24 * 7);
     const weeksElapsed = Math.floor((timestamp - fortaExplorerEarliestTimestamp) / msPerWeek);
 
@@ -50,13 +52,16 @@ function parseAlertsResponse(response) {
     const dayOfWeek = (new Date(timestamp).getDay()) + 1;
 
     // use the transaction hash as a unique "tag"
+    // cSpell:disable
     const tags = [
       `botid:${botId}`,
       `protocol:${protocol}`,
       `severity:${severity}`,
       `dayofweek:${dayOfWeek}`,
       `weekselapsed:${weeksElapsed}`,
+      `botname:${botIdsToNames[botId]}`,
     ];
+    // cSpell:enable
 
     const output = {
       metric: 'alertHeatMap',
@@ -88,6 +93,7 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           severity
           protocol
           name
+          everest_id
           alert_id
           scanner_count
           source {
@@ -108,11 +114,11 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           }
         }
         nextPageValues {
-          timestamp
+          blocknumber
           id
         }
         currentPageValues {
-          timestamp
+          blocknumber
           id
         }
       }

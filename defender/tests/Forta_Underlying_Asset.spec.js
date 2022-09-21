@@ -21,7 +21,6 @@ const acceptedPost = {
   statusText: 'No Content',
 };
 jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
-// eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
 const {

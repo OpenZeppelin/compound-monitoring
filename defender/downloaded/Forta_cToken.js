@@ -120,7 +120,7 @@ exports.handler = async function (autotaskEvent) {
 
   // extract the metadata from the alert Object
   const { metadata } = alert;
-  if (source === undefined) {
+  if (metadata === undefined) {
     throw new Error('metadata undefined');
   }
 
@@ -222,7 +222,6 @@ exports.handler = async function (autotaskEvent) {
   } else {
     message += ` by ${byAddress.slice(0, 6)}`;
   }
-
   message += versionString;
 
   // construct the Etherscan transaction link

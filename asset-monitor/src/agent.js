@@ -227,7 +227,7 @@ function provideHandleTransaction(data) {
         });
       });
     });
-
+    console.log(JSON.stringify(findings, null, 2));
     return findings;
   };
 }

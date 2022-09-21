@@ -118,26 +118,6 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('source undefined');
   }
 
-  // extract the metadata from the alert Object
-  const { alertId, metadata } = alert;
-  if (source === undefined) {
-    throw new Error('metadata undefined');
-  }
-
-  // extract the hashes from the source Object
-  const {
-    transactionHash,
-  } = source;
-
-  // Start of usual modifications to the autotask script
-  // extract the metadata
-  const {
-    multisigAddress, protocolVersion,
-  } = metadata;
-  if (multisigAddress === undefined) {
-    throw new Error('multisigAddress undefined');
-  }
-
   let protocolVersionString = '';
   if (protocolVersion !== undefined) {
     if (protocolVersion === '2') {
@@ -147,6 +127,19 @@ exports.handler = async function (autotaskEvent) {
     } else if (protocolVersion === '2,3') {
       protocolVersionString = ' (Compound v2/v3)';
     }
+
+  // extract the hashes from the source Object
+  const {
+    transactionHash,
+  } = source;
+
+  // Start of usual modifications to the autotask script
+  // extract the metadata
+  const {
+    multisigAddress,
+  } = metadata;
+  if (multisigAddress === undefined) {
+    throw new Error('multisigAddress undefined');
   }
 
   const multisigAddressFormatted = multisigAddress.slice(0, 6);
