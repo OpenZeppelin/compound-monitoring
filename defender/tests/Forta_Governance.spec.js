@@ -220,7 +220,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"**New Proposal** Risk Parameter Updates for 5 Collateral Assets by Fake Name [TX](<https://etherscan.io/tx/0xcab21dadc18ca7c28ec204225ee350558322506df50e12b290b4b563bef0e773>)\\nDetails: https://compound.finance/governance/proposals/107"}';
+    const data = {content: '**New Proposal** Risk Parameter Updates for 5 Collateral Assets by Fake Name [TX](<https://etherscan.io/tx/0xcab21dadc18ca7c28ec204225ee350558322506df50e12b290b4b563bef0e773>)\nDetails: https://compound.finance/governance/proposals/107'};
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -242,7 +242,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"**Vote** Fake title ✅ 50,000 by Fake Name [TX](<https://etherscan.io/tx/0xe65195312258cef491732d11a18199055bab6ded4ffd5cfb7bbbca034159492d>)"}';
+    const data = { content: '**Vote** Fake title ✅ 50,000 by Fake Name [TX](<https://etherscan.io/tx/0xe65195312258cef491732d11a18199055bab6ded4ffd5cfb7bbbca034159492d>)' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -263,7 +263,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"**Executed Proposal** Fake title ✅"}';
+    const data = { content: '**Executed Proposal** Fake title ✅' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -284,7 +284,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"**Queued Proposal** Fake title ✅ available to execute at timestamp 1653983138"}';
+    const data = { content: '**Queued Proposal** Fake title ✅ available to execute at timestamp 1653983138' };
     const expectedLastCall = {
       url, headers, method, data,
     };

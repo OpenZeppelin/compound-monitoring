@@ -199,7 +199,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🆕 **Added Owner** 0xNEW to Community Multi-Sig"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🆕 **Added Owner** 0xNEW to Community Multi-Sig' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -217,7 +217,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🙅‍♂️ **Removed Owner** 0xREMOVED from Community Multi-Sig"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🙅‍♂️ **Removed Owner** 0xREMOVED from Community Multi-Sig' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -235,7 +235,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 📄 **New Proposal** created by Community Multi-Sig\\nDetails: https://compound.finance/governance/proposals/101 (Compound v2/v3)"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 📄 **New Proposal** created by Community Multi-Sig\nDetails: https://compound.finance/governance/proposals/101 (Compound v2/v3)' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -253,7 +253,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 👏 **Executed Proposal** #101 by Community Multi-Sig (Compound v2)"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 👏 **Executed Proposal** #101 by Community Multi-Sig (Compound v2)' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -271,7 +271,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ❌ **Canceled Proposal**  #101 by Community Multi-Sig (Compound v3)"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ❌ **Canceled Proposal**  #101 by Community Multi-Sig (Compound v3)' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -289,7 +289,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🗳️ **Vote Cast** on proposal #101 by Community Multi-Sig"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🗳️ **Vote Cast** on proposal #101 by Community Multi-Sig' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -307,7 +307,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 📶 **Proposal Threshold Changed** from 100 to 200 by Community Multi-Sig"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 📶 **Proposal Threshold Changed** from 100 to 200 by Community Multi-Sig' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -325,7 +325,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🧑‍⚖️ **Admin Changed** from 0xME to 0xYOU by Community Multi-Sig"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🧑‍⚖️ **Admin Changed** from 0xME to 0xYOU by Community Multi-Sig' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -343,7 +343,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ⏸️ **Pause Guardian Changed** from 0xME to 0xYOU by Community Multi-Sig"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ⏸️ **Pause Guardian Changed** from 0xME to 0xYOU by Community Multi-Sig' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -361,7 +361,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ⏯️ **Pause on Action** PAUSED by Community Multi-Sig"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) ⏯️ **Pause on Action** PAUSED by Community Multi-Sig' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -379,7 +379,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🧢 **New Borrow Cap** for 0x0cBT set to 10000000 by Community Multi-Sig"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🧢 **New Borrow Cap** for 0x0cBT set to 10000000 by Community Multi-Sig' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -397,7 +397,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 👲 **New Borrow Cap Guardian** changed from 0xME to 0xYOU by Community Multi-Sig"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 👲 **New Borrow Cap Guardian** changed from 0xME to 0xYOU by Community Multi-Sig' };
     const expectedLastCall = {
       url, headers, method, data,
     };

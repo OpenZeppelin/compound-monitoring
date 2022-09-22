@@ -132,7 +132,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x2c9931793876db33b1a9aad123ad4921dfb9cd5e59dbb78ce78f277759587115>) The address 0x9000 is potentially manipulating the cToken cBTC market (Compound v2)"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x2c9931793876db33b1a9aad123ad4921dfb9cd5e59dbb78ce78f277759587115>) The address 0x9000 is potentially manipulating the cToken cBTC market (Compound v2)' };
     const expectedLastCall = {
       url, headers, method, data,
     };
