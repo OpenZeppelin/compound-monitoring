@@ -220,7 +220,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = {content: '**New Proposal** Risk Parameter Updates for 5 Collateral Assets by Fake Name [TX](<https://etherscan.io/tx/0xcab21dadc18ca7c28ec204225ee350558322506df50e12b290b4b563bef0e773>)\nDetails: https://compound.finance/governance/proposals/107'};
+    const data = { content: '**New Proposal** Risk Parameter Updates for 5 Collateral Assets by Fake Name [TX](<https://etherscan.io/tx/0xcab21dadc18ca7c28ec204225ee350558322506df50e12b290b4b563bef0e773>)\nDetails: https://compound.finance/governance/proposals/107' };
     const expectedLastCall = {
       url, headers, method, data,
     };
