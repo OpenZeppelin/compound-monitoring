@@ -19,6 +19,7 @@ module.exports = {
       rules: {
         'no-plusplus': 'off',
         'no-continue': 'off',
+        'no-console': 'off',
       },
     },
   ],

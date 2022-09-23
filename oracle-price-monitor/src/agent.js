@@ -13,6 +13,7 @@ function createAlert(
   priceReporterAddress,
   currentPrice,
   rejectedPrice,
+  protocolVersion,
 ) {
   return Finding.fromObject({
     name: 'Compound Oracle Price Monitor',
@@ -27,6 +28,7 @@ function createAlert(
       validatorProxyAddress: priceReporterAddress,
       anchorPrice: currentPrice,
       reporterPrice: rejectedPrice,
+      protocolVersion,
     },
   });
 }
@@ -40,13 +42,15 @@ function provideInitialize(data) {
     // initialize the UniswapAnchoredView contract
     data.contract = new ethers.Contract(UNI_ANCHORED_VIEW_ADDRESS, anchoredViewAbi, provider);
     data.priceGuardedEvent = iface.getEvent('PriceGuarded').format(ethers.utils.FormatTypes.full);
+    // UniswapAnchoredView price feed contract is only used in Compound v2
+    data.protocolVersion = '2';
     /* eslint-enable no-param-reassign */
   };
 }
 
 function provideHandleTransaction(data) {
   return async function handleTransaction(txEvent) {
-    const { priceGuardedEvent, contract } = data;
+    const { priceGuardedEvent, contract, protocolVersion } = data;
 
     // use parseLog to see if the event PriceGuarded has been emitted, this is the event that
     // means the price returned from the validator proxy did not meet the acceptable Uniswap V2 TWAP
@@ -79,6 +83,7 @@ function provideHandleTransaction(data) {
         cTokenConfig[7],
         anchorPrice.toString(),
         reporterPrice.toString(),
+        protocolVersion,
       );
     });
 

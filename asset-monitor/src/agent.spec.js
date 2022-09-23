@@ -139,6 +139,7 @@ describe('test createUpgradeAlert', () => {
   let protocolName;
   let protocolAbbreviation;
   let developerAbbreviation;
+  const protocolVersion = '2';
   let cTokenSymbol;
   let cTokenAddress;
   let underlyingAssetAddress;
@@ -177,6 +178,7 @@ describe('test createUpgradeAlert', () => {
         cTokenSymbol,
         cTokenAddress,
         underlyingAssetAddress,
+        protocolVersion,
         ...modifiedArgs,
       },
     });
@@ -185,6 +187,7 @@ describe('test createUpgradeAlert', () => {
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
       cTokenSymbol,
       cTokenAddress,
       underlyingAssetAddress,
@@ -204,6 +207,7 @@ describe('monitor compound for upgraded cToken assets', () => {
     let protocolName;
     let protocolAbbreviation;
     let developerAbbreviation;
+    const protocolVersion = '2';
     let handleTransaction;
     let mockedCTokenContract;
     let mockComptrollerContract;
@@ -322,6 +326,7 @@ describe('monitor compound for upgraded cToken assets', () => {
         protocolName,
         protocolAbbreviation,
         developerAbbreviation,
+        protocolVersion,
         validSymbol,
         validCTokenAddress,
         validAssetAddress,
@@ -391,6 +396,7 @@ describe('monitor compound for upgraded cToken assets', () => {
         protocolName,
         protocolAbbreviation,
         developerAbbreviation,
+        protocolVersion,
         newSymbol,
         newCTokenAddress,
         newAssetAddress,

@@ -17,7 +17,7 @@ async function postToDiscord(url, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
+  const data = { content: message };
 
   let response;
   try {
@@ -124,6 +124,19 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('metadata undefined');
   }
 
+  const { protocolVersion } = metadata;
+
+  let protocolVersionString = '';
+  if (protocolVersion !== undefined) {
+    if (protocolVersion === '2') {
+      protocolVersionString = ' (Compound v2)';
+    } else if (protocolVersion === '3') {
+      protocolVersionString = ' (Compound v3)';
+    } else if (protocolVersion === '2,3') {
+      protocolVersionString = ' (Compound v2/v3)';
+    }
+  }
+
   // extract the hashes from the source Object
   const {
     transactionHash,
@@ -159,56 +172,56 @@ exports.handler = async function (autotaskEvent) {
   switch (alertId) {
     case 'AE-COMP-MULTISIG-OWNER-ADDED-ALERT':
       ({ owner } = metadata);
-      message = `🆕 **Added Owner** ${owner} to Community Multi-Sig`;
+      message = `🆕 **Added Owner** ${owner} to Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-MULTISIG-OWNER-REMOVED-ALERT':
       ({ owner } = metadata);
-      message = `🙅‍♂️ **Removed Owner** ${owner} from Community Multi-Sig`;
+      message = `🙅‍♂️ **Removed Owner** ${owner} from Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT':
       ({ proposalId: id } = metadata);
       message = '📄 **New Proposal** created by Community Multi-Sig';
-      message += `\nDetails: https://compound.finance/governance/proposals/${id}`;
+      message += `\nDetails: https://compound.finance/governance/proposals/${id}${protocolVersionString}`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT':
       ({ proposalId: id } = metadata);
-      message = `👏 **Executed Proposal** #${id} by Community Multi-Sig`;
+      message = `👏 **Executed Proposal** #${id} by Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT':
       ({ proposalId: id } = metadata);
-      message = `❌ **Canceled Proposal**  #${id} by Community Multi-Sig`;
+      message = `❌ **Canceled Proposal**  #${id} by Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-GOVERNANCE-VOTE-CAST-ALERT':
       ({ proposalId: id } = metadata);
-      message = `🗳️ **Vote Cast** on proposal #${id} by Community Multi-Sig`;
+      message = `🗳️ **Vote Cast** on proposal #${id} by Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-GOVERNANCE-THRESHOLD-SET-ALERT':
       ({ oldThreshold, newThreshold } = metadata);
-      message = `📶 **Proposal Threshold Changed** from ${oldThreshold} to ${newThreshold} by Community Multi-Sig`;
+      message = `📶 **Proposal Threshold Changed** from ${oldThreshold} to ${newThreshold} by Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT':
       ({ oldAdmin, newAdmin } = metadata);
-      message = `🧑‍⚖️ **Admin Changed** from ${oldAdmin} to ${newAdmin} by Community Multi-Sig`;
+      message = `🧑‍⚖️ **Admin Changed** from ${oldAdmin} to ${newAdmin} by Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-NEW-PAUSE-GUARDIAN-ALERT':
       ({ oldPauseGuardian, newPauseGuardian } = metadata);
-      message = `⏸️ **Pause Guardian Changed** from ${oldPauseGuardian} to ${newPauseGuardian} by Community Multi-Sig`;
+      message = `⏸️ **Pause Guardian Changed** from ${oldPauseGuardian} to ${newPauseGuardian} by Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-ACTION-PAUSED-ALERT':
       ({ action } = metadata);
-      message = `⏯️ **Pause on Action** ${action} by Community Multi-Sig`;
+      message = `⏯️ **Pause on Action** ${action} by Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-NEW-BORROW-CAP-ALERT':
       ({ cToken, newBorrowCap } = metadata);
       cTokenFormatted = cToken.slice(0, 6);
-      message = `🧢 **New Borrow Cap** for ${cTokenFormatted} set to ${newBorrowCap} by Community Multi-Sig`;
+      message = `🧢 **New Borrow Cap** for ${cTokenFormatted} set to ${newBorrowCap} by Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT':
       ({ oldBorrowCapGuardian, newBorrowCapGuardian } = metadata);
-      message = `👲 **New Borrow Cap Guardian** changed from ${oldBorrowCapGuardian} to ${newBorrowCapGuardian} by Community Multi-Sig`;
+      message = `👲 **New Borrow Cap Guardian** changed from ${oldBorrowCapGuardian} to ${newBorrowCapGuardian} by Community Multi-Sig${protocolVersionString}`;
       break;
     default:
-      message = `📄 **Governance action** taken by **Community Multi-Sig** address **${multisigAddressFormatted}**`;
+      message = `📄 **Governance action** taken by **Community Multi-Sig** address **${multisigAddressFormatted}${protocolVersionString}**`;
   }
 
   // // construct the Etherscan transaction link

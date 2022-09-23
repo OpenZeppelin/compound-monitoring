@@ -48,6 +48,7 @@ function createMarketAttackAlert(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
   compTokenSymbol,
   cTokenAddress,
   mintAmount,
@@ -71,6 +72,7 @@ function createMarketAttackAlert(
       maliciousAddress,
       maliciousAmount,
       totalSupply,
+      protocolVersion,
     },
   });
   return finding;
@@ -131,6 +133,8 @@ function provideInitialize(data) {
 
     data.compTokenAbi = getAbi(compToken.abiFile);
     data.compTokens = {};
+    // Comptroller and cToken contracts are only available in Compound V2
+    data.protocolVersion = '2';
 
     // from the Comptroller contract, get all of the cTokens
     await getCompoundTokens(
@@ -149,6 +153,7 @@ function provideHandleTransaction(data) {
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
       provider,
       excludeAddresses,
       compTokens,
@@ -206,6 +211,7 @@ function provideHandleTransaction(data) {
                 protocolName,
                 protocolAbbreviation,
                 developerAbbreviation,
+                protocolVersion,
                 symbol,
                 transferEvent.args.to,
                 mintEvent.args.mintAmount.toString(),

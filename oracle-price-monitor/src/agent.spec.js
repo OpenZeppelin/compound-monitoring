@@ -114,6 +114,7 @@ describe('handleTransaction', () => {
         validatorProxyAddress: '0xREPORTERADDRESS',
         anchorPrice: '10',
         reporterPrice: '100',
+        protocolVersion: '2',
       },
     });
     expect(findings).toStrictEqual([expectedFinding]);

@@ -17,7 +17,7 @@ async function postToDiscord(url, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
-  const data = JSON.stringify({ content: message });
+  const data = { content: message };
 
   let response;
   try {
@@ -134,16 +134,23 @@ exports.handler = async function (autotaskEvent) {
   const {
     compTokenSymbol,
     maliciousAddress,
+    protocolVersion,
   } = metadata;
   if (maliciousAddress === undefined) {
     throw new Error('maliciousAddress undefined');
+  }
+
+  // Handle older alerts which don't specify the protocol version
+  let versionString = '';
+  if (protocolVersion !== undefined) {
+    versionString = ` (Compound v${protocolVersion})`;
   }
 
   const maliciousAddressFormatted = maliciousAddress.slice(0, 6);
 
   // // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-  const message = `${etherscanLink} 🚱 **${maliciousAddressFormatted}** is potentially manipulating the cToken **${compTokenSymbol}** market`;
+  const message = `${etherscanLink} The address ${maliciousAddressFormatted} is potentially manipulating the cToken ${compTokenSymbol} market${versionString}`;
 
   // create promises for posting messages to Discord webhook
   // with Log Forwarding enabled, this console.log will forward the text string to Dune Analytics

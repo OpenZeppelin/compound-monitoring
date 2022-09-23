@@ -33,6 +33,7 @@ This bot detects specific transactions originating from and/or interacting with 
   - Metadata field contains:
     - Proposal Id created
     - Compound multisig address
+    - Compound version
 
 - AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT
   - Fired when a proposal is executed by the Compound multisig wallet
@@ -41,6 +42,7 @@ This bot detects specific transactions originating from and/or interacting with 
   - Metadata field contains:
     - Proposal Id executed
     - Compound multisig address
+    - Compound version
 
 - AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT
   - Fired when a proposal is canceled by the Compound multisig wallet
@@ -49,6 +51,7 @@ This bot detects specific transactions originating from and/or interacting with 
   - Metadata field contains:
     - Proposal Id canceled
     - Compound multisig address
+    - Compound version
 
 - AE-COMP-GOVERNANCE-VOTE-CAST-ALERT
   - Fired when a vote is cast from the Compound multisig wallet
@@ -57,6 +60,7 @@ This bot detects specific transactions originating from and/or interacting with 
   - Metadata field contains:
     - Proposal Id voted on
     - Compound multisig address
+    - Compound version
 
 - AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET-ALERT
   - Fired when a proposal threshold is set from the Compound multisig wallet
@@ -84,6 +88,7 @@ This bot detects specific transactions originating from and/or interacting with 
     - Old pause guardian address
     - New pause guardian address
     - Compound multisig address
+    - Compound version
 
 - AE-COMP-ACTION-PAUSED-ALERT
   - Fired when a global action is paused by the Compound multisig wallet
@@ -92,6 +97,7 @@ This bot detects specific transactions originating from and/or interacting with 
   - Metadata field contains:
     - Action paused
     - Compound multisig address
+    - Compound version
 
 - AE-COMP-NEW-BORROW-CAP-ALERT
   - Fired when a new borrow cap is set by the Compound multisig wallet
@@ -101,6 +107,7 @@ This bot detects specific transactions originating from and/or interacting with 
     - cToken address changed
     - New borrow cap
     - Compound multisig address
+    - Compound version
 
 - AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT
   - Fired when a new borrow cap guardian is set by the Compound multisig wallet
@@ -110,3 +117,4 @@ This bot detects specific transactions originating from and/or interacting with 
     - Old borrow cap guardian address
     - New borrow cap guardian address
     - Compound multisig address
+    - Compound version
