@@ -14,6 +14,12 @@ const compoundGovernanceAbi = [
   'function state(uint256 proposalId) view returns (uint8)',
 ];
 
+async function readyToExecute(contract, proposalId) {
+  const block = await contract.provider.getBlock('latest');
+  const proposal = await contract.proposals(ethers.BigNumber.from(proposalId));
+  return (block.timestamp > (proposal.eta).toNumber());
+}
+
 exports.handler = async function handler(autotaskEvent) {
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
@@ -85,6 +91,7 @@ exports.handler = async function handler(autotaskEvent) {
 
   const promises = proposalsToCheck.map(async (proposalId) => {
     const state = await governanceContract.state(proposalId);
+    let callExecute;
     switch (state) {
       case 0: // Pending
       case 1: // Active
@@ -102,9 +109,19 @@ exports.handler = async function handler(autotaskEvent) {
         // execute transaction with Relay to call queue()
         console.debug(`Calling queue for proposal ID ${proposalId}`);
         await governanceContract.queue(ethers.BigNumber.from(proposalId));
-        // intentionally allow fall-through so that a successfully queued proposal has the
-        // opportunity to be executed as soon as possible
-        // eslint-disable-next-line no-fallthrough
+        break;
+      case 5: // Queued
+        // check for the ability to call execute()
+        console.debug(`Checking if proposal ID ${proposalId} is ready to execute`);
+        callExecute = await readyToExecute(governanceContract, proposalId);
+        if (callExecute === true) {
+          // if the correct amount of time has passed, execute
+          // execute transaction with Relay to call execute()
+          console.debug(`Calling execute for proposal ID ${proposalId}`);
+          await governanceContract.execute(ethers.BigNumber.from(proposalId));
+        } else {
+          console.debug(`proposal ID ${proposalId} NOT ready to execute`);
+        }
         break;
       default:
         console.error(`Unexpected proposal state: ${state}`);
