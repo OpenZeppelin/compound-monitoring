@@ -13,6 +13,7 @@ function createAddOwnerFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const { owner } = log.args;
 
@@ -26,6 +27,7 @@ function createAddOwnerFinding(
     metadata: {
       owner,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -36,6 +38,7 @@ function createRemoveOwnerFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const { owner } = log.args;
 
@@ -49,6 +52,7 @@ function createRemoveOwnerFinding(
     metadata: {
       owner,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -59,6 +63,7 @@ function createGnosisFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   let finding;
 
@@ -69,6 +74,7 @@ function createGnosisFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -78,6 +84,7 @@ function createGnosisFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -100,6 +107,7 @@ function createProposalCreatedFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const proposalId = log.args.id.toString();
 
@@ -113,6 +121,7 @@ function createProposalCreatedFinding(
     metadata: {
       proposalId,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -123,6 +132,7 @@ function createProposalExecutedFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const proposalId = log.args.id.toString();
 
@@ -136,6 +146,7 @@ function createProposalExecutedFinding(
     metadata: {
       proposalId,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -146,6 +157,7 @@ function createProposalCanceledFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const proposalId = log.args.id.toString();
 
@@ -159,6 +171,7 @@ function createProposalCanceledFinding(
     metadata: {
       proposalId,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -169,6 +182,7 @@ function createVoteCastFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const proposalId = log.args.proposalId.toString();
 
@@ -182,6 +196,7 @@ function createVoteCastFinding(
     metadata: {
       proposalId,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -192,6 +207,7 @@ function createProposalThresholdSetFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const oldThreshold = log.args.oldProposalThreshold.toString();
   const newThreshold = log.args.newProposalThreshold.toString();
@@ -207,6 +223,7 @@ function createProposalThresholdSetFinding(
       oldThreshold,
       newThreshold,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -217,6 +234,7 @@ function createNewAdminFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const { oldAdmin, newAdmin } = log.args;
 
@@ -231,6 +249,7 @@ function createNewAdminFinding(
       oldAdmin,
       newAdmin,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -241,6 +260,7 @@ function createGovernanceFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   let finding;
 
@@ -250,6 +270,7 @@ function createGovernanceFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -259,6 +280,7 @@ function createGovernanceFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -268,6 +290,7 @@ function createGovernanceFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -277,6 +300,7 @@ function createGovernanceFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -286,6 +310,7 @@ function createGovernanceFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -295,6 +320,7 @@ function createGovernanceFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -316,6 +342,7 @@ function createNewPauseGuardianFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const { oldPauseGuardian, newPauseGuardian } = log.args;
 
@@ -330,6 +357,7 @@ function createNewPauseGuardianFinding(
       oldPauseGuardian,
       newPauseGuardian,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -340,6 +368,7 @@ function createActionPausedFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const { action } = log.args;
 
@@ -353,6 +382,7 @@ function createActionPausedFinding(
     metadata: {
       action,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -363,6 +393,7 @@ function createNewBorrowCapFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const { cToken, newBorrowCap } = log.args;
 
@@ -377,6 +408,7 @@ function createNewBorrowCapFinding(
       cToken,
       newBorrowCap,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -387,6 +419,7 @@ function createNewBorrowCapGuardianFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   const { oldBorrowCapGuardian, newBorrowCapGuardian } = log.args;
 
@@ -401,6 +434,7 @@ function createNewBorrowCapGuardianFinding(
       oldBorrowCapGuardian,
       newBorrowCapGuardian,
       multisigAddress,
+      protocolVersion,
     },
   });
   return finding;
@@ -411,6 +445,7 @@ function createComptrollerFinding(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
 ) {
   let finding;
 
@@ -420,6 +455,7 @@ function createComptrollerFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -429,6 +465,7 @@ function createComptrollerFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -438,6 +475,7 @@ function createComptrollerFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
   }
 
@@ -447,7 +485,53 @@ function createComptrollerFinding(
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
     );
+  }
+  return finding;
+}
+
+function createCometFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+) {
+  let finding;
+
+  if (log.name === 'PauseAction') {
+    const actionsArgs = {
+      Supply: log.args.supplyPaused,
+      Transfer: log.args.transferPaused,
+      Withdraw: log.args.withdrawPaused,
+      Absorb: log.args.absorbPaused,
+      Buy: log.args.buyPaused,
+    };
+
+    let actionsList = Object.entries(actionsArgs).map(([k, v]) => {
+      if (v === true) { return k; }
+      return undefined;
+    });
+    actionsList = actionsList.filter(Boolean);
+    if (actionsList.length === 0) {
+      return finding;
+    }
+    const actionsString = actionsList.join(',');
+
+    finding = Finding.fromObject({
+      name: `${protocolName} Actions Paused`,
+      description: `Actions ${actionsString} were Paused by multisig ${multisigAddress}`,
+      alertId: `${developerAbbreviation}-${protocolAbbreviation}-ACTION-PAUSED-ALERT`,
+      protocol: protocolName,
+      type: FindingType.Info,
+      severity: FindingSeverity.Info,
+      metadata: {
+        actions: actionsString,
+        multisigAddress,
+        protocolVersion: '3',
+      },
+    });
+    return finding;
   }
   return finding;
 }
@@ -465,4 +549,5 @@ module.exports = {
   createGnosisFinding,
   createGovernanceFinding,
   createComptrollerFinding,
+  createCometFinding,
 };

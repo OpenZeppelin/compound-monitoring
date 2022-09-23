@@ -101,6 +101,7 @@ describe('test createMarketAttackAlert', () => {
   let protocolName;
   let protocolAbbreviation;
   let developerAbbreviation;
+  const protocolVersion = '2';
   let compTokenSymbol;
   let cTokenAddress;
   let mintAmount;
@@ -134,6 +135,7 @@ describe('test createMarketAttackAlert', () => {
         maliciousAddress,
         maliciousAmount,
         totalSupply,
+        protocolVersion,
       },
     });
 
@@ -141,6 +143,7 @@ describe('test createMarketAttackAlert', () => {
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
       compTokenSymbol,
       cTokenAddress,
       mintAmount,
@@ -161,6 +164,7 @@ describe('monitor compound for attacks on cToken markets', () => {
     let protocolName;
     let protocolAbbreviation;
     let developerAbbreviation;
+    const protocolVersion = '2';
     let override;
     let handleTransaction;
     let mockedCompTokenContract;
@@ -293,6 +297,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         protocolName,
         protocolAbbreviation,
         developerAbbreviation,
+        protocolVersion,
         validCompTokenSymbol,
         validCompTokenAddress,
         mintAmount,
@@ -367,6 +372,7 @@ describe('monitor compound for attacks on cToken markets', () => {
         protocolName,
         protocolAbbreviation,
         developerAbbreviation,
+        protocolVersion,
         newCompSymbol,
         newCompTokenAddress,
         mintAmount,

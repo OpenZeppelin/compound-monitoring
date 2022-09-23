@@ -132,7 +132,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[BLOCK](<https://etherscan.io/block/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) - [ACCT](<https://etherscan.io/address/0x0000000000000000000000000000000000000000>) 📉💵🔥 **Liquidatable account detected** account 0x0000 is liquidatable for $1000.00"}';
+    const data = { content: '[BLOCK](<https://etherscan.io/block/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) - [ACCT](<https://etherscan.io/address/0x0000000000000000000000000000000000000000>) 📉💵🔥 **Liquidatable account detected** account 0x0000 is liquidatable for $1000.00' };
     const expectedLastCall = {
       url, headers, method, data,
     };

@@ -12,6 +12,7 @@ const mockMetadata = {
   validatorProxyAddress: '0xREPORTERADDRESS',
   anchorPrice: '10',
   reporterPrice: '100',
+  protocolVersion: '2',
 };
 
 const {
@@ -130,7 +131,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🚫 Reported price of **0xUNDE** was **rejected**"}';
+    const data = '{"content":"[TX](<https://etherscan.io/tx/0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419>) 🚫 Reported price of **0xUNDE** was **rejected** (Compound v2)"}';
     const expectedLastCall = {
       url, headers, method, data,
     };

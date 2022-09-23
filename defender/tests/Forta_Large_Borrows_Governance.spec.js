@@ -129,7 +129,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x2c9931793876db33b1a9aad123ad4921dfb9cd5e59dbb78ce78f277759587115>) 💸 **0x1212** has borrowed enough **COMP** tokens to pass min threshold for the governance event: **proposal**"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x2c9931793876db33b1a9aad123ad4921dfb9cd5e59dbb78ce78f277759587115>) 💸 **0x1212** has borrowed enough **COMP** tokens to pass min threshold for the governance event: **proposal**' };
     const expectedLastCall = {
       url, headers, method, data,
     };

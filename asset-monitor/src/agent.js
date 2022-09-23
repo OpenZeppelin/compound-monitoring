@@ -23,6 +23,7 @@ function createUpgradeAlert(
   protocolName,
   protocolAbbreviation,
   developerAbbreviation,
+  protocolVersion,
   cTokenSymbol,
   cTokenAddress,
   underlyingAssetAddress,
@@ -46,6 +47,7 @@ function createUpgradeAlert(
       cTokenSymbol,
       cTokenAddress,
       underlyingAssetAddress,
+      protocolVersion,
       ...modifiedArgs,
     },
   });
@@ -140,6 +142,8 @@ function provideInitialize(data) {
       Comptroller: comptroller,
       cTokens,
     } = config.contracts;
+    // Comptroller contract is only available in Compound V2
+    data.protocolVersion = '2';
 
     // from the Comptroller contract, get all of the cTokens
     const comptrollerAbi = getAbi(comptroller.abiFile);
@@ -181,6 +185,7 @@ function provideHandleTransaction(data) {
       protocolName,
       protocolAbbreviation,
       developerAbbreviation,
+      protocolVersion,
       excludeAddresses,
       proxyPatterns,
     } = data;
@@ -211,6 +216,7 @@ function provideHandleTransaction(data) {
             protocolName,
             protocolAbbreviation,
             developerAbbreviation,
+            protocolVersion,
             asset.symbol,
             asset.cToken,
             asset.address,

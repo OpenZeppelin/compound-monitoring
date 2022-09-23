@@ -17,6 +17,7 @@ const mockBorrowMeta = {
   eventName: 'Borrow',
   totalBorrows: '450187856880124',
   usdValue: '18537',
+  protocolVersion: '2',
 };
 
 const mockLiquidateBorrowTxHash = '0x064228d15febb05b929e8aecbf3d828449bd8210df758d692b9b855355ed3560';
@@ -30,6 +31,7 @@ const mockLiquidateBorrowMeta = {
   repayAmount: '880985666',
   seizeTokens: '2710480386',
   usdValue: '881',
+  protocolVersion: '2',
 };
 
 const mockMintTxHash = '0xff85476c183ef3cc0fb0623877abf5589197a773845f8acac341e48c42957a3e';
@@ -41,6 +43,7 @@ const mockMintMeta = {
   mintTokens: '190925893578',
   minter: '0x352E490bC98BB07AA908Cc2934b6Ca473a6b229d',
   usdValue: '67721',
+  protocolVersion: '2',
 };
 
 const mockRedeemTxHash = '0x881d7f5b2804d144535f7b51f504ba6bcf14f3ccd53d57f4e59e0ad262bddeb5';
@@ -52,6 +55,7 @@ const mockRedeemMeta = {
   redeemTokens: '14950771553',
   redeemer: '0xF0163f66Ec80DDA288E753E0A62c8Eb71cd38684',
   usdValue: '88512',
+  protocolVersion: '2',
 };
 
 const mockRepayBorrowTxHash = '0x57a36644b7440ad247a41222ad105d5a08d21b47e434025bcf4427b2c20f3dee';
@@ -65,6 +69,7 @@ const mockRRepayBorrowMeta = {
   repayAmount: '19985757121',
   totalBorrows: '449947401135954',
   usdValue: '19985',
+  protocolVersion: '2',
 };
 
 // mock the axios package
@@ -187,7 +192,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = `{"content":"[TX](<https://etherscan.io/tx/${mockBorrowTxHash}>) 🐳📥 **$18,537 of cUSDC** borrowed by 0x8776"}`;
+    const data = { content: `[TX](<https://etherscan.io/tx/${mockBorrowTxHash}>) 🐳📥 **$18,537 of cUSDC** borrowed by 0x8776 (Compound v2)` };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -206,7 +211,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x064228d15febb05b929e8aecbf3d828449bd8210df758d692b9b855355ed3560>) 💔 **$881 of cUSDT** liquidated from 0xf1C6 by 0xD911"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x064228d15febb05b929e8aecbf3d828449bd8210df758d692b9b855355ed3560>) 💔 **$881 of cUSDT** liquidated from 0xf1C6 by 0xD911 (Compound v2)' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -221,7 +226,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0xff85476c183ef3cc0fb0623877abf5589197a773845f8acac341e48c42957a3e>) 🐳📈 **$67,721 of cETH** supplied by 0x352E"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0xff85476c183ef3cc0fb0623877abf5589197a773845f8acac341e48c42957a3e>) 🐳📈 **$67,721 of cETH** supplied by 0x352E (Compound v2)' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -236,7 +241,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x881d7f5b2804d144535f7b51f504ba6bcf14f3ccd53d57f4e59e0ad262bddeb5>) 🐳📉 **$88,512 of cWBTC** withdrew by 0xF016"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x881d7f5b2804d144535f7b51f504ba6bcf14f3ccd53d57f4e59e0ad262bddeb5>) 🐳📉 **$88,512 of cWBTC** withdrew by 0xF016 (Compound v2)' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -255,7 +260,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = '{"content":"[TX](<https://etherscan.io/tx/0x57a36644b7440ad247a41222ad105d5a08d21b47e434025bcf4427b2c20f3dee>) 🐳📤 **$19,985 of cUSDC** repaid by 0xF6aa"}';
+    const data = { content: '[TX](<https://etherscan.io/tx/0x57a36644b7440ad247a41222ad105d5a08d21b47e434025bcf4427b2c20f3dee>) 🐳📤 **$19,985 of cUSDC** repaid by 0xF6aa (Compound v2)' };
     const expectedLastCall = {
       url, headers, method, data,
     };

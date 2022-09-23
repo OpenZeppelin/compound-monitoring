@@ -86,14 +86,17 @@ describe('check bot configuration file', () => {
 const multisigAddress = '0xbbf3f1421D886E9b2c5D716B5192aC998af2012c';
 const govAddress = '0xc0Da02939E1441F497fd74F78cE7Decb17B66529';
 const comptrollerAddress = '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B';
+const cometAddress = '0xc3d688B66703497DAA19211EEdff47f25384cdc3';
 const multisigAbi = utils.getAbi(config.contracts.multisig.abiFile);
 const governanceAbi = utils.getAbi(config.contracts.governance.abiFile);
 const comptrollerAbi = utils.getAbi(config.contracts.comptroller.abiFile);
+const cometAbi = utils.getAbi(config.contracts.comet_usdc.abiFile);
 
 // create interfaces from abi
 const multisigInterface = new ethers.utils.Interface(multisigAbi.abi);
 const governanceInterface = new ethers.utils.Interface(governanceAbi.abi);
 const comptrollerInterface = new ethers.utils.Interface(comptrollerAbi.abi);
+const cometInterface = new ethers.utils.Interface(cometAbi.abi);
 
 // constants for testing
 const zeroAddress = ethers.constants.AddressZero;
@@ -173,6 +176,7 @@ describe('monitor multisig contract transactions', () => {
     const multisigValidEventName = 'AddedOwner';
     const governanceValidEventName = 'NewAdmin';
     const comptrollerValidEventName = 'NewPauseGuardian';
+    const cometValidEventName = 'PauseAction';
 
     // non-monitored event for testing
     const multisigNotMonitoredEventName = 'EnabledModule';
@@ -245,6 +249,7 @@ describe('monitor multisig contract transactions', () => {
         metadata: {
           owner: zeroAddress,
           multisigAddress,
+          protocolVersion: undefined,
         },
       });
 
@@ -293,6 +298,7 @@ describe('monitor multisig contract transactions', () => {
           oldAdmin: zeroAddress,
           newAdmin: testArgumentAddress,
           multisigAddress,
+          protocolVersion: undefined,
         },
       });
 
@@ -316,7 +322,7 @@ describe('monitor multisig contract transactions', () => {
     });
 
     // test for comptroller events
-    it('returns findings if multisig was involved in a transaction and monitored comptroller event was emitted', async () => {
+    it('returns findings if multisig was involved in a transaction and monitored comptroller(Compound V2) event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
       mockTxEvent.addresses[comptrollerAddress] = true;
 
@@ -341,13 +347,55 @@ describe('monitor multisig contract transactions', () => {
           oldPauseGuardian: testArgumentAddress,
           newPauseGuardian: zeroAddress,
           multisigAddress,
+          protocolVersion: '2',
         },
       });
 
       expect(findings).toStrictEqual([expectedFindings]);
     });
 
-    it('returns empty findings if multisig was not involved in a transaction, but a monitored comptroller event was emitted', async () => {
+    // test for detecting v2/v3 address in new proposals events
+    it('returns findings if multisig was involved in a transaction and monitored a new proposal which includes v2/v3 addresses', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use NewPauseGuardian event to test
+      const log = createLog(
+        governanceInterface.getEvent('ProposalCreated'),
+        {
+          id: 1,
+          proposer: multisigAddress,
+          targets: [comptrollerAddress, cometAddress],
+          values: [],
+          signatures: [],
+          calldatas: [],
+          startBlock: 1,
+          endBlock: 2,
+          description: 'This proposal affects Compound v2 and v3.',
+        },
+        { address: govAddress },
+      );
+
+      mockTxEvent.logs = [log];
+
+      const findings = await handleTransaction(mockTxEvent);
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Proposal Created',
+        description: `Governance Proposal 1 was just created by multisig ${multisigAddress}`,
+        alertId: 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          proposalId: '1',
+          multisigAddress,
+          protocolVersion: '2,3',
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns empty findings if multisig was not involved in a transaction, but a monitored comptroller(Compound V2) event was emitted', async () => {
       mockTxEvent.addresses[comptrollerAddress] = true;
 
       // use NewAdmin event to test
@@ -355,6 +403,66 @@ describe('monitor multisig contract transactions', () => {
         comptrollerInterface.getEvent(comptrollerValidEventName),
         { oldPauseGuardian: testArgumentAddress, newPauseGuardian: zeroAddress },
         { address: comptrollerAddress },
+      );
+
+      mockTxEvent.logs = [log];
+
+      const findings = await handleTransaction(mockTxEvent);
+
+      expect(findings).toStrictEqual([]);
+    });
+
+    // test for comptroller events
+    it('returns findings if multisig was involved in a transaction and monitored comet(Compound V3) event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+      mockTxEvent.addresses[cometAddress] = true;
+
+      // use PauseAction event to test
+      const log = createLog(
+        cometInterface.getEvent(cometValidEventName),
+        {
+          supplyPaused: true,
+          transferPaused: true,
+          withdrawPaused: false,
+          absorbPaused: false,
+          buyPaused: false,
+        },
+        { address: cometAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      const findings = await handleTransaction(mockTxEvent);
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Actions Paused',
+        description: `Actions Supply,Transfer were Paused by multisig ${multisigAddress}`,
+        alertId: 'AE-COMP-ACTION-PAUSED-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          actions: 'Supply,Transfer',
+          multisigAddress,
+          protocolVersion: '3',
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns empty findings if multisig was not involved in a transaction, but a monitored comet(Compound V3) event was emitted', async () => {
+      mockTxEvent.addresses[comptrollerAddress] = true;
+
+      // use PauseAction event to test
+      const log = createLog(
+        cometInterface.getEvent(cometValidEventName),
+        {
+          supplyPaused: true,
+          transferPaused: true,
+          withdrawPaused: false,
+          absorbPaused: false,
+          buyPaused: false,
+        },
+        { address: cometAddress },
       );
 
       mockTxEvent.logs = [log];
