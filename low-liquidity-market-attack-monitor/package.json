@@ -1,6 +1,6 @@
 {
   "name": "forta-ae-comp-market-attack-events",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "This Bot monitors Compound Finance cToken contracts for market attack events.",
   "scripts": {
     "start": "npm run start:dev",
