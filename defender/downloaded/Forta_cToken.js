@@ -136,16 +136,9 @@ exports.handler = async function (autotaskEvent) {
     cTokenSymbol,
     eventName,
     usdValue,
-    protocolVersion,
   } = metadata;
   if (usdValue === undefined) {
     throw new Error('usdValue undefined, please use newer bot version');
-  }
-
-  // Handle older alerts which don't specify the protocol version
-  let versionString = '';
-  if (protocolVersion !== undefined) {
-    versionString = ` (Compound v${protocolVersion})`;
   }
 
   const eventMapping = {
@@ -223,7 +216,6 @@ exports.handler = async function (autotaskEvent) {
   } else {
     message += ` by ${byAddress.slice(0, 6)}`;
   }
-  message += versionString;
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
