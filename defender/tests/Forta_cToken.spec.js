@@ -81,6 +81,8 @@ jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
+jest.mock('axios-retry', () => jest.fn());
+
 const {
   Finding, FindingType, FindingSeverity,
 } = require('forta-agent');
