@@ -328,7 +328,8 @@ exports.handler = async function (autotaskEvent) {
   // ensure that the request key exists within the autotaskEvent Object
   const { request } = autotaskEvent;
   if (request === undefined) {
-    throw new Error('request undefined');
+    console.error('request undefined, Autotask must be triggered by a sentinel');
+    return 'request undefined, Autotask must be triggered by a sentinel';
   }
 
   // ensure that the body key exists within the request Object
