@@ -1,6 +1,12 @@
 /* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
 const axios = require('axios');
+const axiosRetry = require('axios-retry');
 const ethers = require('ethers');
+
+axiosRetry(axios, {
+  retries: 3,
+  retryDelay: axiosRetry.exponentialDelay,
+});
 
 // import the DefenderRelayProvider to interact with its JSON-RPC endpoint
 const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
@@ -235,40 +241,22 @@ function getRandomInt(min, max) {
   return Math.floor((Math.random() * (max - min)) + min);
 }
 
-async function postToDiscord(discordWebhook, message) {
+async function postToDiscord(url, message) {
+  const method = 'post';
   const headers = {
     'Content-Type': 'application/json',
   };
+  const data = { content: message };
 
-  const body = {
-    content: message,
-  };
-
-  const discordObject = {
-    url: discordWebhook,
-    method: 'post',
+  const response = await axios({
+    url,
+    method,
     headers,
-    data: body,
-  };
-  let response;
-  try {
-    // perform the POST request
-    response = await axios(discordObject);
-  } catch (err) {
-    if (err.response && err.response.status === 429) {
-      // rate-limited, retry
-      // after waiting a random amount of time between 2 and 120 seconds
-      const delay = getRandomInt(2000, 120000);
-      // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, delay));
-      await promise;
-      response = await axios(discordObject);
-    } else {
-      throw err;
-    }
-  }
+    data,
+  });
   return response;
 }
+
 
 function getAddressForMatchReason(reason, logs, abi) {
   let found;
