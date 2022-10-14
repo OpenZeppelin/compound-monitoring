@@ -237,10 +237,6 @@ function createDiscordMessage(
   return undefined;
 }
 
-function getRandomInt(min, max) {
-  return Math.floor((Math.random() * (max - min)) + min);
-}
-
 async function postToDiscord(url, message) {
   const method = 'post';
   const headers = {
@@ -256,7 +252,6 @@ async function postToDiscord(url, message) {
   });
   return response;
 }
-
 
 function getAddressForMatchReason(reason, logs, abi) {
   let found;
