@@ -26,4 +26,4 @@ jobs:
       # Looks for package.json in all sub-folders and runs all tests.
       - name: Run NPM test
         continue-on-error: true
-        run: find . ! -path "*/node_modules/*" ! -path "*/additional_path/*" -name "package.json" -execdir echo "::group::$(pwd)" \; -execdir npm ci \; -execdir npm test {} + \; -execdir echo "::endgroup::" \;
+        run: find . ! -path "*/node_modules/*" ! -path "*/additional_path/*" -name "package.json" -execdir echo "::group::$(pwd)" \; -execdir npm ci \; -execdir npm test \; -execdir echo "::endgroup::" \; -execdir npm test {} +
