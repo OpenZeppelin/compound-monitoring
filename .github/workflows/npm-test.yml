@@ -1,0 +1,30 @@
+---
+# Custom workflow for running NPM test
+name: NPM Test
+# yamllint disable-line rule:truthy
+on:
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [master, main]
+    types: [opened, reopened, labeled]
+  push:
+    branches:
+      - main
+
+jobs:
+  npm-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+      # Looks for package.json in all sub-folders and runs all tests.
+      - name: Run NPM test
+        continue-on-error: true
+        run: find . ! -path "*/node_modules/*" ! -path "*/additional_path/*" -name "package.json" -execdir pwd \; -execdir npm ci \; -execdir npm test \;

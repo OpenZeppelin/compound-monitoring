@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [master, main]
     types: [opened, reopened, labeled]
+  push:
+    branches:
+      - main
 
 env: # Comment env block if you do not want to apply fixes
   # Apply linter fixes configuration
@@ -48,7 +51,7 @@ jobs:
           REPORT_OUTPUT_FOLDER: megalinter-reports
           FORMATTERS_DISABLE_ERRORS: true # Treat formatting as a warning
           DISABLE: COPYPASTE # Disable categories of linters
-          DISABLE_LINTERS: JAVASCRIPT_STANDARD,REPOSITORY_TRIVY
+          DISABLE_LINTERS: JAVASCRIPT_STANDARD
 
           SHOW_ELAPSED_TIME: true
           FILEIO_REPORTER: false
@@ -69,18 +72,19 @@ jobs:
           # checkov settings
           REPOSITORY_CHECKOV_CONFIG_FILE: .github/checkov.yml
           REPOSITORY_CHECKOV_DISABLE_ERRORS: true # Disable errors until we decide how to handle this one.
+          # secretlint settings
+          REPOSITORY_SECRETLINT_CONFIG_FILE: .github/secretlintrc.json
+          REPOSITORY_SECRETLINT_ARGUMENTS: --secretlintignores "**/megalinter-reports/**"
           # Other linters
           REPOSITORY_GIT_DIFF_DISABLE_ERRORS: true
           COPYPASTE_JSCPD_DISABLE_ERRORS: true
           ACTION_ACTIONLINT_FILTER_REGEX_EXCLUDE: (defender-sentinel-deployer.yml)
           REPOSITORY_GITLEAKS_CONFIG_FILE: .github/gitleaks.toml
-          REPOSITORY_SECRETLINT_CONFIG_FILE: .github/secretlintrc.json
-          REPOSITORY_SECRETLINT_ARGUMENTS: --secretlintignores "**/megalinter-reports/**"
 
       # Upload MegaLinter artifacts
       - name: Archive production artifacts
         if: ${{ success() }} || ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: MegaLinter reports
           path: |
@@ -111,8 +115,20 @@ jobs:
           base: ${{ env.BRANCH_NAME }}
           branch: auto-fix/${{ env.BRANCH_NAME }}
           delete-branch: true # Deletes temp branch after close or merge.
-      - name: Create PR output
-        if: ${{ always() }}
+
+      - name: Update PR status
+        if: ${{ success() }}
+        # set the merge commit status check
+        # using GitHub REST API
+        # see https://docs.github.com/en/rest/reference/repos#create-a-commit-status
         run: |
-          echo "Pull Request Number - ${{ steps.cpr.outputs.pull-request-number }}"
-          echo "Pull Request URL - ${{ steps.cpr.outputs.pull-request-url }}"
+          curl --request POST \
+          --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }} \
+          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+          --header 'content-type: application/json' \
+          --data '{
+            "context": "MegaLinter",
+            "state": "success",
+            "description": "MegaLinter checks passed",
+            "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          }'
