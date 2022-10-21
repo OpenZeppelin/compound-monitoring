@@ -3,7 +3,6 @@
 name: NPM Test
 # yamllint disable-line rule:truthy
 on:
-on:
   workflow_dispatch:
   pull_request:
     branches: [master, main]
