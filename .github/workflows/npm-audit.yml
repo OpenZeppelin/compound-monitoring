@@ -20,14 +20,32 @@ jobs:
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v3
+
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: lts/*
+
       # Looks for package.json in all sub-folders and looks for vulnerable packages.
       - name: List outdated packages
         continue-on-error: true
-        run: find . ! -path "*/node_modules/*" ! -path "*/additional_path/*" -name "package.json" -execdir pwd \; -execdir npm ci \; -execdir npm outdated \;
+        # Single command, all newlines are interpreted as a space
+        run: >
+          find .
+          ! -path "*/node_modules/*"
+          ! -path "*/additional_path/*"
+          -name "package.json"
+          -execdir pwd \;
+          -execdir npm ci \;
+          -execdir npm outdated \;
+
       - name: Check for vulnerabilities
         if: always()
-        run: find . ! -path "*/node_modules/*" ! -path "*/additional_path/*" -name "package.json" -execdir pwd \; -execdir npm audit {} +
+        # Single command, all newlines are interpreted as a space
+        run: >
+          find . !
+          -path "*/node_modules/*"
+          ! -path "*/additional_path/*"
+          -name "package.json"
+          -execdir pwd \;
+          -execdir npm audit {} +
