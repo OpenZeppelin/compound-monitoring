@@ -32,7 +32,7 @@ jobs:
           ! -path "*/node_modules/*"
           ! -path "*/additional_path/*"
           -name "package.json"
-          -execdir echo "::group::$(pwd)" \;
+          -execdir echo "::group::"{} \;
           -execdir npm ci \;
           -execdir npm test \;
           -execdir echo "::endgroup::" \;
