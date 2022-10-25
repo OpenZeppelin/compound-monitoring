@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: lts/*
 
-      # Looks for package.json in all sub-folders and looks for vulnerable packages.
+      # Looks for package.json in all sub-folders lists all outdated packages for refernce. Ignores error codes.
       - name: List outdated packages
         continue-on-error: true
         # Single command, all newlines are interpreted as a space
@@ -39,6 +39,7 @@ jobs:
           -execdir npm ci \;
           -execdir npm outdated \;
 
+      # Looks for package.json in all sub-folders and looks for vulnerable packages. Fails on vulnerable packages.
       - name: Check for vulnerabilities
         if: always()
         # Single command, all newlines are interpreted as a space
