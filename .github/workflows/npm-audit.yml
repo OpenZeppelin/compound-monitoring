@@ -6,51 +6,47 @@ on:
   # Enabling manual test
   # REF: https://stackoverflow.com/questions/58933155/manual-workflow-triggers-in-github-actions
   workflow_dispatch:
-  push:
+  pull_request:
+    branches: [master, main]
+    types: [opened, reopened]
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * 0" # Hours, minutes, day of month, month, day of week. Set for weekly
 
 jobs:
   npm-audit:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # Add your Bot directory here
-        all-dir:
-          [
-            "asset-monitor",
-            "comp-delegations-monitor",
-            "ctoken-monitor",
-            "defender",
-            "distribution",
-            "gnosis-safe-deploy",
-            "governance",
-            "large-borrows-governance",
-            "liquidation-monitor",
-            "low-liquidity-market-attack-monitor",
-            "multisig-transactions-monitor",
-            "oracle-price-monitor",
-          ]
-      fail-fast: false
-    defaults:
-      run:
-        working-directory: ${{ matrix.all-dir }}
     timeout-minutes: 5
 
     steps:
       - name: Checkout the repo
         uses: actions/checkout@v3
+
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: lts/*
-      - name: Install Packages
-        run: npm install
 
-      - name: Check for vulnerabilities
-        id: VulnerabilityCheck
+      # Looks for package.json in all sub-folders lists all outdated packages for refernce. Ignores error codes.
+      - name: List outdated packages
         continue-on-error: true
-        run: npm audit
-      - name: List outdated packages if vulnerabilities are detected
-        if: steps.VulnerabilityCheck.outcome == 'failure'
-        run: npm outdated
+        # Single command, all newlines are interpreted as a space
+        run: >
+          find .
+          ! -path "*/node_modules/*"
+          ! -path "*/additional_path/*"
+          -name "package.json"
+          -execdir pwd \;
+          -execdir npm ci \;
+          -execdir npm outdated \;
+
+      # Looks for package.json in all sub-folders and looks for vulnerable packages. Fails on vulnerable packages.
+      - name: Check for vulnerabilities
+        if: always()
+        # Single command, all newlines are interpreted as a space
+        run: >
+          find . !
+          -path "*/node_modules/*"
+          ! -path "*/additional_path/*"
+          -name "package.json"
+          -execdir pwd \;
+          -execdir npm audit {} +
