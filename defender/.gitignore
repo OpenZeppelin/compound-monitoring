@@ -1,2 +1,13 @@
 .env
 node_modules
+
+# Temp
+demo*.js
+config.js
+
+# Serverless directories
+.serverless
+
+# Defender
+secrets*.yml
+.defender
