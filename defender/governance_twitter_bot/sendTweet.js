@@ -1,18 +1,17 @@
 const { TwitterApi } = require('./twitter-api-v2');
-const config = require('./config');
 require('dotenv').config();
 
 // eslint-disable-next-line no-unused-vars
 const twitterKeys = {
   // Consumer Keys from an elevated developer account
-  appKey: '',
-  appSecret: '',
+  appKey: process.env.TWITTER_APP_KEY,
+  appSecret: process.env.TWITTER_APP_SECRET,
   // Authentication Tokens (must have write permissions)
-  accessToken: '',
-  accessSecret: '',
+  accessToken: process.env.TWITTER_ACCESS_TOKEN,
+  accessSecret: process.env.TWITTER_ACCESS_SECRET,
 };
 
-const userClient = new TwitterApi(config);
+const userClient = new TwitterApi(twitterKeys);
 
 async function postToTwitter(client, message, tweetIdToReply) {
   let result;
