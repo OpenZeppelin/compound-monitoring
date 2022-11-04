@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-unresolved, import/extensions
 const { TwitterApi } = require('./twitter-api-v2');
 require('dotenv').config();
 
