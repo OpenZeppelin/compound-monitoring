@@ -20,6 +20,7 @@ const botIdsToNames = {
 
 const botIds = Object.keys(botIdsToNames);
 
+const fortaApiEndpoint = 'https://api.forta.network/graphql';
 const fortaExplorerApiEndpoint = 'https://explorer-api.forta.network/graphql';
 const datadogApiEndpoint = 'https://api.datadoghq.com/api/v2/series';
 
@@ -37,10 +38,11 @@ function camelize(str, delimiter) {
 }
 
 function parseAgentInformationResponse(response) {
-  const { data: { data: { getAgentInformation } } } = response;
+  const { data: { data: { bots: { bots } } } } = response;
 
   const output = {};
-  Object.entries(getAgentInformation[0]).forEach(([key, value]) => {
+
+  Object.entries(bots[0]).forEach(([key, value]) => {
     const newKey = camelize(key, '_');
     output[newKey] = value;
   });
@@ -49,7 +51,7 @@ function parseAgentInformationResponse(response) {
 }
 
 function parseMetricsResponse(response, currentTimestamp) {
-  const { data: { data: { getAgentMetrics: { metrics } } } } = response;
+  const { data: { data: { getAgentMetrics: { chains: [{ metrics }] } } } } = response;
   const output = {};
   metrics.forEach((metric) => {
     // convert the name of the metric to lowerCamelCase
@@ -97,28 +99,33 @@ function parseMetricsResponse(response, currentTimestamp) {
 // specifically, this contains data such as the Bot ID, Image, Last Updated, Enabled, etc.
 function createAgentInformationQuery(id) {
   const graphqlQuery = {
-    operationName: 'Retrieve',
-    query: `query Retrieve($getAgentInput: AgentInformation) {
-      getAgentInformation(input: $getAgentInput) {
-        id
-        name
-        developer
-        chainIds
-        projects
-        created_at
-        updated_at
-        description
-        version
-        repository
-        enabled
-        image
-        manifest_ipfs
-        doc_ipfs
+    query: `query Bots($input: BotsInput) {
+      bots(input: $input) {
+        bots {
+          id
+          name
+          developer
+          chainIds
+          projects
+          createdAt
+          description
+          version
+          repository
+          enabled
+          image
+          reference
+          docReference
+        }
       }
     }`,
     variables: {
-      getAgentInput: {
-        id,
+      input: {
+        ids: [id],
+        /*
+        after: {
+          createdAt: 1651548960,
+        }
+        */
       },
     },
   };
@@ -130,6 +137,7 @@ function createMetricsQuery(agentId, timeFrame) {
   const graphqlQuery = {
     query: `query ($getAgentMetricsInput: GetAgentMetricsInput) {
       getAgentMetrics(input: $getAgentMetricsInput) {
+        chains {
         metrics {
           key
           scanners {
@@ -141,6 +149,7 @@ function createMetricsQuery(agentId, timeFrame) {
             }
           }
         }
+      }
       }
     }`,
     variables: {
@@ -154,6 +163,22 @@ function createMetricsQuery(agentId, timeFrame) {
 }
 
 async function postQuery(graphqlQuery) {
+  const headers = {
+    'content-type': 'application/json',
+  };
+
+  // perform the POST request
+  const response = await axios({
+    url: fortaApiEndpoint,
+    method: 'post',
+    headers,
+    data: graphqlQuery,
+  });
+
+  return response;
+}
+
+async function postQueryExplorer(graphqlQuery) {
   const headers = {
     'content-type': 'application/json',
   };
@@ -257,6 +282,7 @@ exports.handler = async function (autotaskEvent) {
     const agentInformationQuery = createAgentInformationQuery(botId);
     const agentInformationResponse = await postQuery(agentInformationQuery);
     const information = parseAgentInformationResponse(agentInformationResponse);
+
     // only add the bot information if this is the first time we have executed the Autotask
     // or if the bot information has changed from what is stored
     if (firstRun === true || botChanged(information, agentInformation, botId)) {
@@ -272,8 +298,9 @@ exports.handler = async function (autotaskEvent) {
     }
 
     // this will likely be updated every time
+    // TODO: Replace this with Forta's public graphql endpoint
     const metricsQuery = createMetricsQuery(botId, timeFrame);
-    const metricsResponse = await postQuery(metricsQuery);
+    const metricsResponse = await postQueryExplorer(metricsQuery);
     const metrics = parseMetricsResponse(
       metricsResponse,
       currentTimestamp,
