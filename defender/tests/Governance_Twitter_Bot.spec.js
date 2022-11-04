@@ -58,6 +58,17 @@ mockAxios.get = jest.fn();
 
 jest.mock('axios-retry', () => jest.fn());
 
+jest.mock('../governance_twitter_bot/autotask-1/twitter-api-v2', () => ({
+  TwitterApi: {
+    ...jest.requireActual('../governance_twitter_bot/autotask-1/twitter-api-v2'),
+    v1: {
+      tweet: jest.fn(),
+      reply: jest.fn(),
+    },
+  },
+}));
+const { TwitterApi: mockTwitter } = require('../governance_twitter_bot/autotask-1/twitter-api-v2');
+
 const { handler } = require('../governance_twitter_bot/autotask-1/index');
 
 describe('check autotask', () => {
@@ -145,7 +156,7 @@ describe('check autotask', () => {
     expect(mockAxios).toBeCalledTimes(0);
   });
 
-  it('calls axios for proposals that are active', async () => {
+  it('calls Twitter for proposals that are active', async () => {
     const expectedData = {
       content: 'Compound Governance: Proposal [1 - Prop1](https://compound.finance/governance/proposals/1) is active with:\n\tFOR votes vs quorum threshold: 0%\n\t👍 (for) votes:     0\n\t👎 (against) votes: 0\n\t🙊 (abstain) votes: 0\n\tTime left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) ',
     };
@@ -157,6 +168,7 @@ describe('check autotask', () => {
     mockContract.state = jest.fn().mockResolvedValueOnce(1);
 
     await handler({ secrets });
+    console.error(mockTwitter);
 
     // should look up the state of the 1 proposal and look up that proposal's info
     expect(mockContract.state).toBeCalledTimes(1);
