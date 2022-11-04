@@ -1,3 +1,4 @@
+[![MegaLinter](https://github.com/arbitraryexecution/compound-monitoring/workflows/MegaLinter/badge.svg?branch=main)](https://github.com/arbitraryexecution/compound-monitoring/actions?query=workflow%3AMegaLinter+branch%3Amain)
 # Compound Protocol Monitoring
 
 This repository contains:
