@@ -38,8 +38,8 @@ resources:
         eip1559-pricing: true
 
     secrets:
-      stack: 
-        governanceAddress:  ${self:custom.governanceAddress}
+      stack:
+        governanceAddress: ${self:custom.governanceAddress}
         appKey: ${self:custom.config.secrets.appKey}
         appSecret: ${self:custom.config.secrets.appSecret}
         accessToken: ${self:custom.config.secrets.accessToken}
