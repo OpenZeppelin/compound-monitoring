@@ -21,10 +21,12 @@
     "defender-kvstore-client": "1.24.0",
     "defender-relay-client": "1.21.3",
     "defender-sentinel-client": "1.26.0",
+    "defender-serverless": "1.0.3",
     "dotenv": "16.0.0",
     "ethers": "5.6.6",
     "forta-agent": "0.1.6",
-    "jszip": "3.7.1"
+    "jszip": "3.7.1",
+    "serverless": "3.24.0"
   },
   "devDependencies": {
     "eslint": "8.9.0",

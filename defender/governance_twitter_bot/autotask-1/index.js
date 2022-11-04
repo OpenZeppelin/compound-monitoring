@@ -1,23 +1,24 @@
 require('dotenv').config();
 
 const stackName = 'governance_twitter_bot';
-const discordSecretName = `${stackName}_webhookURL`;
 const governanceAddressSecretName = `${stackName}_governanceAddress`;
+// Consumer Keys from an elevated developer account
 const appKeySecretName = `${stackName}_appKey`;
 const appSecretSecretName = `${stackName}_appSecret`;
+// Authentication Tokens (must have write permissions)
 const accessTokenSecretName = `${stackName}_accessToken`;
 const accessSecretSecretName = `${stackName}_accessSecret`;
 
 const ethers = require('ethers');
 const axios = require('axios');
 const axiosRetry = require('axios-retry');
+const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
+const { TwitterApi } = require('./twitter-api-v2');
 
 axiosRetry(axios, {
   retries: 3,
   retryDelay: axiosRetry.exponentialDelay,
 });
-
-const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
 
 const compoundGovernanceAbi = [
   'function initialProposalId() view returns (uint256)',
@@ -73,11 +74,45 @@ exports.handler = async function handler(autotaskEvent) {
     throw new Error('secrets undefined');
   }
 
-  // ensure that there is a DiscordUrl secret
-  const discordUrl = secrets[discordSecretName];
-  if (discordUrl === undefined) {
-    throw new Error('discordUrl undefined');
+  // ensure that there is a governanceAddress secret
+  const governanceAddress = secrets[governanceAddressSecretName];
+  if (governanceAddress === undefined) {
+    throw new Error('governanceAddress undefined');
   }
+
+  // ensure that there is an appKey secret
+  const appKey = secrets[appKeySecretName];
+  if (appKey === undefined) {
+    throw new Error('appKey undefined');
+  }
+
+  // ensure that there is an appSecret secret
+  const appSecret = secrets[appSecretSecretName];
+  if (appSecret === undefined) {
+    throw new Error('appSecret undefined');
+  }
+
+  // ensure that there is a accessToken secret
+  const accessToken = secrets[accessTokenSecretName];
+  if (accessToken === undefined) {
+    throw new Error('accessToken undefined');
+  }
+
+  // ensure that there is a accessSecret secret
+  const accessSecret = secrets[accessSecretSecretName];
+  if (accessSecret === undefined) {
+    throw new Error('accessSecret undefined');
+  }
+
+  const twitterKeys = {
+    // Consumer Keys from an elevated developer account
+    appKey,
+    appSecret,
+    // Authentication Tokens (must have write permissions)
+    accessToken,
+    accessSecret,
+  };
+  const userClient = new TwitterApi(twitterKeys);
 
   // create a Provider from the connected Relay
   console.debug('Creating DefenderRelayProvider');
@@ -93,21 +128,10 @@ exports.handler = async function handler(autotaskEvent) {
   // create an ethers.js Contract Object to interact with the on-chain smart contract
   console.debug('Creating governanceContract');
   const governanceContract = new ethers.Contract(
-    compoundGovernanceAddress,
+    governanceAddress,
     compoundGovernanceAbi,
     provider,
   );
-
-  const twitterKeys = {
-    // Consumer Keys from an elevated developer account
-    appKey: '',
-    appSecret: '',
-    // Authentication Tokens (must have write permissions)
-    accessToken: '',
-    accessSecret: '',
-  };
-
-  const userClient = new TwitterApi(config);
 
   // check the initialized value of the proposal ID
   // NOTE: the first proposal ID is this value PLUS 1
@@ -195,9 +219,11 @@ exports.handler = async function handler(autotaskEvent) {
   const proposalInfo = await Promise.all(pendingProposals
     .map(async (proposalId) => governanceContract.proposals(proposalId)));
 
-  // Define the initial message
-  const initialMessage = `Current Compound Governance Proposals as of ${new Date().toUTCString()}`;
-  let tweetId = postToTwitter(userClient, initialMessage, null);
+  let tweetId;
+
+  // Define the initial message (or comment these 2 lines out if not needed)
+  const initialMessage = `Current Compound Governance Proposals as of ${new Date().toUTCString()}:`;
+  tweetId = await postToTwitter(userClient, initialMessage, null);
 
   for (let proposalIndex = 0; proposalIndex < proposalInfo.length; proposalIndex++) {
     const proposal = proposalInfo[proposalIndex];
@@ -220,27 +246,33 @@ exports.handler = async function handler(autotaskEvent) {
     timeLeft %= 60;
     const seconds = Math.trunc(timeLeft);
 
-    const titleLink = `[${proposal.id} - ${titleMap[proposal.id]}]`
-      + `(https://compound.finance/governance/proposals/${proposal.id})`;
-    const discordMessage = `Compound Governance: Proposal ${titleLink} is active with:\n\t`
-      + `FOR votes vs quorum threshold: ${vsQuorum}%\n\t`
-      + `👍 (for) votes:     ${forVotes}\n\t`
-      + `👎 (against) votes: ${againstVotes}\n\t`
-      + `🙊 (abstain) votes: ${abstainVotes}\n\t`
-      + `Time left to vote: ${days} day(s) ${hours} hour(s) ${minutes} minutes(s) ${seconds} seconds(s) `;
-    console.debug(discordMessage);
-    await postToDiscord(discordUrl, discordMessage);
+    const proposalLink = `https://compound.finance/governance/proposals/${proposal.id}`;
+    const currentTweet = `Proposal #${proposal.id} - ${titleMap[proposal.id]}:\n`
+      + `FOR votes vs quorum threshold: ${vsQuorum}%\n`
+      + `👍 (for) votes:        ${forVotes}\n`
+      + `👎 (against) votes: ${againstVotes}\n`
+      + `🙊 (abstain) votes: ${abstainVotes}\n`
+      + `Time left to vote: ${days} day(s) ${hours} hour(s) ${minutes} minutes(s) ${seconds} seconds(s)\n`
+      + `${proposalLink}`;
+    console.debug(currentTweet);
+    // eslint-disable-next-line no-await-in-loop
+    tweetId = await postToTwitter(userClient, currentTweet, tweetId);
   }
-  await Promise.all(proposalInfo.map(async (proposal) => {
-  }));
+
   return true;
 };
 
-// To run locally (this code will not be executed in Autotasks)
+// To run locally (this code will not be executed in AutoTasks)
 if (require.main === module) {
+  // Import values from the local .env file
   const { RELAYER_API_KEY: apiKey, RELAYER_SECRET_KEY: apiSecret } = process.env;
-  const secrets = {};
-  secrets[discordSecretName] = process.env.DISCORD_URL;
+  const secrets = {
+    [governanceAddressSecretName]: process.env.GOVERNANCE_ADDRESS,
+    [appKeySecretName]: process.env.TWITTER_APP_KEY,
+    [appSecretSecretName]: process.env.TWITTER_APP_SECRET,
+    [accessTokenSecretName]: process.env.TWITTER_ACCESS_TOKEN,
+    [accessSecretSecretName]: process.env.TWITTER_ACCESS_SECRET,
+  };
 
   exports.handler({ apiKey, apiSecret, secrets })
     .then(() => process.exit(0))

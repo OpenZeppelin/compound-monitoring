@@ -1,5 +1,10 @@
-const secrets = { GovernanceDiscordUrl: 'testURL' };
-
+const secrets = {
+  governance_twitter_bot_governanceAddress: 'GOVERNANCE_ADDRESS',
+  governance_twitter_bot_appKey: 'TWITTER_APP_KEY',
+  governance_twitter_bot_appSecret: 'TWITTER_APP_SECRET',
+  governance_twitter_bot_accessToken: 'TWITTER_ACCESS_TOKEN',
+  governance_twitter_bot_accessSecret: 'TWITTER_ACCESS_SECRET',
+};
 const mockDecimals = 18;
 
 const mockContract = {
@@ -53,7 +58,7 @@ mockAxios.get = jest.fn();
 
 jest.mock('axios-retry', () => jest.fn());
 
-const { handler } = require('./Compound_Governance_Discord_Summary');
+const { handler } = require('../governance_twitter_bot/autotask-1/index');
 
 describe('check autotask', () => {
   beforeEach(() => {

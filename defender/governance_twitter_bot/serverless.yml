@@ -26,6 +26,7 @@ functions:
       type: schedule
       frequency: 52560000
     paused: false
+    relayer: ${self:resources.Resources.relayers.relayer-1}
 
 resources:
   Resources:
@@ -37,8 +38,18 @@ resources:
         eip1559-pricing: true
 
     secrets:
-      stack:
-        webhookURL: ${self:custom.config.secrets.webhookURL}
+      stack: 
+        governanceAddress:  ${self:custom.governanceAddress}
+        appKey: ${self:custom.config.secrets.appKey}
+        appSecret: ${self:custom.config.secrets.appSecret}
+        accessToken: ${self:custom.config.secrets.accessToken}
+        accessSecret: ${self:custom.config.secrets.accessSecret}
+
+    relayers:
+      relayer-1:
+        name: MarketMonitor Serverless Relay
+        network: mainnet
+        min-balance: 100000000000000000
 
 plugins:
   - defender-serverless
