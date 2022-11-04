@@ -249,7 +249,7 @@ exports.handler = async function handler(autotaskEvent) {
     const proposalLink = `https://compound.finance/governance/proposals/${proposal.id}`;
     const currentTweet = `Proposal #${proposal.id} - ${titleMap[proposal.id]}:\n`
       + `FOR votes vs quorum threshold: ${vsQuorum}%\n`
-      + `👍 (for) votes:        ${forVotes}\n`
+      + `👍 (for) votes: ${forVotes}\n`
       + `👎 (against) votes: ${againstVotes}\n`
       + `🙊 (abstain) votes: ${abstainVotes}\n`
       + `Time left to vote: ${days} day(s) ${hours} hour(s) ${minutes} minutes(s) ${seconds} seconds(s)\n`

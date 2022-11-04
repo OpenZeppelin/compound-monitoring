@@ -58,16 +58,26 @@ mockAxios.get = jest.fn();
 
 jest.mock('axios-retry', () => jest.fn());
 
-jest.mock('../governance_twitter_bot/autotask-1/twitter-api-v2', () => ({
-  TwitterApi: {
-    ...jest.requireActual('../governance_twitter_bot/autotask-1/twitter-api-v2'),
-    v1: {
-      tweet: jest.fn(),
-      reply: jest.fn(),
-    },
-  },
-}));
-const { TwitterApi: mockTwitter } = require('../governance_twitter_bot/autotask-1/twitter-api-v2');
+// jest.mock('../governance_twitter_bot/autotask-1/twitter-api-v2', () => ({
+//   ...jest.requireActual('../governance_twitter_bot/autotask-1/twitter-api-v2'),
+//   TwitterApi: {
+//     // ...jest.requireActual('../governance_twitter_bot/autotask-1/twitter-api-v2'),
+//     v1: {
+//       tweet: jest.fn(),
+//       reply: jest.fn(),
+//     },
+//   },
+// }));
+
+const { TwitterApi } = require('../governance_twitter_bot/autotask-1/twitter-api-v2');
+
+// Spy on the tweet and reply methods. The first tweet will return with id_str: '1'
+let mockTweet = jest.spyOn(TwitterApi.prototype.v1, 'tweet').mockImplementation(() => ({ id_str: '1' }));
+// reply will prepend a 1 to the tweetID that it was passed. '1' => '11' => '111'
+let mockReply = jest.spyOn(TwitterApi.prototype.v1, 'reply').mockImplementation((msg, id) => ({ id_str: `1${id}` }));
+
+// expect(person.sayMyName()).toBe("Hello");
+// expect(person.bla()).toBe("bla");
 
 const { handler } = require('../governance_twitter_bot/autotask-1/index');
 
@@ -76,6 +86,8 @@ describe('check autotask', () => {
     mockContract.state.mockClear();
     mockContract.quorumVotes.mockClear();
     mockAxios.mockClear();
+    mockTweet.mockClear();
+    mockReply.mockClear();
 
     // define default values
     mockContract.state.mockReturnValue(0); // Default to pending state
@@ -157,9 +169,13 @@ describe('check autotask', () => {
   });
 
   it('calls Twitter for proposals that are active', async () => {
-    const expectedData = {
-      content: 'Compound Governance: Proposal [1 - Prop1](https://compound.finance/governance/proposals/1) is active with:\n\tFOR votes vs quorum threshold: 0%\n\t👍 (for) votes:     0\n\t👎 (against) votes: 0\n\t🙊 (abstain) votes: 0\n\tTime left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) ',
-    };
+    const expectedProp1 = 'Proposal #1 - Prop1:\n'
+      + 'FOR votes vs quorum threshold: 0%\n'
+      + '👍 (for) votes: 0\n'
+      + '👎 (against) votes: 0\n'
+      + '🙊 (abstain) votes: 0\n'
+      + 'Time left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s)\n'
+      + 'https://compound.finance/governance/proposals/1';
 
     mockContract.initialProposalId = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(0));
     mockContract.proposalCount = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(1));
@@ -167,24 +183,39 @@ describe('check autotask', () => {
     // proposal is state 1 (active)
     mockContract.state = jest.fn().mockResolvedValueOnce(1);
 
+    const initialMessage = `Current Compound Governance Proposals as of ${new Date().toUTCString()}:`;
     await handler({ secrets });
-    console.error(mockTwitter);
 
     // should look up the state of the 1 proposal and look up that proposal's info
     expect(mockContract.state).toBeCalledTimes(1);
     expect(mockContract.proposals).toBeCalledTimes(1);
-    expect(mockAxios).toBeCalledTimes(1);
-    expect(mockAxios.mock.lastCall[0].data).toEqual(expectedData);
+
+    // Initial tweet
+    expect(mockTweet).toBeCalledTimes(1);
+    expect(mockTweet.mock.calls[0][0]).toBe(initialMessage);
+
+    // Reply to the initial tweet (ID:1)
+    expect(mockReply).toBeCalledTimes(1);
+    expect(mockReply.mock.calls[0][0]).toBe(expectedProp1);
+    expect(mockReply.mock.calls[0][1]).toBe('1');
   });
 
-  it('handles multiple calls proposals', async () => {
-    const expectedData0 = {
-      content: 'Compound Governance: Proposal [1 - Prop1](https://compound.finance/governance/proposals/1) is active with:\n\tFOR votes vs quorum threshold: 0%\n\t👍 (for) votes:     0\n\t👎 (against) votes: 0\n\t🙊 (abstain) votes: 0\n\tTime left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) ',
-    };
+  it('handles multiple proposals', async () => {
+    const expectedProp1 = 'Proposal #1 - Prop1:\n'
+      + 'FOR votes vs quorum threshold: 0%\n'
+      + '👍 (for) votes: 0\n'
+      + '👎 (against) votes: 0\n'
+      + '🙊 (abstain) votes: 0\n'
+      + 'Time left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s)\n'
+      + 'https://compound.finance/governance/proposals/1';
 
-    const expectedData1 = {
-      content: 'Compound Governance: Proposal [2 - Prop2](https://compound.finance/governance/proposals/2) is active with:\n\tFOR votes vs quorum threshold: 10%\n\t👍 (for) votes:     10\n\t👎 (against) votes: 10\n\t🙊 (abstain) votes: 10\n\tTime left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s) ',
-    };
+    const expectedProp2 = 'Proposal #2 - Prop2:\n'
+      + 'FOR votes vs quorum threshold: 10%\n'
+      + '👍 (for) votes: 10\n'
+      + '👎 (against) votes: 10\n'
+      + '🙊 (abstain) votes: 10\n'
+      + 'Time left to vote: 1 day(s) 2 hour(s) 3 minutes(s) 4 seconds(s)\n'
+      + 'https://compound.finance/governance/proposals/2';
 
     const proposal0 = { ...exampleProposal };
     const proposal1 = { ...exampleProposal };
@@ -202,13 +233,20 @@ describe('check autotask', () => {
     // proposal is state 1 (active)
     mockContract.state = jest.fn().mockResolvedValueOnce(1).mockResolvedValueOnce(1);
 
+    const initialMessage = `Current Compound Governance Proposals as of ${new Date().toUTCString()}:`;
     await handler({ secrets });
 
-    // should look up the state of the 2 proposals and look up those proposals' info
-    expect(mockContract.state).toBeCalledTimes(2);
-    expect(mockContract.proposals).toBeCalledTimes(2);
-    expect(mockAxios).toBeCalledTimes(2);
-    expect(mockAxios.mock.calls[0][0].data).toEqual(expectedData0);
-    expect(mockAxios.mock.calls[1][0].data).toEqual(expectedData1);
+    // Initial tweet
+    expect(mockTweet).toBeCalledTimes(1);
+    expect(mockTweet.mock.calls[0][0]).toBe(initialMessage);
+
+    // Reply to the initial tweet (ID:'1')
+    expect(mockReply).toBeCalledTimes(2);
+    expect(mockReply.mock.calls[0][0]).toBe(expectedProp1);
+    expect(mockReply.mock.calls[0][1]).toBe('1');
+
+    // Reply to the reply(ID:'11')
+    expect(mockReply.mock.calls[1][0]).toBe(expectedProp2);
+    expect(mockReply.mock.calls[1][1]).toBe('11');
   });
 });
