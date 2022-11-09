@@ -63,7 +63,7 @@ const { TwitterApi } = require('../governance_twitter_bot/autotask-1/twitter-api
 // Spy on the tweet and reply methods. The first tweet will return with id_str: '1'
 const mockTweet = jest.spyOn(TwitterApi.prototype.v1, 'tweet').mockImplementation(() => ({ id_str: '1' }));
 // reply will prepend a 1 to the tweetID that it was passed. '1' => '11' => '111'
-const mockReply = jest.spyOn(TwitterApi.prototype.v1, 'reply').mockImplementation((msg, id) => ({ id_str: `1${id}` }));
+const mockReply = jest.spyOn(TwitterApi.prototype.v1, 'reply').mockImplementation((_msg, id) => ({ id_str: `1${id}` }));
 
 const { handler } = require('../governance_twitter_bot/autotask-1/index');
 
