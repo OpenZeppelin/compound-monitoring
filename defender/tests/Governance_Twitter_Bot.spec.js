@@ -115,7 +115,7 @@ describe('check autotask', () => {
     });
 
     mockContract.proposals.mockReset();
-    mockContract.proposals.mockReturnValue(exampleProposal);
+    mockContract.proposals.mockResolvedValue(exampleProposal);
   });
 
   afterEach(() => {
