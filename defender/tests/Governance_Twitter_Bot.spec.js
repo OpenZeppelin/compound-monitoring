@@ -77,10 +77,10 @@ describe('check autotask', () => {
     mockReply.mockClear();
 
     // define default values
-    mockContract.state.mockReturnValue(0); // Default to pending state
-    mockContract.comp.mockReturnValue(`0x${'1'.repeat(40)}`); // 0x1111...
+    mockContract.state.mockResolvedValue(0); // Default to pending state
+    mockContract.comp.mockResolvedValue(`0x${'1'.repeat(40)}`); // 0x1111...
     // need 100 Tokens to reach quorum
-    mockContract.quorumVotes.mockReturnValue(ethers.BigNumber.from(`100${'0'.repeat(mockDecimals)}`));
+    mockContract.quorumVotes.mockResolvedValue(ethers.BigNumber.from(`100${'0'.repeat(mockDecimals)}`));
 
     // one block per second
     mockProvider.getBlock.mockClear();
