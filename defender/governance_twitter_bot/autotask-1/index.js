@@ -92,7 +92,7 @@ exports.handler = async function handler(autotaskEvent) {
     throw new Error('appSecret undefined');
   }
 
-  // ensure that there is a accessToken secret
+  // ensure that there is an accessToken secret
   const accessToken = secrets[accessTokenSecretName];
   if (accessToken === undefined) {
     throw new Error('accessToken undefined');
