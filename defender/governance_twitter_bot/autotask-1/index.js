@@ -200,7 +200,7 @@ exports.handler = async function handler(autotaskEvent) {
   // Get vote info for each active proposal
   console.debug('Gathering vote information');
 
-  // Get COMP's address to query for decimals.
+  // Get COMP's address to query for decimals
   const compAddress = await governanceContract.comp();
   const compContract = new ethers.Contract(compAddress, compAbi, provider);
   const compDecimals = await compContract.decimals();
