@@ -66,9 +66,6 @@ const mockTweet = jest.spyOn(TwitterApi.prototype.v1, 'tweet').mockImplementatio
 // reply will prepend a 1 to the tweetID that it was passed. '1' => '11' => '111'
 const mockReply = jest.spyOn(TwitterApi.prototype.v1, 'reply').mockImplementation((msg, id) => ({ id_str: `1${id}` }));
 
-// expect(person.sayMyName()).toBe("Hello");
-// expect(person.bla()).toBe("bla");
-
 const { handler } = require('../governance_twitter_bot/autotask-1/index');
 
 describe('check autotask', () => {
