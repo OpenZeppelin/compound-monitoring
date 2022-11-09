@@ -206,7 +206,7 @@ exports.handler = async function handler(autotaskEvent) {
   const compDecimals = await compContract.decimals();
   const compScale = ethers.BigNumber.from(10).pow(compDecimals);
 
-  // Find how many votes are need to pass
+  // Find how many votes are needed to pass
   const quorumVotes = await governanceContract.quorumVotes();
 
   // Get titles of the Proposals
