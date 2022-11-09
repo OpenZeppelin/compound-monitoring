@@ -42,6 +42,7 @@ async function postToTwitter(client, message, tweetIdToReply) {
     // Otherwise start a new tweet thread
     result = await client.v1.tweet(message);
   }
+  // Use the id_str because id is greater than Number.MAX_SAFE_INTEGER
   const { id_str: id } = result;
   return id;
 }
@@ -219,11 +220,9 @@ exports.handler = async function handler(autotaskEvent) {
   const proposalInfo = await Promise.all(pendingProposals
     .map(async (proposalId) => governanceContract.proposals(proposalId)));
 
-  let tweetId;
-
-  // Define the initial message (or comment these 2 lines out if not needed)
+  // Define the initial message
   const initialMessage = `Current Compound Governance Proposals as of ${new Date().toUTCString()}:`;
-  tweetId = await postToTwitter(userClient, initialMessage, null);
+  let tweetId = await postToTwitter(userClient, initialMessage, null);
 
   for (let proposalIndex = 0; proposalIndex < proposalInfo.length; proposalIndex++) {
     const proposal = proposalInfo[proposalIndex];

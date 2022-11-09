@@ -58,7 +58,6 @@ mockAxios.get = jest.fn();
 
 jest.mock('axios-retry', () => jest.fn());
 
-
 const { TwitterApi } = require('../governance_twitter_bot/autotask-1/twitter-api-v2');
 
 // Spy on the tweet and reply methods. The first tweet will return with id_str: '1'
@@ -137,9 +136,9 @@ describe('check autotask', () => {
     mockContract.initialProposalId = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(0));
     mockContract.proposalCount = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(6));
 
+    // Active case is omitted
     mockContract.state = jest.fn()
       .mockResolvedValueOnce(0) // Pending
-      // .mockResolvedValueOnce(1) // Active (will test active state in next test)
       .mockResolvedValueOnce(2) // Cancelled
       .mockResolvedValueOnce(3) // Defeated
       .mockResolvedValueOnce(4) // Successful
@@ -155,7 +154,7 @@ describe('check autotask', () => {
     expect(mockAxios).toBeCalledTimes(0);
   });
 
-  it('calls Twitter for proposals that are active', async () => {
+  it('calls Twitter for a proposal that is active', async () => {
     const expectedProp1 = 'Proposal #1 - Prop1:\n'
       + 'FOR votes vs quorum threshold: 0%\n'
       + '👍 (for) votes: 0\n'
