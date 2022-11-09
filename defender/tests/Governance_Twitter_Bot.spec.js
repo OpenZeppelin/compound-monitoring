@@ -58,16 +58,6 @@ mockAxios.get = jest.fn();
 
 jest.mock('axios-retry', () => jest.fn());
 
-// jest.mock('../governance_twitter_bot/autotask-1/twitter-api-v2', () => ({
-//   ...jest.requireActual('../governance_twitter_bot/autotask-1/twitter-api-v2'),
-//   TwitterApi: {
-//     // ...jest.requireActual('../governance_twitter_bot/autotask-1/twitter-api-v2'),
-//     v1: {
-//       tweet: jest.fn(),
-//       reply: jest.fn(),
-//     },
-//   },
-// }));
 
 const { TwitterApi } = require('../governance_twitter_bot/autotask-1/twitter-api-v2');
 
