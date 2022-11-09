@@ -197,7 +197,7 @@ exports.handler = async function handler(autotaskEvent) {
   const oldBlock = await provider.getBlock(currentBlock.number - blockGap);
   const timePerBlock = (currentBlock.timestamp - oldBlock.timestamp) / blockGap;
 
-  // Get vote info for each pending proposal
+  // Get vote info for each active proposal
   console.debug('Gathering vote information');
 
   // Get COMP's address to query for decimals.
