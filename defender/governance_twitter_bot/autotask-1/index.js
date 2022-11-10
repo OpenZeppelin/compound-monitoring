@@ -184,11 +184,11 @@ exports.handler = async function handler(autotaskEvent) {
     return null;
   }));
 
-  const pendingProposals = results.filter(Boolean);
+  const activeProposals = results.filter(Boolean);
 
   // End early if there is nothing to process
-  if (pendingProposals.length === 0) {
-    console.debug('No pending proposals found');
+  if (activeProposals.length === 0) {
+    console.debug('No active proposals found');
     return true;
   }
 
@@ -212,12 +212,12 @@ exports.handler = async function handler(autotaskEvent) {
 
   // Get titles of the Proposals
   const titleMap = {};
-  await Promise.all(pendingProposals.map(async (proposalId) => {
+  await Promise.all(activeProposals.map(async (proposalId) => {
     titleMap[proposalId] = await getProposalTitle(proposalId);
   }));
 
   // Get proposal info
-  const proposalInfo = await Promise.all(pendingProposals
+  const proposalInfo = await Promise.all(activeProposals
     .map(async (proposalId) => governanceContract.proposals(proposalId)));
 
   // Define the initial message
