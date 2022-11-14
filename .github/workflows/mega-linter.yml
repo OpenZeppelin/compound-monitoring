@@ -52,6 +52,7 @@ jobs:
           FORMATTERS_DISABLE_ERRORS: true # Treat formatting as a warning
           DISABLE: COPYPASTE # Disable categories of linters
           DISABLE_LINTERS: JAVASCRIPT_STANDARD,REPOSITORY_TRIVY
+          EXCLUDED_DIRECTORIES: twitter-api-v2
 
           SHOW_ELAPSED_TIME: true
           FILEIO_REPORTER: false
