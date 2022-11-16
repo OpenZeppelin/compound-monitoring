@@ -14,7 +14,7 @@ function retryDelayFunc(retryCount) {
   // 3 - 280s - third retry (160s delay from second retry)
   // this leaves 20s for the rest of the Autotask to execute, plus
   // whatever time each request takes
-  const delay = (retryCount**2)*40*1000;
+  const delay = (2**retryCount)*40*1000;
   return delay;
 }
 
