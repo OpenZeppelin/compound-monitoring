@@ -3,9 +3,24 @@ const axios = require('axios');
 const axiosRetry = require('axios-retry');
 const ethers = require('ethers');
 
+// function to calculate the delay until the next request attempt
+// returns a value specified in milliseconds
+function retryDelayFunc(retryCount) {
+  // 300 seconds total in Autotask execution to perform retries
+  // #   time   attempt
+  // 0 -   0s - initial request
+  // 1 -  40s - first retry (40s delay from initial request)
+  // 2 - 120s - second retry (80s delay from first retry)
+  // 3 - 280s - third retry (160s delay from second retry)
+  // this leaves 20s for the rest of the Autotask to execute, plus
+  // whatever time each request takes
+  const delay = (2**retryCount)*20*1000;
+  return delay;
+}
+
 axiosRetry(axios, {
   retries: 3,
-  retryDelay: axiosRetry.exponentialDelay,
+  retryDelay: retryDelayFunc,
 });
 
 // import the DefenderRelayProvider to interact with its JSON-RPC endpoint
@@ -418,20 +433,17 @@ exports.handler = async function (autotaskEvent) {
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
-  const discordPromises = messages.map((message) => {
-    console.log(`${etherscanLink} ${message}`);
-    return postToDiscord(discordUrl, `${etherscanLink} ${message}`);
+  // aggregate all of the messages into one
+  let combinedMessage = '';
+  messages.forEach((message, messageIndex) => {
+    combinedMessage += `${etherscanLink} ${message}`;
+    if (messageIndex < (messages.length - 1)) {
+      combinedMessage += '\n';
+    }
   });
 
-  // wait for the promises to settle
-  // we want to have as many succeed as possible, so we are using
-  // .allSettled() rather than .all() here
-  let results = await Promise.allSettled(discordPromises);
-
-  results = results.filter((result) => result.status === 'rejected');
-  if (results.length > 0) {
-    throw new Error(results[0].reason);
-  }
+  console.log(combinedMessage);
+  await postToDiscord(discordUrl, combinedMessage);
 
   return {};
 };
