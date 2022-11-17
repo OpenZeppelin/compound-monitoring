@@ -15,9 +15,16 @@ const axiosRetry = require('axios-retry');
 const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
 const { TwitterApi } = require('./twitter-api-v2');
 
+function condition(error) {
+  const result = axiosRetry.isNetworkOrIdempotentRequestError(error);
+  const rateLimit = (error.response.status === 429);
+  return result || rateLimit;
+}
+
 axiosRetry(axios, {
   retries: 3,
   retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: condition,
 });
 
 const compoundGovernanceAbi = [
