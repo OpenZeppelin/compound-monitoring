@@ -3,9 +3,16 @@ const axios = require('axios');
 const axiosRetry = require('axios-retry');
 const ethers = require('ethers');
 
+function condition(error) {
+  const result = axiosRetry.isNetworkOrIdempotentRequestError(error);
+  const rateLimit = (error.response.status === 429);
+  return result || rateLimit;
+}
+
 axiosRetry(axios, {
   retries: 3,
   retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: condition,
 });
 
 // import the DefenderRelayProvider to interact with its JSON-RPC endpoint
