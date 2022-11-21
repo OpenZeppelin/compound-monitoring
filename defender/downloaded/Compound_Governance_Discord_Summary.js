@@ -7,9 +7,16 @@ const ethers = require('ethers');
 const axios = require('axios');
 const axiosRetry = require('axios-retry');
 
+function condition(error) {
+  const result = axiosRetry.isNetworkOrIdempotentRequestError(error);
+  const rateLimit = (error.response.status === 429);
+  return result || rateLimit;
+}
+
 axiosRetry(axios, {
   retries: 3,
   retryDelay: axiosRetry.exponentialDelay,
+  retryCondition: condition,
 });
 
 const { DefenderRelayProvider } = require('defender-relay-client/lib/ethers');
