@@ -3,6 +3,12 @@ const axios = require('axios');
 const axiosRetry = require('axios-retry');
 const ethers = require('ethers');
 
+function condition(error) {
+  const result = axiosRetry.isNetworkOrIdempotentRequestError(error);
+  const rateLimit = (error.response.status === 429);
+  return result || rateLimit;
+}
+
 // function to calculate the delay until the next request attempt
 // returns a value specified in milliseconds
 function retryDelayFunc(retryCount) {
@@ -14,13 +20,14 @@ function retryDelayFunc(retryCount) {
   // 3 - 280s - third retry (160s delay from second retry)
   // this leaves 20s for the rest of the Autotask to execute, plus
   // whatever time each request takes
-  const delay = (2**retryCount)*20*1000;
+  const delay = (2 ** retryCount) * 20 * 1000;
   return delay;
 }
 
 axiosRetry(axios, {
   retries: 3,
   retryDelay: retryDelayFunc,
+  retryCondition: condition,
 });
 
 // import the DefenderRelayProvider to interact with its JSON-RPC endpoint
