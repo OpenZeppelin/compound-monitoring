@@ -85,7 +85,7 @@ exports.handler = async function handler(autotaskEvent) {
         console.error(error);
       }
     } else {
-      // error is not throw to prevent one failed transaction from failing the rest in the batch
+      // error is not thrown to prevent one failed transaction from failing the rest in the batch
       console.error('Action is not a vote or delgate-vote');
     }
   });
