@@ -112,7 +112,7 @@ describe('check autotask', () => {
   });
 
   it('does not vote if POST request information is not a delegate vote or a cast vote action', async () => {
-    // missing a support or delegatee field
+    // case for missing a support or delegatee field
     // in practice, this should not occur, as the api endpoint makes this a required field
     const invalidVoteObject = {
       address: '0x1111111111111111111111111111111111111111',
@@ -141,7 +141,7 @@ describe('check autotask', () => {
     mockContract.delegateBySig.mockClear();
   });
 
-  it('does not vote if POST request information is not a batched array', async() => {
+  it('does not vote if POST request information is not a batched array', async () => {
     const validVote1 = createCastVoteObject(
       '0x1111111111111111111111111111111111111111',
       0,
@@ -157,5 +157,5 @@ describe('check autotask', () => {
     expect(mockContract.delegateBySig).toBeCalledTimes(0);
     mockContract.castVoteBySig.mockClear();
     mockContract.delegateBySig.mockClear();
-  })
+  });
 });

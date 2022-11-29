@@ -18,9 +18,9 @@ exports.handler = async function handler(autotaskEvent) {
   if (autotaskEvent.request === undefined) {
     throw new Error('POST request information not found');
   }
-  // get batch of signed messages to submit on-chain through the Defender Relayer
+  // body contains batch of signed messages to submit on-chain through the Defender Relayer
   // the api endpoint does most of the validation checking for us already
-  // (ex. checks for valid signatures)
+  // (ex. checks for valid signatures and all required fields)
   // https://app.swaggerhub.com/apis-docs/arr00/COMP.vote/1.0#/
   const { body } = autotaskEvent.request;
 
@@ -28,10 +28,11 @@ exports.handler = async function handler(autotaskEvent) {
     throw new Error('Request body must be an Array');
   }
 
-  // initiate a new relay signer
+  // initiate a new relay provider
   console.debug('Creating DefenderRelayProvider');
   const provider = new DefenderRelayProvider(autotaskEvent);
 
+  // initiate a new relay signer
   console.debug('Creating DefenderRelaySigner');
   const signer = new DefenderRelaySigner(autotaskEvent, provider, { speed: 'fast' });
 
@@ -51,7 +52,7 @@ exports.handler = async function handler(autotaskEvent) {
     signer,
   );
 
-  // cast vote or delegate on-chain
+  // cast vote or delegate vote on-chain
   const promises = body.map(async (votes) => {
     if (votes.delegatee !== undefined) {
       const {
