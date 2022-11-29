@@ -3,6 +3,7 @@ const ethers = require('ethers');
 const { DefenderRelayProvider, DefenderRelaySigner } = require('defender-relay-client/lib/ethers');
 
 const compoundGovernanceAddress = '0xc0Da02939E1441F497fd74F78cE7Decb17B66529'; // GovernorBravoDelegate.sol
+
 const compTokenAddress = '0xc00e94Cb662C3520282E6f5717214004A7f26888'; // Comp.sol
 
 const compoundGovernanceAbi = [
@@ -52,7 +53,7 @@ exports.handler = async function handler(autotaskEvent) {
 
   // cast vote or delegate on-chain
   const promises = body.map(async (votes) => {
-    if (votes.delegatee) {
+    if (votes.delegatee !== undefined) {
       const {
         address, delegatee, nonce, expiry, v, r, s,
       } = votes;
@@ -64,7 +65,7 @@ exports.handler = async function handler(autotaskEvent) {
       } catch (error) {
         console.error(error);
       }
-    } else if (votes.support) {
+    } else if (votes.support !== undefined) {
       const {
         address, proposalId, support, v, r, s,
       } = votes;
@@ -83,7 +84,8 @@ exports.handler = async function handler(autotaskEvent) {
         console.error(error);
       }
     } else {
-      throw new Error('Action is not a vote or delgate-vote');
+      // error is not throw to prevent one failed transaction from failing the rest in the batch
+      console.error('Action is not a vote or delgate-vote');
     }
   });
   await Promise.all(promises);
