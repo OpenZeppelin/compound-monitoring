@@ -9,8 +9,6 @@ jest.mock('ethers', () => ({
   Contract: jest.fn().mockReturnValue(mockContract),
 }));
 
-const { ethers } = require('ethers');
-
 // mock the defender-relay-client package
 jest.mock('defender-relay-client/lib/ethers', () => ({
   DefenderRelayProvider: jest.fn(),
@@ -113,7 +111,7 @@ describe('check autotask', () => {
     mockContract.delegateBySig.mockClear();
   });
 
-  it('throws error if POST request information is not a delegate vote or a cast vote action', async () => {
+  it('does not vote if POST request information is not a delegate vote or a cast vote action', async () => {
     // missing a support or delegatee field
     // in practice, this should not occur, as the api endpoint makes this a required field
     const invalidVoteObject = {
@@ -142,4 +140,22 @@ describe('check autotask', () => {
     mockContract.castVoteBySig.mockClear();
     mockContract.delegateBySig.mockClear();
   });
+
+  it('does not vote if POST request information is not a batched array', async() => {
+    const validVote1 = createCastVoteObject(
+      '0x1111111111111111111111111111111111111111',
+      0,
+      0,
+      27,
+      '0xda4429a9e8e6b54cb101b2df002039f2879ab4ca0e8fae64134942cb81f3e581',
+      '0x3b90a37dc078a82dfc418695b1d4473661aa4d24dd874ac68678894ff44a6b27',
+    );
+    const autotaskEvent = createAutotaskEvent(validVote1); // not a batched tx
+    await expect(handler(autotaskEvent)).rejects.toThrow('Request body must be an Array');
+
+    expect(mockContract.castVoteBySig).toBeCalledTimes(0);
+    expect(mockContract.delegateBySig).toBeCalledTimes(0);
+    mockContract.castVoteBySig.mockClear();
+    mockContract.delegateBySig.mockClear();
+  })
 });
