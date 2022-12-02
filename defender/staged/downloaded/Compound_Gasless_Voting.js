@@ -12,6 +12,8 @@ const compoundGovernanceAbi = [
 
 const compTokenAbi = [
   'function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s)',
+  'function balanceOf(address account) external view returns (uint)',
+  'function getCurrentVotes(address account) external view returns (uint96)',
 ];
 
 exports.handler = async function handler(autotaskEvent) {
@@ -59,30 +61,38 @@ exports.handler = async function handler(autotaskEvent) {
         address, delegatee, nonce, expiry, v, r, s,
       } = votes;
 
-      // delegate vote on-chain
-      console.debug(`Delgating votes from ${address} to ${delegatee}`);
-      try {
-        await compTokenContract.delegateBySig(delegatee, nonce, expiry, v, r, s);
-      } catch (error) {
-        console.error(error);
+      // check if address has votes to delegate
+      const delegateCompBalance = await compTokenContract.balanceOf(address);
+      if (delegateCompBalance > 0) {
+        // delegate vote on-chain
+        console.debug(`Delgating votes from ${address} to ${delegatee}`);
+        try {
+          await compTokenContract.delegateBySig(delegatee, nonce, expiry, v, r, s);
+        } catch (error) {
+          console.error(error);
+        }
       }
     } else if (votes.support !== undefined) {
       const {
         address, proposalId, support, v, r, s,
       } = votes;
-      if (support === 0) {
-        console.debug(`Address ${address} is casting a vote in favor of proposal ID: ${proposalId}`);
-      } else if (support === 1) {
-        console.debug(`Address ${address} is casting a vote against proposal ID: ${proposalId}`);
-      } else if (support === 2) {
-        console.debug(`Address ${address} is casting a vote to abstain for proposal ID: ${proposalId}`);
-      }
 
-      // cast vote on-chain
-      try {
-        await governanceContract.castVoteBySig(proposalId, support, v, r, s);
-      } catch (error) {
-        console.error(error);
+      // check if address has enough delegated votes to submit a vote
+      const addressDelegatedVotes = await compTokenContract.getCurrentVotes(address);
+      if (addressDelegatedVotes > 0) {
+        if (support === 0) {
+          console.debug(`Address ${address} is casting a vote in favor of proposal ID: ${proposalId}`);
+        } else if (support === 1) {
+          console.debug(`Address ${address} is casting a vote against proposal ID: ${proposalId}`);
+        } else if (support === 2) {
+          console.debug(`Address ${address} is casting a vote to abstain for proposal ID: ${proposalId}`);
+        }
+        // cast vote on-chain
+        try {
+          await governanceContract.castVoteBySig(proposalId, support, v, r, s);
+        } catch (error) {
+          console.error(error);
+        }
       }
     } else {
       // error is not thrown to prevent one failed transaction from failing the rest in the batch
