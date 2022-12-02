@@ -9,10 +9,19 @@ jest.mock('ethers', () => ({
   Contract: jest.fn().mockReturnValue(mockContract),
 }));
 
+const { ethers } = require('ethers');
+
 // mock the defender-relay-client package
+const mockProvider = {
+  getBalance: jest.fn().mockReturnValue(10),
+};
+const mockSigner = {
+  getAddress: jest.fn().mockReturnValue(ethers.constants.AddressZero),
+};
+
 jest.mock('defender-relay-client/lib/ethers', () => ({
-  DefenderRelayProvider: jest.fn(),
-  DefenderRelaySigner: jest.fn(),
+  DefenderRelayProvider: jest.fn().mockReturnValue(mockProvider),
+  DefenderRelaySigner: jest.fn().mockReturnValue(mockSigner),
 }));
 
 const { handler } = require('./Compound_Gasless_Voting');
