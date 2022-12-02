@@ -55,11 +55,12 @@ function createDelegateVoteObject(address, delegatee, nonce, expiry, v, r, s) {
 
 describe('check autotask', () => {
   it('casts votes when given a valid signed message', async () => {
+    mockContract.getCurrentVotes = jest.fn().mockResolvedValue(100);
     const validVote1 = createCastVoteObject(
       '0x1111111111111111111111111111111111111111',
       0,
       0,
-      27,
+      '0x1b',
       '0xda4429a9e8e6b54cb101b2df002039f2879ab4ca0e8fae64134942cb81f3e581',
       '0x3b90a37dc078a82dfc418695b1d4473661aa4d24dd874ac68678894ff44a6b27',
     );
@@ -67,7 +68,7 @@ describe('check autotask', () => {
       '0x2222222222222222222222222222222222222222',
       0,
       0,
-      27,
+      '0x1b',
       '0x2e04bc22ee95e9f1d77b8634a8f0bf68e73dc8dab0b531d7cce777878b2f00b0',
       '0xd73d470d9b221117d96c88f26a57d89ae8470d986e8bac4398d8315f4cca1460',
     );
@@ -81,13 +82,42 @@ describe('check autotask', () => {
     mockContract.delegateBySig.mockClear();
   });
 
+  it('does not cast votes the address has 0 delegated votes', async () => {
+    mockContract.getCurrentVotes = jest.fn().mockResolvedValue(0);
+    const validVote1 = createCastVoteObject(
+      '0x1111111111111111111111111111111111111111',
+      0,
+      0,
+      '0x1b',
+      '0xda4429a9e8e6b54cb101b2df002039f2879ab4ca0e8fae64134942cb81f3e581',
+      '0x3b90a37dc078a82dfc418695b1d4473661aa4d24dd874ac68678894ff44a6b27',
+    );
+    const validVote2 = createCastVoteObject(
+      '0x2222222222222222222222222222222222222222',
+      0,
+      0,
+      '0x1b',
+      '0x2e04bc22ee95e9f1d77b8634a8f0bf68e73dc8dab0b531d7cce777878b2f00b0',
+      '0xd73d470d9b221117d96c88f26a57d89ae8470d986e8bac4398d8315f4cca1460',
+    );
+    const batchedTxs = [validVote1, validVote2];
+    const autotaskEvent = createAutotaskEvent(batchedTxs);
+    await handler(autotaskEvent);
+
+    expect(mockContract.castVoteBySig).toBeCalledTimes(0);
+    expect(mockContract.delegateBySig).toBeCalledTimes(0);
+    mockContract.castVoteBySig.mockClear();
+    mockContract.delegateBySig.mockClear();
+  });
+
   it('delegates votes when given a valid signed message', async () => {
+    mockContract.balanceOf = jest.fn().mockResolvedValue(10);
     const validDelegateVote1 = createDelegateVoteObject(
       '0x1111111111111111111111111111111111111111',
       '0x2222222222222222222222222222222222222222',
       1,
       100,
-      27,
+      '0x1b',
       '0xda4429a9e8e6b54cb101b2df002039f2879ab4ca0e8fae64134942cb81f3e581',
       '0x3b90a37dc078a82dfc418695b1d4473661aa4d24dd874ac68678894ff44a6b27',
     );
@@ -96,7 +126,7 @@ describe('check autotask', () => {
       '0x3333333333333333333333333333333333333333',
       1,
       100,
-      27,
+      '0x1b',
       '0x2e04bc22ee95e9f1d77b8634a8f0bf68e73dc8dab0b531d7cce777878b2f00b0',
       '0xd73d470d9b221117d96c88f26a57d89ae8470d986e8bac4398d8315f4cca1460',
     );
@@ -111,7 +141,40 @@ describe('check autotask', () => {
     mockContract.delegateBySig.mockClear();
   });
 
+  it('does not delegate votes if the address has 0 COMP tokens', async () => {
+    mockContract.balanceOf = jest.fn().mockResolvedValue(0);
+    const validDelegateVote1 = createDelegateVoteObject(
+      '0x1111111111111111111111111111111111111111',
+      '0x2222222222222222222222222222222222222222',
+      1,
+      100,
+      '0x1b',
+      '0xda4429a9e8e6b54cb101b2df002039f2879ab4ca0e8fae64134942cb81f3e581',
+      '0x3b90a37dc078a82dfc418695b1d4473661aa4d24dd874ac68678894ff44a6b27',
+    );
+    const validDelegateVote2 = createDelegateVoteObject(
+      '0x2222222222222222222222222222222222222222',
+      '0x3333333333333333333333333333333333333333',
+      1,
+      100,
+      '0x1b',
+      '0x2e04bc22ee95e9f1d77b8634a8f0bf68e73dc8dab0b531d7cce777878b2f00b0',
+      '0xd73d470d9b221117d96c88f26a57d89ae8470d986e8bac4398d8315f4cca1460',
+    );
+
+    const batchedTxs = [validDelegateVote1, validDelegateVote2];
+    const autotaskEvent = createAutotaskEvent(batchedTxs);
+    await handler(autotaskEvent);
+
+    expect(mockContract.castVoteBySig).toBeCalledTimes(0);
+    expect(mockContract.delegateBySig).toBeCalledTimes(0);
+    mockContract.castVoteBySig.mockClear();
+    mockContract.delegateBySig.mockClear();
+  });
+
   it('does not vote if POST request information is not a delegate vote or a cast vote action', async () => {
+    mockContract.balanceOf = jest.fn().mockResolvedValue(10);
+    mockContract.getCurrentVotes = jest.fn().mockResolvedValue(100);
     // case for missing a support or delegatee field
     // in practice, this should not occur, as the api endpoint makes this a required field
     const invalidVoteObject = {
@@ -127,7 +190,7 @@ describe('check autotask', () => {
       '0x1111111111111111111111111111111111111111',
       0,
       0,
-      27,
+      '0x1b',
       '0xda4429a9e8e6b54cb101b2df002039f2879ab4ca0e8fae64134942cb81f3e581',
       '0x3b90a37dc078a82dfc418695b1d4473661aa4d24dd874ac68678894ff44a6b27',
     );
@@ -146,7 +209,7 @@ describe('check autotask', () => {
       '0x1111111111111111111111111111111111111111',
       0,
       0,
-      27,
+      '0x1b',
       '0xda4429a9e8e6b54cb101b2df002039f2879ab4ca0e8fae64134942cb81f3e581',
       '0x3b90a37dc078a82dfc418695b1d4473661aa4d24dd874ac68678894ff44a6b27',
     );
