@@ -8,6 +8,7 @@ const compTokenAddress = '0xc00e94Cb662C3520282E6f5717214004A7f26888'; // Comp.s
 
 const compoundGovernanceAbi = [
   'function castVoteBySig(uint proposalId, uint8 support, uint8 v, bytes32 r, bytes32 s)',
+  'function state(uint256 proposalId) view returns (uint8)',
 ];
 
 const compTokenAbi = [
@@ -78,8 +79,10 @@ exports.handler = async function handler(autotaskEvent) {
       } = votes;
 
       // check if address has enough delegated votes to submit a vote
+      // check if proposal is active - only active proposals can be voted on
       const addressDelegatedVotes = await compTokenContract.getCurrentVotes(address);
-      if (addressDelegatedVotes > 0) {
+      const state = await governanceContract.state(proposalId);
+      if (addressDelegatedVotes > 0 && state === 1) {
         if (support === 0) {
           console.debug(`Address ${address} is casting a vote in favor of proposal ID: ${proposalId}`);
         } else if (support === 1) {
