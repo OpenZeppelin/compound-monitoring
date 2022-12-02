@@ -39,6 +39,20 @@ exports.handler = async function handler(autotaskEvent) {
   console.debug('Creating DefenderRelaySigner');
   const signer = new DefenderRelaySigner(autotaskEvent, provider, { speed: 'fast' });
 
+  // Test relay and check for balance
+  let relayAddress;
+  try {
+    relayAddress = await signer.getAddress();
+  } catch (error) {
+    console.error('Relay is not working, check if it is connected : ', error);
+    throw error;
+  }
+
+  const relayBalance = await provider.getBalance(relayAddress);
+  if (relayBalance <= 0) {
+    throw new Error('Insufficient funds for Relay, please deposit funds.')
+  }
+
   // create an ethers.js Contract Object to interact with the on-chain governance smart contract
   console.debug('Creating governanceContract');
   const governanceContract = new ethers.Contract(
