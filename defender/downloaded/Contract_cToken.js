@@ -440,17 +440,37 @@ exports.handler = async function (autotaskEvent) {
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
 
-  // aggregate all of the messages into one
+  // aggregate all of the messages into larger messages
+  // but don't exceed 2000 characters per combined message
+  const combinedMessages = [];
   let combinedMessage = '';
   messages.forEach((message, messageIndex) => {
-    combinedMessage += `${etherscanLink} ${message}`;
+    const nextMessage = `${etherscanLink} ${message}`;
+
+    // Discord character limit is 2000
+    // ref: https://discord.com/developers/docs/resources/webhook#execute-webhook
+    // the extra '1' in this if statement is for the additional line break that will be added
+    // to all lines except the last one
+    if (combinedMessage.length + nextMessage.length + 1 > 2000) {
+      // don't add the message to the current combined message, just put it in the Array
+      combinedMessages.push(combinedMessage);
+      // re-initialize the combined message for aggregating the next group of messages
+      combinedMessage = '';
+    }
+
+    // concatenate the next message to the current combined message
+    combinedMessage += nextMessage;
     if (messageIndex < (messages.length - 1)) {
+      // add a newline character to create separation between the messages
       combinedMessage += '\n';
+    } else {
+      // add the last message to the Array of messages
+      combinedMessages.push(combinedMessage);
     }
   });
 
-  console.log(combinedMessage);
-  await postToDiscord(discordUrl, combinedMessage);
+  console.log(combinedMessages);
+  await Promise.all(combinedMessages.map((message) => postToDiscord(discordUrl, message)));
 
   return {};
 };
