@@ -1,0 +1,41 @@
+service: generated-service
+configValidationMode: error
+frameworkVersion: "3"
+
+provider:
+  name: defender
+  stage: dev
+  stackName: forta_explorer_monitor
+  ssot: false
+
+custom:
+  config: ${file(../secrets.yml)}
+
+defender:
+  key: ${self:custom.config.keys.api}
+  secret: ${self:custom.config.keys.secret}
+
+functions:
+  autotask-1:
+    name: Forta Explorer Monitor Serverless Autotask
+    path: autotask-1
+    trigger:
+      type: schedule
+      cron: "0 * * * *"
+    paused: false
+
+resources:
+  Resources:
+    policies:
+      policy-1:
+        gas-price-cap: 1000
+        whitelist-receivers:
+          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
+        eip1559-pricing: true
+
+    secrets:
+
+    relayers:
+
+plugins:
+  - defender-serverless
