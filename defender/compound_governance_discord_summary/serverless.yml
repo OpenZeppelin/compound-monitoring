@@ -5,7 +5,7 @@ frameworkVersion: "3"
 provider:
   name: defender
   stage: dev
-  stackName: CHANGE_ME
+  stackName: compound_governance_discord_summary
   ssot: false
 
 custom:
@@ -13,13 +13,13 @@ custom:
   stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
 
   # Configure this section and rename secret-example.yml to secrets.yml
-  name: CHANGE_ME
-  # Comment out any secret that you do not want to be overwritten in Defender
+  name: Compound Governance Discord Summary
   defenderSecrets:
     # Public Variables
-    publicVariable: "Nothing Sensitive"
+    # Compound Governance Address
+    governanceAddress: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
     # Private variables pulled from external secrets.yml file
-    privateVariable: ${self:custom.stackSecrets.privateVariable}
+    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -31,7 +31,7 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      cron: "0 * * * *"
+      cron: "0 */12 * * *"
     paused: false
     relayer: ${self:resources.Resources.relayers.relayer-1}
 
