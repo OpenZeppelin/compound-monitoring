@@ -5,14 +5,17 @@ frameworkVersion: "3"
 provider:
   name: defender
   stage: dev
-  stackName: forta_explorer_monitor
+  stackName: compound_governance_automation
   ssot: false
 
 custom:
   config: ${file(../secrets.yml)}
 
 # Configure this section and rename secret-example.yml to secrets.yml
-  name: Forta Explorer Monitor
+  name: Compound Governance Automation
+  defenderSecrets:
+    # Compound Governance Address
+    governanceAddress: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -26,6 +29,7 @@ functions:
       type: schedule
       cron: "0 * * * *"
     paused: false
+    relayer: ${self:resources.Resources.relayers.relayer-1}
 
 resources:
   Resources:
@@ -37,8 +41,13 @@ resources:
         eip1559-pricing: true
 
     secrets:
+      stack: ${self:custom.defenderSecrets}
 
     relayers:
+      relayer-1:
+        name: ${self:custom.name} Serverless Relay
+        network: mainnet
+        min-balance: 100000000000000000
 
 plugins:
   - defender-serverless
