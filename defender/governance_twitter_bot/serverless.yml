@@ -12,13 +12,14 @@ custom:
   config: ${file(../secrets.yml)}
   stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
 
-# Configure this section and rename secret-example.yml to secrets.yml
+  # Configure this section and rename secret-example.yml to secrets.yml
   name: Compound Governance Twitter
+  # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
+    # Public Variables
     # Compound Governance Address
     governanceAddress: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
-    # Secrets pulled from external secrets.yml file
-    # Comment them out if you don't want to overwrite the existing secrets in defender
+    # Private Variables pulled from external secrets.yml file
     appKey: ${self:custom.stackSecrets.appKey}
     appSecret: ${self:custom.stackSecrets.appSecret}
     accessToken: ${self:custom.stackSecrets.accessToken}

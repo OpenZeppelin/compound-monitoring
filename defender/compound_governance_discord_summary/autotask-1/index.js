@@ -1,7 +1,8 @@
 require('dotenv').config();
 
-const discordSecretName = 'GovernanceDiscordUrl';
-const compoundGovernanceAddress = '0xc0Da02939E1441F497fd74F78cE7Decb17B66529';
+const stackName = 'compound_governance_discord_summary';
+const governanceAddressSecretName = `${stackName}_governanceAddress`;
+const discordSecretName = `${stackName}_discordWebhook`;
 
 const ethers = require('ethers');
 const axios = require('axios');
@@ -84,6 +85,12 @@ exports.handler = async function handler(autotaskEvent) {
     throw new Error('discordUrl undefined');
   }
 
+  // ensure that there is a DiscordUrl secret
+  const governanceAddress = secrets[governanceAddressSecretName];
+  if (discordUrl === undefined) {
+    throw new Error('discordUrl undefined');
+  }
+
   // create a Provider from the connected Relay
   console.debug('Creating DefenderRelayProvider');
   const provider = new DefenderRelayProvider(autotaskEvent);
@@ -98,7 +105,7 @@ exports.handler = async function handler(autotaskEvent) {
   // create an ethers.js Contract Object to interact with the on-chain smart contract
   console.debug('Creating governanceContract');
   const governanceContract = new ethers.Contract(
-    compoundGovernanceAddress,
+    governanceAddress,
     compoundGovernanceAbi,
     provider,
   );

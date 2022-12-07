@@ -53,9 +53,11 @@ performs the functions we expect.
 
 ### Serverless Migration status
 
-- Compound Governance Automation 
-- Forta Explorer Monitor - Ready to deploy but autotask returns error 400 - Need to revise serverless
+- Compound Governance Automation - Ready to deploy
+- Compound Governance Discord Summary - Ready to deploy
+- Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
 - Governance Twitter Bot - Ready to deploy
 
 - Template Autotask and Relay - Done
 - Template Autotask, Sentinel, and Relay - Not Started
+- Compare all serverless.yml files to template - Not Started
