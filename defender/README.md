@@ -53,4 +53,5 @@ performs the functions we expect.
 
 ### Serverless Migration status
 
+- Forta Explorer Monitor - Ready to deploy but autotask returns error 400
 - Governance Twitter Bot - Ready to deploy
