@@ -57,7 +57,8 @@ performs the functions we expect.
 - Compound Governance Discord Summary - Ready to deploy
 - cToken Monitor - Ready to deploy
 - Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
-- Governance Twitter Bot - Ready to deploy
+- Governance Discord Alert - Replaces Contract Governance - Ready to deploy
+- Governance Twitter Bot - Should rename to Governance Twitter Summary
 
 - Template Autotask and Relay - Done
 - Template Autotask, Sentinel, and Relay - Done

@@ -1,3 +1,6 @@
+const stackName = 'governance_discord_alert';
+const discordSecretName = `${stackName}_discordWebhook`;
+
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
@@ -204,9 +207,9 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { GovernanceDiscordUrl: discordUrl } = secrets;
+  const discordUrl = secrets[discordSecretName];
   if (discordUrl === undefined) {
-    throw new Error('GovernanceDiscordUrl undefined');
+    throw new Error('discordUrl undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object
