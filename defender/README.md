@@ -53,15 +53,19 @@ performs the functions we expect.
 
 ### Serverless Migration status
 
-- Contract Ctoken - Missing Sentinel Data
 - Compound Governance Automation - Ready to deploy
 - Compound Governance Discord Summary - Ready to deploy
+- cToken Monitor - Ready to deploy
 - Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
 - Governance Twitter Bot - Ready to deploy
 
 - Template Autotask and Relay - Done
 - Template Autotask, Sentinel, and Relay - Done
-- Compare all serverless.yml files to template - Not Started
 
 Other To do:
+- Compare (diff) all serverless.yml files to templates - Not Started
 - Verify all Autotask Scheduling
+- Verify Autotask Stack variable matches actual stack
+- Verify Stack Variables exist in Secret.yml and Autotask
+- Standardize all YAMLs with single quotes
+- Verify Secrets error handling

@@ -1,3 +1,7 @@
+const stackName = 'ctoken_monitor';
+const comptrollerAddressSecretName = `${stackName}_comptrollerAddress`;
+const discordSecretName = `${stackName}_discordWebhook`;
+
 /* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
 const axios = require('axios');
 const axiosRetry = require('axios-retry');
@@ -82,7 +86,8 @@ const eventMapping = {
   },
 };
 
-const comptrollerAddress = '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B';
+// Define the address in the handler section
+let comptrollerAddress;
 const comptrollerAbi = ['function oracle() view returns (address)'];
 const oracleAbi = ['function getUnderlyingPrice(address cToken) external view returns (uint)'];
 
@@ -337,9 +342,15 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const { DiscordUrl: discordUrl } = secrets;
+  const discordUrl = secrets[discordSecretName];
   if (discordUrl === undefined) {
     throw new Error('discordUrl undefined');
+  }
+
+  // ensure that there is a comptrollerAddress secret
+  comptrollerAddress = secrets[comptrollerAddressSecretName];
+  if (comptrollerAddress === undefined) {
+    throw new Error('comptrollerAddress undefined');
   }
 
   // ensure that the request key exists within the autotaskEvent Object

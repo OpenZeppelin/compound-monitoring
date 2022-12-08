@@ -1,6 +1,6 @@
 service: generated-service
 configValidationMode: error
-frameworkVersion: "3"
+frameworkVersion: '3'
 
 provider:
   name: defender
@@ -17,7 +17,7 @@ custom:
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
     # Public Variables
-    publicVariable: "Nothing Sensitive"
+    publicVariable: 'Nothing Sensitive'
     # Private variables pulled from external secrets.yml file
     privateVariable: ${self:custom.stackSecrets.privateVariable}
 
@@ -31,7 +31,7 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      cron: "0 * * * *"
+      cron: '0 * * * *'
     paused: false
     relayer: ${self:resources.Resources.relayers.relayer-1}
 
@@ -41,7 +41,7 @@ resources:
       policy-1:
         gas-price-cap: 1000
         whitelist-receivers:
-          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
+          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
         eip1559-pricing: true
 
     secrets:
