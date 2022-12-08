@@ -85,10 +85,10 @@ exports.handler = async function handler(autotaskEvent) {
     throw new Error('discordUrl undefined');
   }
 
-  // ensure that there is a DiscordUrl secret
+  // ensure that there is a governanceAddress secret
   const governanceAddress = secrets[governanceAddressSecretName];
-  if (discordUrl === undefined) {
-    throw new Error('discordUrl undefined');
+  if (governanceAddress === undefined) {
+    throw new Error('governanceAddress undefined');
   }
 
   // create a Provider from the connected Relay
