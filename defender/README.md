@@ -56,6 +56,7 @@ performs the functions we expect.
 - Compound Governance Automation - Ready to deploy
 - Compound Governance Discord Summary - Ready to deploy
 - cToken Monitor - Ready to deploy
+- Datadog Alerts Heat Map - Ready to deploy
 - Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
 - Governance Discord Alert - Replaces Contract Governance - Ready to deploy
 - Governance Twitter Bot - Should rename to Governance Twitter Summary
@@ -70,3 +71,4 @@ Other To do:
 - Verify Stack Variables exist in Secret.yml and Autotask
 - Standardize all YAMLs with single quotes
 - Verify Secrets error handling
+- Validate if relay settings are the same between old vs new
