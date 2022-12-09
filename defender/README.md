@@ -62,6 +62,7 @@ performs the functions we expect.
 - Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
 - Governance Discord Alert - Replaces Contract Governance - Ready to deploy
 - Governance Twitter Bot - Should rename to Governance Twitter Summary
+- Proposal 110 Automatoooor - Ready to deploy
 
 - Template Autotask and Relay - Done
 - Template Autotask, Sentinel, and Relay - Done
