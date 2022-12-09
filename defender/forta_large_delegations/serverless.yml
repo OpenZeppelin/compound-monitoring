@@ -5,7 +5,7 @@ frameworkVersion: '3'
 provider:
   name: defender
   stage: dev
-  stackName: forta_large_borrows_governance
+  stackName: forta_large_delegations
   ssot: false
 
 custom:
@@ -13,13 +13,13 @@ custom:
   stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
 
   # Configure this section and rename secret-example.yml to secrets.yml
-  name: Forta Large Borrows Governance
+  name: Forta Large Delegations
 
   # Forta Sentinel Settings
   alert-ids:
-    - AE-COMP-GOVERNANCE-THRESHOLD
+    - AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD
   agent-ids:
-    - '0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339'
+    - '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53'
 
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
