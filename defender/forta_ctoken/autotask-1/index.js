@@ -1,5 +1,5 @@
-// Set the name of the Secret set in Autotask
-const discordSecretName = 'DiscordUrl';
+const stackName = 'forta_ctoken';
+const discordSecretName = `${stackName}_discordWebhook`;
 
 const axios = require('axios');
 const axiosRetry = require('axios-retry');

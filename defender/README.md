@@ -59,6 +59,7 @@ performs the functions we expect.
 - Datadog Alerts Heat Map - Ready to deploy
 - Datadog Forta Bot Alerts - Ready to deploy
 - Datadog Forta Detection Bot Health - Ready to deploy
+- Forta cToken - Ready to deploy
 - Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
 - Governance Discord Alert - Replaces Contract Governance - Ready to deploy
 - Governance Twitter Bot - Should rename to Governance Twitter Summary

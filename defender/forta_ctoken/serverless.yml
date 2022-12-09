@@ -5,7 +5,7 @@ frameworkVersion: '3'
 provider:
   name: defender
   stage: dev
-  stackName: CHANGE_ME
+  stackName: forta_ctoken
   ssot: false
 
 custom:
@@ -13,21 +13,18 @@ custom:
   stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
 
   # Configure this section and rename secret-example.yml to secrets.yml
-  name: CHANGE_ME
+  name: Forta cToken
 
   # Forta Sentinel Settings
   alert-ids:
-    - AE-FORT-ALERT-CHANGE_ME
+    - AE-COMP-CTOKEN-EVENT
   agent-ids:
-    - '0x00'
+    - '0x125c36816fbad9974a452947bf6a98d975988ddf4342c159a986383b64765e22'
 
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
-    # Public Variables
-    publicVariable: 'Nothing Sensitive'
     # Private variables pulled from external secrets.yml file
     discordWebhook: ${self:custom.stackSecrets.discordWebhook}
-    privateVariable: ${self:custom.stackSecrets.privateVariable}
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -41,7 +38,6 @@ functions:
       type: schedule
       frequency: 52560000
     paused: false
-    relayer: ${self:resources.Resources.relayers.relayer-1}
 
 resources:
   Resources:
@@ -56,10 +52,6 @@ resources:
       stack: ${self:custom.defenderSecrets}
 
     relayers:
-      relayer-1:
-        name: ${self:custom.name} Serverless Relay
-        network: mainnet
-        min-balance: 100000000000000000
 
     sentinels:
       sentinel-1:
