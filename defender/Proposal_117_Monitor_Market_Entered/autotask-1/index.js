@@ -1,3 +1,7 @@
+const stackName = 'proposal_117_monitor_market_entered';
+const discordSecretName = `${stackName}_discordWebhook`;
+const slackSecretName = `${stackName}_slackWebhook`;
+
 /* eslint-disable import/no-extraneous-dependencies,import/no-unresolved */
 const axios = require('axios');
 const ethers = require('ethers');
@@ -291,14 +295,13 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a DiscordUrl secret
-  const {
-    Proposal117DiscordUrl: discordUrl,
-    Proposal117SlackUrl: slackUrl,
-  } = secrets;
+  const discordUrl = secrets[discordSecretName];
   if (discordUrl === undefined) {
     throw new Error('discordUrl undefined');
   }
 
+  // ensure that there is a SlackUrl secret
+  const slackUrl = secrets[slackSecretName];
   if (slackUrl === undefined) {
     throw new Error('slackUrl undefined');
   }
