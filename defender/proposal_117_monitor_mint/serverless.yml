@@ -5,14 +5,20 @@ frameworkVersion: '3'
 provider:
   name: defender
   stage: dev
-  stackName: proposal_110_automatoooor
+  stackName: proposal_117_monitor_mint
   ssot: false
 
 custom:
   config: ${file(../secrets.yml)}
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
 
   # Configure this section and rename secret-example.yml to secrets.yml
-  name: Proposal 110 Automatoooor
+  name: Proposal 117 Monitor Mint
+  # Comment out any secret that you do not want to be overwritten in Defender
+  defenderSecrets:
+    # Private variables pulled from external secrets.yml file
+    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
+    slackWebhook: ${self:custom.stackSecrets.slackWebhook}
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -24,7 +30,7 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      frequency: 5
+      frequency: 52560000
     paused: false
     relayer: ${self:resources.Resources.relayers.relayer-1}
 
@@ -38,6 +44,7 @@ resources:
         eip1559-pricing: true
 
     secrets:
+      stack: ${self:custom.defenderSecrets}
 
     relayers:
       relayer-1:
