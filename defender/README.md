@@ -64,6 +64,7 @@ performs the functions we expect.
 - Governance Twitter Bot - Should rename to Governance Twitter Summary
 - Proposal 110 Automatoooor - Ready to Deploy
 - Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data.
+- Proposal 117 Monitor Mint - No longer in production, missing sentinel data.
 
 - Template Autotask and Relay - Done
 - Template Autotask, Sentinel, and Relay - Done
