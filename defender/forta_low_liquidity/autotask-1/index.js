@@ -1,5 +1,5 @@
-// Set the name of the Secret set in Autotask
-const discordSecretName = 'SecurityAlertsDiscordUrl';
+const stackName = 'forta_low_liquidity';
+const discordSecretName = `${stackName}_discordWebhook`;
 
 const axios = require('axios');
 
