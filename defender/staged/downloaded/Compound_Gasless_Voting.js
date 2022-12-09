@@ -69,6 +69,9 @@ exports.handler = async function handler(autotaskEvent) {
     signer,
   );
 
+  // if any transactions fail, set this to false
+  let resultOutcome = true;
+
   // cast vote or delegate vote on-chain
   const promises = body.map(async (votes) => {
     if (votes.delegatee !== undefined) {
@@ -84,6 +87,7 @@ exports.handler = async function handler(autotaskEvent) {
         try {
           await compTokenContract.delegateBySig(delegatee, nonce, expiry, v, r, s);
         } catch (error) {
+          resultOutcome = false;
           console.error(error);
         }
       }
@@ -108,15 +112,28 @@ exports.handler = async function handler(autotaskEvent) {
         try {
           await governanceContract.castVoteBySig(proposalId, support, v, r, s);
         } catch (error) {
+          resultOutcome = false;
           console.error(error);
         }
       }
     } else {
       // error is not thrown to prevent one failed transaction from failing the rest in the batch
+      resultOutcome = false;
       console.error('Action is not a vote or delgate-vote');
     }
   });
-  await Promise.all(promises);
 
-  return true;
+  // filter through for failed transactions
+  // log out reason for each failure
+  let results = await Promise.allSettled(promises);
+
+  results = results.filter((result) => result.status === 'rejected');
+  if (results.length > 0) {
+    results.forEach((result) => {
+      console.error(result.reason);
+    });
+  }
+
+  // if false, at least one transaction has failed
+  return resultOutcome;
 };
