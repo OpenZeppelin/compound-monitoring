@@ -1,3 +1,6 @@
+const stackName = 'datadog_alerts_heat_map';
+const datadogSecretName = `${stackName}_datadogApiKey`;
+
 /* eslint-disable import/no-unresolved,import/no-extraneous-dependencies */
 const axios = require('axios');
 const { KeyValueStoreClient } = require('defender-kvstore-client');
@@ -211,9 +214,10 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('secrets undefined');
   }
 
-  const { DatadogApiKey: datadogApiKey } = secrets;
+  // ensure that there is a datadogApiKey secret
+  const datadogApiKey = secrets[datadogSecretName];
   if (datadogApiKey === undefined) {
-    throw new Error('Datadog API key undefined');
+    throw new Error('datadogApiKey undefined');
   }
 
   let firstRun = false;
