@@ -50,7 +50,7 @@ exports.handler = async function handler(autotaskEvent) {
 
   const relayBalance = await provider.getBalance(relayAddress);
   if (relayBalance <= 0) {
-    throw new Error('Insufficient funds for Relay, please deposit funds.')
+    throw new Error('Insufficient funds for Relay, please deposit funds.');
   }
 
   // create an ethers.js Contract Object to interact with the on-chain governance smart contract
@@ -80,7 +80,7 @@ exports.handler = async function handler(autotaskEvent) {
       const delegateCompBalance = await compTokenContract.balanceOf(address);
       if (delegateCompBalance > 0) {
         // delegate vote on-chain
-        console.debug(`Delgating votes from ${address} to ${delegatee}`);
+        console.debug(`Delegating votes from ${address} to ${delegatee}`);
         try {
           await compTokenContract.delegateBySig(delegatee, nonce, expiry, v, r, s);
         } catch (error) {

@@ -1,6 +1,8 @@
 const mockContract = {
   castVoteBySig: jest.fn(),
   delegateBySig: jest.fn(),
+  getCurrentVotes: jest.fn(),
+  state: jest.fn(),
 };
 
 // mock ethers
@@ -63,6 +65,11 @@ function createDelegateVoteObject(address, delegatee, nonce, expiry, v, r, s) {
 }
 
 describe('check autotask', () => {
+  beforeEach(() => {
+    mockContract.getCurrentVotes.mockReset();
+    mockContract.state.mockReset();
+  });
+
   it('casts votes when given a valid signed message', async () => {
     mockContract.getCurrentVotes = jest.fn().mockResolvedValue(100);
     mockContract.state = jest.fn().mockResolvedValue(1);
@@ -92,9 +99,9 @@ describe('check autotask', () => {
     mockContract.delegateBySig.mockClear();
   });
 
-  it('does not cast votes the address has 0 delegated votes', async () => {
-    mockContract.getCurrentVotes = jest.fn().mockResolvedValue(0);
-    mockContract.state = jest.fn().mockResolvedValue(1);
+  it('does not cast votes if the address has 0 delegated votes', async () => {
+    mockContract.state = jest.fn().mockResolvedValue(2);
+    mockContract.getCurrentVotes = jest.fn().mockResolvedValue(100);
     const validVote1 = createCastVoteObject(
       '0x1111111111111111111111111111111111111111',
       0,
