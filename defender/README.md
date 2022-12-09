@@ -65,7 +65,7 @@ performs the functions we expect.
 - Forta Governance - Ready to deploy
 - Forta Large Borrows Governance - Ready to deploy
 - Forta Large Delegations - Ready to deploy
-- Forta 2 - Ready to deploy
+- Forta Low Liquidity - Ready to deploy
 - Forta 3 - Ready to deploy
 - Forta 4 - Ready to deploy
 - Forta 5 - Ready to deploy
