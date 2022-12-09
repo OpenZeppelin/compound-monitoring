@@ -1,0 +1,50 @@
+service: generated-service
+configValidationMode: error
+frameworkVersion: '3'
+
+provider:
+  name: defender
+  stage: dev
+  stackName: datadog_forta_bot_alerts
+  ssot: false
+
+custom:
+  config: ${file(../secrets.yml)}
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
+
+  # Configure this section and rename secret-example.yml to secrets.yml
+  name: Datadog Forta Bot Alerts
+  # Comment out any secret that you do not want to be overwritten in Defender
+  defenderSecrets:
+    # Private variables pulled from external secrets.yml file
+    datadogApiKey: ${self:custom.stackSecrets.datadogApiKey}
+
+defender:
+  key: ${self:custom.config.keys.api} 
+  secret: ${self:custom.config.keys.secret}
+
+functions:
+  autotask-1:
+    name: ${self:custom.name} Serverless Autotask
+    path: autotask-1
+    trigger:
+      type: schedule
+      frequency: 60
+    paused: false
+
+resources:
+  Resources:
+    policies:
+      policy-1:
+        gas-price-cap: 1000
+        whitelist-receivers:
+          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
+        eip1559-pricing: true
+
+    secrets:
+      stack: ${self:custom.defenderSecrets}
+
+    relayers:
+
+plugins:
+  - defender-serverless

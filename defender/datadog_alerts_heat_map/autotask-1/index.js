@@ -201,7 +201,6 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('datadogApiKey undefined');
   }
 
-
   const store = new KeyValueStoreClient(autotaskEvent);
 
   // load the latest timestamp that was stored
