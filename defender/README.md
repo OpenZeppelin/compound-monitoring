@@ -60,6 +60,7 @@ performs the functions we expect.
 - Datadog Forta Bot Alerts - Ready to deploy
 - Datadog Forta Detection Bot Health - Ready to deploy
 - Forta cToken - Ready to deploy
+- Forta Distribution - Ready to deploy
 - Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
 - Governance Discord Alert - Replaces Contract Governance - Ready to deploy
 - Governance Twitter Bot - Should rename to Governance Twitter Summary
@@ -80,6 +81,7 @@ Other To do:
 - Verify Secrets error handling
 - Validate if relay settings are the same between old vs new
 - Update the README
+- Verify Paused status on production
 
 Stretch goals:
 - Learn if serverless [environment variables](https://adamdelong.com/serverless-environment-variables/) available inside of autotasks
