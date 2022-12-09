@@ -67,7 +67,7 @@ performs the functions we expect.
 - Forta Large Delegations - Ready to deploy
 - Forta Low Liquidity - Ready to deploy
 - Forta Multi-Sig - Ready to deploy
-- Forta 4 - Ready to deploy
+- Forta Oracle Price - Ready to deploy
 - Forta 5 - Ready to deploy
 - Governance Discord Alert - Replaces Contract Governance - Ready to deploy
 - Governance Twitter Bot - Should rename to Governance Twitter Summary
