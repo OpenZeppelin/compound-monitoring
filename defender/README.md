@@ -62,6 +62,13 @@ performs the functions we expect.
 - Forta cToken - Ready to deploy
 - Forta Distribution - Ready to deploy
 - Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
+- Forta Governance - Ready to deploy
+- Forta Large Borrows Governance - Ready to deploy
+- Forta Large Delegations - Ready to deploy
+- Forta 2 - Ready to deploy
+- Forta 3 - Ready to deploy
+- Forta 4 - Ready to deploy
+- Forta 5 - Ready to deploy
 - Governance Discord Alert - Replaces Contract Governance - Ready to deploy
 - Governance Twitter Bot - Should rename to Governance Twitter Summary
 - Proposal 110 Automatoooor - Ready to Deploy
