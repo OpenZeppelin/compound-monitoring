@@ -84,12 +84,7 @@ exports.handler = async function handler(autotaskEvent) {
       if (delegateCompBalance > 0) {
         // delegate vote on-chain
         console.debug(`Delegating votes from ${address} to ${delegatee}`);
-        try {
-          await compTokenContract.delegateBySig(delegatee, nonce, expiry, v, r, s);
-        } catch (error) {
-          resultOutcome = false;
-          console.error(error);
-        }
+        await compTokenContract.delegateBySig(delegatee, nonce, expiry, v, r, s);
       }
     } else if (votes.support !== undefined) {
       const {
@@ -109,12 +104,7 @@ exports.handler = async function handler(autotaskEvent) {
           console.debug(`Address ${address} is casting a vote to abstain for proposal ID: ${proposalId}`);
         }
         // cast vote on-chain
-        try {
-          await governanceContract.castVoteBySig(proposalId, support, v, r, s);
-        } catch (error) {
-          resultOutcome = false;
-          console.error(error);
-        }
+        await governanceContract.castVoteBySig(proposalId, support, v, r, s);
       }
     } else {
       // error is not thrown to prevent one failed transaction from failing the rest in the batch
@@ -129,6 +119,7 @@ exports.handler = async function handler(autotaskEvent) {
 
   results = results.filter((result) => result.status === 'rejected');
   if (results.length > 0) {
+    resultOutcome = false;
     results.forEach((result) => {
       console.error(result.reason);
     });
