@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const stackName = 'governance_twitter_bot';
+const stackName = 'governance_twitter_summary';
 const governanceAddressSecretName = `${stackName}_governanceAddress`;
 // Consumer Keys from an elevated developer account
 const appKeySecretName = `${stackName}_appKey`;

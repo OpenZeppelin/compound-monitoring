@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const stackName = 'compound_governance_discord_summary';
+const stackName = 'governance_discord_summary';
 const governanceAddressSecretName = `${stackName}_governanceAddress`;
 const discordSecretName = `${stackName}_discordWebhook`;
 

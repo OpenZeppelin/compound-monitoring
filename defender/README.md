@@ -53,12 +53,10 @@ performs the functions we expect.
 
 ### Serverless Migration status
 
-- Compound Governance Automation - Ready to deploy
-- Compound Governance Discord Summary - Ready to deploy
 - cToken Monitor - Ready to deploy
-- Datadog Alerts Heat Map - Ready to deploy
-- Datadog Forta Bot Alerts - Ready to deploy
-- Datadog Forta Detection Bot Health - Ready to deploy
+- Datadog Alerts Heat Map - Error 400
+- Datadog Forta Bot Alerts - Error 400
+- Datadog Forta Detection Bot Health - Error 400
 - Forta cToken - Ready to deploy
 - Forta Distribution - Ready to deploy
 - Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
@@ -69,7 +67,9 @@ performs the functions we expect.
 - Forta Multi-Sig - Ready to deploy
 - Forta Oracle Price - Ready to deploy
 - Forta Underlying Asset - Ready to deploy
+- Governance Automation - Ready to deploy
 - Governance Discord Alert - Replaces Contract Governance - Ready to deploy
+- Governance Discord Summary - Ready to deploy
 - Governance Twitter Bot - Should rename to Governance Twitter Summary
 - Proposal 110 Automatoooor - Ready to Deploy
 - Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data.
