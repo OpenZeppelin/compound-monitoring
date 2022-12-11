@@ -1,4 +1,4 @@
-const stackName = 'compound_governance_automation';
+const stackName = 'governance_automation';
 const governanceAddressSecretName = `${stackName}_governanceAddress`;
 
 const ethers = require('ethers');
