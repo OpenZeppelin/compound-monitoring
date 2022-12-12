@@ -53,14 +53,15 @@ performs the functions we expect.
 
 ### Serverless Migration status
 
+NAME - STATUS - (PAUSED)
 - cToken Monitor - Ready to deploy
 - Datadog Alerts Heat Map - Error 400
 - Datadog Forta Bot Alerts - Error 400
 - Datadog Forta Detection Bot Health - Error 400
-- Forta cToken - Ready to deploy
-- Forta Distribution - Ready to deploy
+- Forta cToken - Ready to deploy - Paused
+- Forta Distribution - Ready to deploy - Paused
 - Forta Explorer Monitor - Ready to deploy but autotask returns error 400, also consider adding more bots and updating old ones
-- Forta Governance - Ready to deploy
+- Forta Governance - Ready to deploy - Paused
 - Forta Large Borrows Governance - Ready to deploy
 - Forta Large Delegations - Ready to deploy
 - Forta Low Liquidity - Ready to deploy
@@ -68,27 +69,31 @@ performs the functions we expect.
 - Forta Oracle Price - Ready to deploy
 - Forta Underlying Asset - Ready to deploy
 - Governance Automation - Ready to deploy
-- Governance Discord Alert - Replaces Contract Governance - Ready to deploy
+- Governance Discord Alert - Replaced Contract Governance - Ready to deploy
 - Governance Discord Summary - Ready to deploy
-- Governance Twitter Bot - Should rename to Governance Twitter Summary
-- Proposal 110 Automatoooor - Ready to Deploy
-- Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data.
-- Proposal 117 Monitor Mint - No longer in production, missing sentinel data.
+- Governance Twitter Bot - Ready to deploy
+- Proposal 110 Automatoooor - Ready to Deploy - Paused
+- Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data - Paused
+- Proposal 117 Monitor Mint - No longer in production, missing sentinel data - Paused
 
-- Template Autotask and Relay - Done
-- Template Autotask, Sentinel, and Relay - Done
-- Template Autotask, Forta Sentinel, and Relay - Not Started
 
 Other To do:
+- Template Autotask and Relay - Done
+- Template Autotask, Sentinel, and Relay - Done
+- Template Autotask, Forta Sentinel, and Relay - Done
+
 - Compare (diff) all serverless.yml files to templates - Not Started
 - Verify all Autotask Scheduling
 - Verify Autotask Stack variable matches actual stack
 - Verify Stack Variables exist in Secret.yml and Autotask
 - Standardize all YAMLs with single quotes
+- Scheduling time 52560000 to 525600000
 - Verify Secrets error handling
-- Validate if relay settings are the same between old vs new
+
+- Validate if relay settings are the same between old vs new - Done
 - Update the README
-- Verify Paused status on production
+- Verify Paused status on production - Done
+- Verify that git mv was used when possible
 
 Stretch goals:
 - Learn if serverless [environment variables](https://adamdelong.com/serverless-environment-variables/) available inside of autotasks

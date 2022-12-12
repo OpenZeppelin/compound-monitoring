@@ -64,7 +64,7 @@ resources:
         type: FORTA
         addresses: []
         network: mainnet
-        paused: false
+        paused: true
         autotask-trigger: ${self:functions.autotask-1}
         notify-config:
           timeout: 0
