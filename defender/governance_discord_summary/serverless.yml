@@ -5,14 +5,21 @@ frameworkVersion: "3"
 provider:
   name: defender
   stage: dev
-  stackName: governance_twitter_bot
+  stackName: governance_discord_summary
   ssot: false
 
-# Configure and rename secret-example.yml to secrets.yml
 custom:
   config: ${file(../secrets.yml)}
-  # Compound Governance Address
-  governanceAddress: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
+
+  # Configure this section and rename secret-example.yml to secrets.yml
+  name: Governance Discord Summary
+  defenderSecrets:
+    # Public Variables
+    # Compound Governance Address
+    governanceAddress: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+    # Private variables pulled from external secrets.yml file
+    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -20,7 +27,7 @@ defender:
 
 functions:
   autotask-1:
-    name: Compound Governance Twitter Serverless Autotask
+    name: ${self:custom.name} Serverless Autotask
     path: autotask-1
     trigger:
       type: schedule
@@ -38,16 +45,11 @@ resources:
         eip1559-pricing: true
 
     secrets:
-      stack:
-        governanceAddress: ${self:custom.governanceAddress}
-        appKey: ${self:custom.config.secrets.appKey}
-        appSecret: ${self:custom.config.secrets.appSecret}
-        accessToken: ${self:custom.config.secrets.accessToken}
-        accessSecret: ${self:custom.config.secrets.accessSecret}
+      stack: ${self:custom.defenderSecrets}
 
     relayers:
       relayer-1:
-        name: MarketMonitor Serverless Relay
+        name: ${self:custom.name} Serverless Relay
         network: mainnet
         min-balance: 100000000000000000
 
