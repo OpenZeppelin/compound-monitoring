@@ -18,7 +18,7 @@ custom:
   # Forta Sentinel Settings
   alert-ids:
     - AE-COMP-MULTISIG-OWNER-ADDED-ALERT
-    - AE-COMP-MULITSIG-OWNER-REMOVED-ALERT
+    - AE-COMP-MULTISIG-OWNER-REMOVED-ALERT
     - AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT
     - AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT
     - AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT
@@ -47,7 +47,7 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      frequency: 52560000
+      frequency: 525600000
     paused: false
 
 resources:
