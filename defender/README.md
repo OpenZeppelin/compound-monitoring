@@ -54,6 +54,7 @@ performs the functions we expect.
 ### Serverless Migration status
 
 NAME - STATUS - (PAUSED)
+Production
 - cToken Monitor - Ready to deploy
 - Datadog Alerts Heat Map - Error 400
 - Datadog Forta Bot Alerts - Error 400
@@ -76,6 +77,8 @@ NAME - STATUS - (PAUSED)
 - Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data - Paused
 - Proposal 117 Monitor Mint - No longer in production, missing sentinel data - Paused
 
+Dev
+- TBD
 
 Other To do:
 - Template Autotask and Relay - Done
