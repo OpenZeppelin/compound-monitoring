@@ -81,18 +81,18 @@ Dev
 - TBD
 
 Other To do:
-- Template Autotask and Relay - Done
-- Template Autotask, Sentinel, and Relay - Done
-- Template Autotask, Forta Sentinel, and Relay - Done
 - Compare (diff) all serverless.yml files to templates - Not Started
 - Verify all Autotask Scheduling
 - Verify Autotask Stack variable matches actual stack
 - Verify Stack Variables exist in Secret.yml and Autotask
-- Standardize all YAMLs with single quotes
-- Scheduling time 52560000 to 525600000
 - Verify Secrets error handling
-- Validate if relay settings are the same between old vs new - Done
 - Update the README
+- Template Autotask and Relay - Done
+- Template Autotask, Sentinel, and Relay - Done
+- Template Autotask, Forta Sentinel, and Relay - Done
+- Standardize all YAMLs with single quotes - Done
+- Scheduling time 52560000 to 525600000 - Done
+- Validate if relay settings are the same between old vs new - Done
 - Verify Paused status on production - Done
 - Verify that git mv was used when possible - Done, only Governance Twitter/Discord Summaries got mixed up.
 

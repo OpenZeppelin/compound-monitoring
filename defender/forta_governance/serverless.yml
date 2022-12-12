@@ -41,7 +41,7 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      frequency: 52560000
+      frequency: 525600000
     paused: false
 
 resources:
