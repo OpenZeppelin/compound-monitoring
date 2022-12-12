@@ -1,6 +1,6 @@
 service: generated-service
 configValidationMode: error
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: defender
@@ -19,7 +19,7 @@ custom:
   alert-ids:
     - AE-COMP-MARKET-ATTACK-EVENT
   agent-ids:
-    - '0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a'
+    - "0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a"
 
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
@@ -45,7 +45,7 @@ resources:
       policy-1:
         gas-price-cap: 1000
         whitelist-receivers:
-          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
+          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
 
     secrets:
@@ -69,6 +69,6 @@ resources:
           severity: 1
           alert-ids: ${self:custom.alert-ids}
         agent-ids: ${self:custom.agent-ids}
-      
+
 plugins:
   - defender-serverless

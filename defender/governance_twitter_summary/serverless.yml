@@ -1,6 +1,6 @@
 service: generated-service
 configValidationMode: error
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: defender
@@ -18,7 +18,7 @@ custom:
   defenderSecrets:
     # Public Variables
     # Compound Governance Address
-    governanceAddress: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529'
+    governanceAddress: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
     # Private Variables pulled from external secrets.yml file
     appKey: ${self:custom.stackSecrets.appKey}
     appSecret: ${self:custom.stackSecrets.appSecret}
@@ -35,7 +35,7 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      cron: '0 */12 * * *'
+      cron: "0 */12 * * *"
     paused: false
     relayer: ${self:resources.Resources.relayers.relayer-1}
 
@@ -45,7 +45,7 @@ resources:
       policy-1:
         gas-price-cap: 1000
         whitelist-receivers:
-          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
+          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
 
     secrets:
