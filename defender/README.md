@@ -84,7 +84,6 @@ Other To do:
 - Template Autotask and Relay - Done
 - Template Autotask, Sentinel, and Relay - Done
 - Template Autotask, Forta Sentinel, and Relay - Done
-
 - Compare (diff) all serverless.yml files to templates - Not Started
 - Verify all Autotask Scheduling
 - Verify Autotask Stack variable matches actual stack
@@ -92,11 +91,10 @@ Other To do:
 - Standardize all YAMLs with single quotes
 - Scheduling time 52560000 to 525600000
 - Verify Secrets error handling
-
 - Validate if relay settings are the same between old vs new - Done
 - Update the README
 - Verify Paused status on production - Done
-- Verify that git mv was used when possible
+- Verify that git mv was used when possible - Done, only Governance Twitter/Discord Summaries got mixed up.
 
 Stretch goals:
 - Learn if serverless [environment variables](https://adamdelong.com/serverless-environment-variables/) available inside of autotasks
