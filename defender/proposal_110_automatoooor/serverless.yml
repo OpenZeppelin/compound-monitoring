@@ -25,7 +25,7 @@ functions:
     trigger:
       type: schedule
       frequency: 5
-    paused: false
+    paused: true
     relayer: ${self:resources.Resources.relayers.relayer-1}
 
 resources:

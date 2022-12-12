@@ -31,7 +31,7 @@ functions:
     trigger:
       type: schedule
       frequency: 52560000
-    paused: false
+    paused: true
     relayer: ${self:resources.Resources.relayers.relayer-1}
 
 resources:
