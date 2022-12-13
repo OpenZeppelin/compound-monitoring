@@ -54,6 +54,7 @@ performs the functions we expect.
 ### Serverless Migration status
 
 NAME - STATUS - (PAUSED)
+
 Production
 - cToken Monitor - Ready to deploy
 - Datadog Alerts Heat Map - Error 400
@@ -81,7 +82,9 @@ Dev
 - TBD
 
 Other To do:
-- Compare (diff) all serverless.yml files to templates - Not Started
+- Migrate Staged components
+- Adjust all tests to work with new framework
+- Compare (diff) all serverless.yml files to templates - Done
 - Update the README
 - Verify all Autotask Scheduling - Done
 - Verify Autotask Stack variable matches actual stack - Done
