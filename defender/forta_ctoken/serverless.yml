@@ -38,6 +38,7 @@ functions:
       type: schedule
       frequency: 525600000
     paused: false
+    relayer: ${self:resources.Resources.relayers.relayer-1}
 
 resources:
   Resources:
@@ -52,6 +53,10 @@ resources:
       stack: ${self:custom.defenderSecrets}
 
     relayers:
+      relayer-1:
+        name: ${self:custom.name} Serverless Relay
+        network: mainnet
+        min-balance: 100000000000000000
 
     sentinels:
       sentinel-1:
