@@ -31,7 +31,7 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      cron: '0 */12 * * *'
+      frequency: 1440
     paused: false
     relayer: ${self:resources.Resources.relayers.relayer-1}
 

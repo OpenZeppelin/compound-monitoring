@@ -39,7 +39,7 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      frequency: 52560000
+      frequency: 525600000
     paused: false
     relayer: ${self:resources.Resources.relayers.relayer-1}
 

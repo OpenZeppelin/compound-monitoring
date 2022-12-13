@@ -70,8 +70,8 @@ Production
 - Forta Oracle Price - Ready to deploy
 - Forta Underlying Asset - Ready to deploy
 - Governance Automation - Ready to deploy
-- Governance Discord Alert - Replaced Contract Governance - Ready to deploy
-- Governance Discord Summary - Ready to deploy
+- Governance Discord Alert - Replaces Contract Governance - Ready to deploy
+- Governance Discord Summary - Replaces Active Proposal Updater - Ready to deploy
 - Governance Twitter Bot - Ready to deploy
 - Proposal 110 Automatoooor - Ready to Deploy - Paused
 - Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data - Paused
@@ -82,15 +82,16 @@ Dev
 
 Other To do:
 - Compare (diff) all serverless.yml files to templates - Not Started
-- Verify all Autotask Scheduling
-- Verify Autotask Stack variable matches actual stack
-- Verify Stack Variables exist in Secret.yml and Autotask
-- Verify Secrets error handling
 - Update the README
+- Verify all Autotask Scheduling - Done
+- Verify Autotask Stack variable matches actual stack - Done
+- Verify Stack Variables exist in Secret.yml and Autotask - Done
+- Verify Secrets error handling - Done
+- Remove vulnerable packages - Done
+- Linted - Done
 - Template Autotask and Relay - Done
-- Template Autotask, Sentinel, and Relay - Done
+- Template Autotask, Contract Sentinel, and Relay - Done
 - Template Autotask, Forta Sentinel, and Relay - Done
-- Standardize all YAMLs with single quotes - Done
 - Scheduling time 52560000 to 525600000 - Done
 - Validate if relay settings are the same between old vs new - Done
 - Verify Paused status on production - Done

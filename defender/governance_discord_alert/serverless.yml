@@ -52,10 +52,6 @@ resources:
       stack: ${self:custom.defenderSecrets}
 
     relayers:
-      relayer-1:
-        name: ${self:custom.name} Serverless Relay
-        network: mainnet
-        min-balance: 100000000000000000
 
     sentinels:
       sentinel-1:
