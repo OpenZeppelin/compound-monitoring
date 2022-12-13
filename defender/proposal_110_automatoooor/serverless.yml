@@ -1,6 +1,6 @@
 service: generated-service
 configValidationMode: error
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: defender
@@ -34,7 +34,7 @@ resources:
       policy-1:
         gas-price-cap: 1000
         whitelist-receivers:
-          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
+          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
 
     secrets:
