@@ -1,6 +1,6 @@
 service: generated-service
 configValidationMode: error
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: defender
@@ -30,7 +30,7 @@ custom:
     - AE-COMP-NEW-BORROW-CAP-ALERT
     - AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT
   agent-ids:
-    - '0x2e7f036f3495fec41a3eabae03b3efd378f6834bbb2976b99dfed6d3c7de7458'
+    - "0x2e7f036f3495fec41a3eabae03b3efd378f6834bbb2976b99dfed6d3c7de7458"
 
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
@@ -56,7 +56,7 @@ resources:
       policy-1:
         gas-price-cap: 1000
         whitelist-receivers:
-          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
+          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
 
     secrets:
@@ -80,6 +80,6 @@ resources:
           severity: 1
           alert-ids: ${self:custom.alert-ids}
         agent-ids: ${self:custom.agent-ids}
-      
+
 plugins:
   - defender-serverless
