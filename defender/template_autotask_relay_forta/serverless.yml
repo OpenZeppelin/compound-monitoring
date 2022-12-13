@@ -1,6 +1,6 @@
 service: generated-service
 configValidationMode: error
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: defender
@@ -19,12 +19,12 @@ custom:
   alert-ids:
     - AE-FORT-ALERT-CHANGE_ME
   agent-ids:
-    - '0x00'
+    - "0x00"
 
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
     # Public Variables
-    publicVariable: 'Nothing Sensitive'
+    publicVariable: "Nothing Sensitive"
     # Private variables pulled from external secrets.yml file
     discordWebhook: ${self:custom.stackSecrets.discordWebhook}
     privateVariable: ${self:custom.stackSecrets.privateVariable}
@@ -49,7 +49,7 @@ resources:
       policy-1:
         gas-price-cap: 1000
         whitelist-receivers:
-          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
+          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
 
     secrets:
@@ -77,6 +77,6 @@ resources:
           severity: 1
           alert-ids: ${self:custom.alert-ids}
         agent-ids: ${self:custom.agent-ids}
-      
+
 plugins:
   - defender-serverless
