@@ -13,7 +13,9 @@ custom:
 
   # Configure this section and rename secret-example.yml to secrets.yml
   name: Governance Automation
+  # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
+    # Public Variables
     # Compound Governance Address
     governanceAddress: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
 

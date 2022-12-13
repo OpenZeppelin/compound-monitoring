@@ -15,7 +15,7 @@ custom:
   # Configure this section and rename secret-example.yml to secrets.yml
   name: cToken Monitor
 
-  # Sentinel Settings
+  # Contract Sentinel Settings
   monitored-addresses:
     - "0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c" # Compound Aave Token (cAAVE)
     - "0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E" # Compound Basic Attention Token (cBAT)
