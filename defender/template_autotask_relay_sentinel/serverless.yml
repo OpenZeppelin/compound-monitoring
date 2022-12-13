@@ -1,6 +1,6 @@
 service: generated-service
 configValidationMode: error
-frameworkVersion: '3'
+frameworkVersion: "3"
 
 provider:
   name: defender
@@ -17,14 +17,14 @@ custom:
 
   # Contract Sentinel Settings
   monitored-addresses:
-    - '0x00'
+    - "0x00"
   # Possible Defender networks: https://github.com/OpenZeppelin/defender-client/blob/master/packages/base/src/utils/network.ts`
   monitored-network: mainnet
 
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
     # Public Variables
-    publicVariable: 'Nothing Sensitive'
+    publicVariable: "Nothing Sensitive"
     # Private variables pulled from external secrets.yml file
     privateVariable: ${self:custom.stackSecrets.privateVariable}
 
@@ -48,7 +48,7 @@ resources:
       policy-1:
         gas-price-cap: 1000
         whitelist-receivers:
-          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
+          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
 
     secrets:
