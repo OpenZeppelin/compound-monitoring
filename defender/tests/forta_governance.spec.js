@@ -1,5 +1,7 @@
 // Set the name of the Secret set in Autotask
-const discordSecretName = 'GovernanceDiscordUrl';
+const stackName = 'forta_governance';
+const discordSecretName = `${stackName}_discordWebhook`;
+
 // Name of the Secret in the .env file
 const discordEnvSecretName = 'discordUrl';
 
@@ -116,7 +118,7 @@ if (discordSecretName !== discordEnvSecretName) {
 }
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('../downloaded/Forta_Governance');
+const { handler } = require('../forta_governance/autotask-1/index');
 
 function createFinding(metadata) {
   return Finding.fromObject({

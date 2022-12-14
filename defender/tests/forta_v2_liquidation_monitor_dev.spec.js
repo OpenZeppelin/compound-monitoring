@@ -1,5 +1,6 @@
 // Set the name of the Secret set in Autotask
-const discordSecretName = 'LiquidationDiscordUrl';
+const stackName = 'forta_v2_liquidation_monitor_dev';
+const discordSecretName = `${stackName}_discordWebhook`;
 // Name of the Secret in the .env file
 const discordEnvSecretName = 'discordUrl';
 
@@ -54,7 +55,7 @@ if (discordSecretName !== discordEnvSecretName) {
 }
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('../staged/downloaded/Forta_Liquidation_Monitor');
+const { handler } = require('../forta_v2_liquidation_monitor_dev/autotask-1/index');
 
 function createFortaSentinelEvent(finding, blockHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks

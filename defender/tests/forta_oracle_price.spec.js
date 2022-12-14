@@ -1,5 +1,6 @@
 // Set the name of the Secret set in Autotask
-const discordSecretName = 'SecurityAlertsDiscordUrl';
+const stackName = 'forta_oracle_price';
+const discordSecretName = `${stackName}_discordWebhook`;
 // Name of the Secret in the .env file
 const discordEnvSecretName = 'discordUrl';
 
@@ -57,7 +58,7 @@ jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
 const axios = require('axios');
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('../downloaded/Forta_Oracle_Price');
+const { handler } = require('../forta_oracle_price/autotask-1/index');
 
 function createFortaSentinelEvent(finding, blockHash, txHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks

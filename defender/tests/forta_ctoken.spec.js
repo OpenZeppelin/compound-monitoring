@@ -1,5 +1,7 @@
 // Set the name of the Secret set in Autotask
-const discordSecretName = 'DiscordUrl';
+const stackName = 'forta_ctoken';
+const discordSecretName = `${stackName}_discordWebhook`;
+
 // Name of the Secret in the .env file
 const discordEnvSecretName = 'discordUrl';
 
@@ -106,7 +108,7 @@ if (discordSecretName !== discordEnvSecretName) {
 }
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('../downloaded/Forta_cToken');
+const { handler } = require('../forta_ctoken/autotask-1/index');
 
 function createFinding(metadata) {
   return Finding.fromObject({

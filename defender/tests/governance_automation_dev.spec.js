@@ -1,3 +1,7 @@
+// Set the name of the Secret set in Autotask
+const stackName = 'governance_automation_dev';
+const governanceAddressSecretName = `${stackName}_governanceAddress`;
+
 require('dotenv').config();
 
 const mockContract = {
@@ -41,10 +45,11 @@ jest.mock('defender-kvstore-client', () => ({
   KeyValueStoreClient: jest.fn().mockReturnValue(mockKeyValueStoreClient),
 }));
 
-const { handler } = require('./Compound_Governance_Automation');
+const { handler } = require('../governance_automation_dev/autotask-1/index');
 
 describe('check autotask', () => {
   let mockKeyValueStore;
+  let mockAutotaskEvent;
   beforeEach(() => {
     // reset the Object that mocks the key value store before each test case
     mockKeyValueStore = {};
@@ -52,6 +57,12 @@ describe('check autotask', () => {
     mockKeyValueStoreClient.put = jest.fn((key, value) => {
       mockKeyValueStore[key] = value;
     });
+
+    mockAutotaskEvent = {
+      secrets: {
+        [governanceAddressSecretName]: 'http://localhost/',
+      },
+    };
   });
 
   afterEach(() => {
@@ -63,7 +74,7 @@ describe('check autotask', () => {
   it('does nothing if no proposals have been created', async () => {
     mockContract.initialProposalId = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(0));
     mockContract.proposalCount = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(0));
-    const results = await handler({});
+    const results = await handler(mockAutotaskEvent);
     expect(results).toStrictEqual(true);
     // no proposal IDs should be added to the key value store
     expect(mockKeyValueStore).toStrictEqual({ proposalIdsToIgnore: '' });
@@ -77,7 +88,7 @@ describe('check autotask', () => {
     mockKeyValueStore.proposalIdsToIgnore = '';
     // set the state to pending, which should be ignored
     mockContract.state = jest.fn().mockResolvedValueOnce(0); // Canceled
-    const results = await handler({});
+    const results = await handler(mockAutotaskEvent);
     expect(results).toStrictEqual(true);
     // no proposal IDs should be added to the key value store
     expect(mockKeyValueStore).toStrictEqual({ proposalIdsToIgnore: '' });
@@ -89,7 +100,7 @@ describe('check autotask', () => {
     mockContract.initialProposalId = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(0));
     mockContract.proposalCount = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(3));
     mockKeyValueStore.proposalIdsToIgnore = '1,2,3';
-    const results = await handler({});
+    const results = await handler(mockAutotaskEvent);
     expect(results).toStrictEqual(true);
     // no proposal IDs should be added to the key value store
     expect(mockKeyValueStore).toStrictEqual({ proposalIdsToIgnore: '1,2,3' });
@@ -105,7 +116,7 @@ describe('check autotask', () => {
       .mockResolvedValueOnce(3) // Defeated
       .mockResolvedValueOnce(6) // Expired
       .mockResolvedValueOnce(7); // Executed
-    const results = await handler({});
+    const results = await handler(mockAutotaskEvent);
     expect(results).toStrictEqual(true);
     // all of the proposal IDs should be added to the key value store
     expect(mockKeyValueStore).toStrictEqual({
@@ -120,7 +131,7 @@ describe('check autotask', () => {
     mockContract.proposalCount = jest.fn().mockResolvedValueOnce(ethers.BigNumber.from(2));
     // first proposal is state 0 (pending), second proposal is state 1 (active)
     mockContract.state = jest.fn().mockResolvedValueOnce(0).mockResolvedValueOnce(1);
-    const results = await handler({});
+    const results = await handler(mockAutotaskEvent);
     expect(results).toStrictEqual(true);
     // no proposal IDs should be added to the key value store
     expect(mockKeyValueStore).toStrictEqual({ proposalIdsToIgnore: '' });
@@ -135,7 +146,7 @@ describe('check autotask', () => {
     mockContract.state = jest.fn().mockResolvedValueOnce(4);
     mockContract.provider.getBlock.mockResolvedValueOnce({ timestamp: 99 });
     mockContract.proposals.mockResolvedValueOnce({ eta: ethers.BigNumber.from(100) });
-    const results = await handler({});
+    const results = await handler(mockAutotaskEvent);
     expect(results).toStrictEqual(true);
     // the proposalIdsToIgnore should be added with an empty string as the value
     expect(mockKeyValueStore).toStrictEqual({ proposalIdsToIgnore: '' });
@@ -161,7 +172,7 @@ describe('check autotask', () => {
     mockContract.proposals = jest.fn()
       .mockResolvedValueOnce({ eta: ethers.BigNumber.from(mockTimestamp + 1) });
 
-    const results = await handler({});
+    const results = await handler(mockAutotaskEvent);
     expect(results).toStrictEqual(true);
     // the proposalIdsToIgnore should be added with an empty string as the value
     expect(mockKeyValueStore).toStrictEqual({ proposalIdsToIgnore: '' });
@@ -187,7 +198,7 @@ describe('check autotask', () => {
     mockContract.proposals = jest.fn()
       .mockResolvedValueOnce({ eta: ethers.BigNumber.from(mockTimestamp - 1) });
 
-    const results = await handler({});
+    const results = await handler(mockAutotaskEvent);
     expect(results).toStrictEqual(true);
     // the proposalIdsToIgnore should be added with an empty string as the value
     expect(mockKeyValueStore).toStrictEqual({ proposalIdsToIgnore: '' });
