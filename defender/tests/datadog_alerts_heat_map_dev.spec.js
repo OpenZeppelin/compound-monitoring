@@ -1,3 +1,4 @@
+// Set the name of the Secret set in Autotask
 const stackName = 'datadog_alerts_heat_map_dev';
 const datadogSecretName = `${stackName}_datadogApiKey`;
 

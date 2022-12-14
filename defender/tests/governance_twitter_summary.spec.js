@@ -1,9 +1,19 @@
+// Set the name of the Secrets set in Autotask
+const stackName = 'governance_twitter_summary';
+const governanceAddressSecretName = `${stackName}_governanceAddress`;
+// Consumer Keys from an elevated developer account
+const appKeySecretName = `${stackName}_appKey`;
+const appSecretSecretName = `${stackName}_appSecret`;
+// Authentication Tokens (must have write permissions)
+const accessTokenSecretName = `${stackName}_accessToken`;
+const accessSecretSecretName = `${stackName}_accessSecret`;
+
 const secrets = {
-  governance_twitter_bot_governanceAddress: 'GOVERNANCE_ADDRESS',
-  governance_twitter_bot_appKey: 'TWITTER_APP_KEY',
-  governance_twitter_bot_appSecret: 'TWITTER_APP_SECRET',
-  governance_twitter_bot_accessToken: 'TWITTER_ACCESS_TOKEN',
-  governance_twitter_bot_accessSecret: 'TWITTER_ACCESS_SECRET',
+  [governanceAddressSecretName]: 'GOVERNANCE_ADDRESS',
+  [appKeySecretName]: 'TWITTER_APP_KEY',
+  [appSecretSecretName]: 'TWITTER_APP_SECRET',
+  [accessTokenSecretName]: 'TWITTER_ACCESS_TOKEN',
+  [accessSecretSecretName]: 'TWITTER_ACCESS_SECRET',
 };
 const mockDecimals = 18;
 
@@ -58,14 +68,14 @@ mockAxios.get = jest.fn();
 
 jest.mock('axios-retry', () => jest.fn());
 
-const { TwitterApi } = require('../governance_twitter_bot/autotask-1/twitter-api-v2');
+const { TwitterApi } = require('../governance_twitter_summary/autotask-1/twitter-api-v2');
 
 // Spy on the tweet and reply methods. The first tweet will return with id_str: '1'
 const mockTweet = jest.spyOn(TwitterApi.prototype.v1, 'tweet').mockImplementation(() => ({ id_str: '1' }));
 // reply will prepend a 1 to the tweetID that it was passed. '1' => '11' => '111'
 const mockReply = jest.spyOn(TwitterApi.prototype.v1, 'reply').mockImplementation((_msg, id) => ({ id_str: `1${id}` }));
 
-const { handler } = require('../governance_twitter_bot/autotask-1/index');
+const { handler } = require('../governance_twitter_summary/autotask-1/index');
 
 describe('check autotask', () => {
   beforeEach(() => {

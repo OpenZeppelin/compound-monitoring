@@ -1,4 +1,12 @@
-const secrets = { GovernanceDiscordUrl: 'testURL' };
+// Set the name of the Secret set in Autotask
+const stackName = 'governance_discord_summary';
+const governanceAddressSecretName = `${stackName}_governanceAddress`;
+const discordSecretName = `${stackName}_discordWebhook`;
+
+const secrets = {
+  [governanceAddressSecretName]: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
+  [discordSecretName]: 'testURL',
+};
 
 const mockDecimals = 18;
 
@@ -53,7 +61,7 @@ mockAxios.get = jest.fn();
 
 jest.mock('axios-retry', () => jest.fn());
 
-const { handler } = require('./Compound_Governance_Discord_Summary');
+const { handler } = require('../governance_discord_summary/autotask-1/index');
 
 describe('check autotask', () => {
   beforeEach(() => {

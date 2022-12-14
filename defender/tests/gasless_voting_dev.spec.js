@@ -26,7 +26,7 @@ jest.mock('defender-relay-client/lib/ethers', () => ({
   DefenderRelaySigner: jest.fn().mockReturnValue(mockSigner),
 }));
 
-const { handler } = require('./Compound_Gasless_Voting');
+const { handler } = require('../gasless_voting_dev/autotask-1/index');
 
 function createAutotaskEvent(batchedTxs) {
   const autotaskEvent = {

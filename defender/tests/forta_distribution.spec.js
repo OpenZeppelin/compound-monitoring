@@ -1,5 +1,7 @@
 // Set the name of the Secret set in Autotask
-const discordSecretName = 'SecurityAlertsDiscordUrl';
+const stackName = 'forta_distribution';
+const discordSecretName = `${stackName}_discordWebhook`;
+
 // Name of the Secret in the .env file
 const discordEnvSecretName = 'discordUrl';
 
@@ -59,7 +61,7 @@ if (discordSecretName !== discordEnvSecretName) {
 }
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('../downloaded/Forta_Distributions');
+const { handler } = require('../forta_distribution/autotask-1/index');
 
 function createFortaSentinelEvent(finding, addresses, blockHash, txHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
