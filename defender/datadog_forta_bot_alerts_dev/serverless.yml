@@ -5,14 +5,19 @@ frameworkVersion: "3"
 provider:
   name: defender
   stage: dev
-  stackName: forta_explorer_monitor
+  stackName: datadog_forta_bot_alerts_dev
   ssot: false
 
 custom:
   config: ${file(../secrets.yml)}
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
 
   # Configure this section and rename secret-example.yml to secrets.yml
-  name: Forta Explorer Monitor
+  name: Datadog Forta Bot Alerts DEV
+  # Comment out any secret that you do not want to be overwritten in Defender
+  defenderSecrets:
+    # Private variables pulled from external secrets.yml file
+    datadogApiKey: ${self:custom.stackSecrets.datadogApiKey}
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -24,7 +29,7 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      cron: "0 * * * *" # Every hour on the hour
+      frequency: 60
     paused: false
 
 resources:
@@ -37,6 +42,7 @@ resources:
         eip1559-pricing: true
 
     secrets:
+      stack: ${self:custom.defenderSecrets}
 
     relayers:
 

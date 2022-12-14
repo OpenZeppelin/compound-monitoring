@@ -5,14 +5,14 @@ frameworkVersion: "3"
 provider:
   name: defender
   stage: dev
-  stackName: forta_explorer_monitor
+  stackName: forta_explorer_monitor_dev
   ssot: false
 
 custom:
   config: ${file(../secrets.yml)}
 
   # Configure this section and rename secret-example.yml to secrets.yml
-  name: Forta Explorer Monitor
+  name: Forta Explorer Monitor DEV
 
 defender:
   key: ${self:custom.config.keys.api}

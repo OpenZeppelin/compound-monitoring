@@ -1,4 +1,5 @@
-const discordSecretName = 'LiquidationDiscordUrl';
+const stackName = 'forta_v3_liquidation_monitor_dev';
+const discordSecretName = `${stackName}_discordWebhook`;
 
 const axios = require('axios');
 const axiosRetry = require('axios-retry');
