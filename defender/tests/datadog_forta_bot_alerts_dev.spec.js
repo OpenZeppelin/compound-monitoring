@@ -1,3 +1,6 @@
+const stackName = 'datadog_forta_bot_alerts_dev';
+const datadogSecretName = `${stackName}_datadogApiKey`;
+
 jest.mock('axios', () => jest.fn());
 const axios = require('axios');
 
@@ -28,7 +31,7 @@ jest.mock('defender-kvstore-client', () => ({
   KeyValueStoreClient: jest.fn().mockReturnValue(mockKeyValueStore),
 }));
 
-const { handler } = require('./Datadog_Forta_Bot_Alerts');
+const { handler } = require('../datadog_forta_bot_alerts_dev/autotask-1/index');
 
 describe('Run the Autotask', () => {
   let outputObject;
@@ -43,7 +46,7 @@ describe('Run the Autotask', () => {
 
     mockAutotaskEvent = {
       secrets: {
-        DatadogApiKey: 'fakeApiKey',
+        [datadogSecretName]: 'fakeApiKey',
       },
     };
   });

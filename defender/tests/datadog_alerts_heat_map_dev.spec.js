@@ -1,3 +1,6 @@
+const stackName = 'datadog_alerts_heat_map_dev';
+const datadogSecretName = `${stackName}_datadogApiKey`;
+
 jest.mock('axios', () => jest.fn());
 const axios = require('axios');
 
@@ -26,7 +29,7 @@ jest.mock('defender-kvstore-client', () => ({
   KeyValueStoreClient: jest.fn().mockReturnValue(mockKeyValueStore),
 }));
 
-const { handler } = require('./Datadog_Alerts_Heat_Map');
+const { handler } = require('../datadog_alerts_heat_map_dev/autotask-1/index');
 
 describe('Run the Autotask', () => {
   let outputObject;
@@ -41,7 +44,7 @@ describe('Run the Autotask', () => {
 
     mockAutotaskEvent = {
       secrets: {
-        DatadogApiKey: 'fakeApiKey',
+        [datadogSecretName]: 'fakeApiKey',
       },
     };
   });

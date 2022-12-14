@@ -1,3 +1,6 @@
+const stackName = 'datadog_alerts_heat_map';
+const datadogSecretName = `${stackName}_datadogApiKey`;
+
 jest.mock('axios', () => jest.fn());
 const axios = require('axios');
 
@@ -10,23 +13,23 @@ const mockKeyValueStore = {
   put: jest.fn(),
 };
 
-const botIds = [
-  '0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714', // Forta Low Liquidity Attack
-  '0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339', // Forta Large Borrows Governance
-  '0x916603512086fcad84c35858d2fc5356c512f72b19c80e52e8f9c04d8122e2ba', // Forta Multi-Sig Monitor
-  '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53', // Forta Large Delegations Monitor
-  '0xe200d890a67d51c3610520dd9fdfa9e2bd6dd341d41e32fa457601e73c4c6685', // Forta Oracle Price Monitor
-  '0xf836bda7810aa2dd9df5bb7ac748f173b945863e922a15bb7c57da7b0e6dab05', // Forta Underlying Asset Monitor
-  '0x125c36816fbad9974a452947bf6a98d975988ddf4342c159a986383b64765e22', // Forta Compound cToken Monitor
-  '0xa0424dfee87cc34b9ff6a1dfa2cb22dbf1b20a238698ae0eeffbf07f869e5b39', // Forta Compound Governance Monitor
-];
+const botIdsToNames = {
+  '0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a': 'Low Liquidity Attack',
+  '0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339': 'Large Borrows Governance',
+  '0x2e7f036f3495fec41a3eabae03b3efd378f6834bbb2976b99dfed6d3c7de7458': 'Community Multi-Sig',
+  '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53': 'Large Delegations',
+  '0x32facccd163300ad76c7fe88b559b812dca9050a569417b42fced95594dda08e': 'Oracle Price',
+  '0xfa3044aa08927163ff8578fb5c108978dfde3a12e0b21834e53111e2859f3a59': 'Underlying Asset',
+  '0xab39733ddf86340b8e7940ebb933bb48506a341485c7f8c77da17bc1400fe028': 'Market Activity',
+  '0xa0424dfee87cc34b9ff6a1dfa2cb22dbf1b20a238698ae0eeffbf07f869e5b39': 'Governance Activity',
+};
 
 // override the key-value store Class
 jest.mock('defender-kvstore-client', () => ({
   KeyValueStoreClient: jest.fn().mockReturnValue(mockKeyValueStore),
 }));
 
-const { handler } = require('../downloaded/Datadog_Forta_Detection_Bot_Health');
+const { handler } = require('../datadog_forta_detection_bot_health/autotask-1/index');
 
 describe('Run the Autotask', () => {
   let outputObject;
@@ -41,7 +44,7 @@ describe('Run the Autotask', () => {
 
     mockAutotaskEvent = {
       secrets: {
-        DatadogApiKey: 'mockApiKey',
+        [datadogSecretName]: 'mockApiKey',
       },
     };
   });
@@ -74,7 +77,7 @@ describe('Run the Autotask', () => {
 
     // construct the Object that will be stringified and stored in the kvstore
     const agentInformationStored = {};
-    botIds.forEach((botId) => {
+    Object.keys(botIdsToNames).forEach((botId) => {
       agentInformationStored[botId] = {};
     });
 
@@ -85,7 +88,7 @@ describe('Run the Autotask', () => {
   it('returns updated metrics when metrics are updated', async () => {
     const mockLastUpdateTimestamp = '8675308';
     const agentInformationStored = {};
-    botIds.forEach((botId) => {
+    Object.keys(botIdsToNames).forEach((botId) => {
       agentInformationStored[botId] = {};
     });
 
@@ -160,7 +163,7 @@ describe('Run the Autotask', () => {
 
     // construct expected Datadog requests
     const expectedDatadogRequests = [];
-    botIds.forEach((botId) => {
+    Object.entries(botIdsToNames).forEach(([botId, botName]) => {
       expectedDatadogRequests.push({
         url: 'https://api.datadoghq.com/api/v2/series',
         method: 'post',
@@ -181,6 +184,7 @@ describe('Run the Autotask', () => {
               tags: [
                 `botid:${botId}`,
                 'scannerid:0x12345',
+                `botname:${botName}`,
               ],
               type: 0,
             },
@@ -195,6 +199,7 @@ describe('Run the Autotask', () => {
               tags: [
                 `botid:${botId}`,
                 'scannerid:0x12345',
+                `botname:${botName}`,
               ],
               type: 0,
             },
