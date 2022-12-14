@@ -78,7 +78,7 @@ Production
 - Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data - Paused
 - Proposal 117 Monitor Mint - No longer in production, missing sentinel data - Paused
 
-Dev - Should replace production - Need to test deploy all
+Dev - Yet to be implemented on production
 - Datadog Alerts Heat Map
 - Datadog Forta Bot Alerts
 - Forta Explorer Monitor
@@ -94,26 +94,6 @@ When changing the stack name, ensure that the following are updated:
 - secret.yml - secrets.(stackName)
 - autotask/index.js - `const stackName = '<stackName>';`
 
-Other To do:
-- Adjust all tests to work with new framework
-- Migrate Staged components - Done
-- Compare (diff) all serverless.yml files to templates - Done
-- Update the README
-- Verify all Autotask Scheduling - Done
-- Verify Autotask Stack variable matches actual stack - Done
-- Verify Stack Variables exist in Secret.yml and Autotask - Done
-- Verify Secrets error handling - Done
-- Remove vulnerable packages - Done
-- Linted - Done
-- Template Autotask and Relay - Done
-- Template Autotask, Contract Sentinel, and Relay - Done
-- Template Autotask, Forta Sentinel, and Relay - Done
-- Scheduling time 52560000 to 525600000 - Done
-- Validate if relay settings are the same between old vs new - Done
-- Verify Paused status on production - Done
-- Verify that git mv was used when possible - Done, only Governance Twitter/Discord Summaries got mixed up.
-
-Stretch goals:
+Future plans:
 - Learn if serverless [environment variables](https://adamdelong.com/serverless-environment-variables/) available inside of autotasks
 - If so, some additional autotask parameters may be migrated to the serverless.yml file
-
