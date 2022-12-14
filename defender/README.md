@@ -78,12 +78,25 @@ Production
 - Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data - Paused
 - Proposal 117 Monitor Mint - No longer in production, missing sentinel data - Paused
 
-Dev
-- TBD
+Dev - Should replace production - Need to test deploy all
+- Datadog Alerts Heat Map
+- Datadog Forta Bot Alerts
+- Forta Explorer Monitor
+- Forta v2 Liquidation Monitor
+- Forta v3 Liquidation Monitor
+- Gasless Voting
+- Governance Automation
+
+When changing the stack name, ensure that the following are updated:
+- Folder name
+- serverless.yml - provider.stackName
+- serverless.yml - custom.name
+- secret.yml - secrets.(stackName)
+- autotask/index.js - `const stackName = '<stackName>';`
 
 Other To do:
-- Migrate Staged components
 - Adjust all tests to work with new framework
+- Migrate Staged components - Done
 - Compare (diff) all serverless.yml files to templates - Done
 - Update the README
 - Verify all Autotask Scheduling - Done

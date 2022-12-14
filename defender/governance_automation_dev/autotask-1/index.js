@@ -1,9 +1,10 @@
+const stackName = 'governance_automation_dev';
+const governanceAddressSecretName = `${stackName}_governanceAddress`;
+
 const ethers = require('ethers');
 
 const { KeyValueStoreClient } = require('defender-kvstore-client');
 const { DefenderRelayProvider, DefenderRelaySigner } = require('defender-relay-client/lib/ethers');
-
-const compoundGovernanceAddress = '0xc0Da02939E1441F497fd74F78cE7Decb17B66529';
 
 const compoundGovernanceAbi = [
   'function execute(uint proposalId)',
@@ -26,6 +27,17 @@ exports.handler = async function handler(autotaskEvent) {
     throw new Error('autotaskEvent undefined');
   }
 
+  const { secrets } = autotaskEvent;
+  if (secrets === undefined) {
+    throw new Error('secrets undefined');
+  }
+
+  // ensure that there is a governanceAddress secret
+  const governanceAddress = secrets[governanceAddressSecretName];
+  if (governanceAddress === undefined) {
+    throw new Error('governanceAddress undefined');
+  }
+
   // create a Provider and Signer from the connected Relay
   console.debug('Creating DefenderRelayProvider');
   const provider = new DefenderRelayProvider(autotaskEvent);
@@ -43,7 +55,7 @@ exports.handler = async function handler(autotaskEvent) {
   // create an ethers.js Contract Object to interact with the on-chain smart contract
   console.debug('Creating governanceContract');
   const governanceContract = new ethers.Contract(
-    compoundGovernanceAddress,
+    governanceAddress,
     compoundGovernanceAbi,
     signer,
   );

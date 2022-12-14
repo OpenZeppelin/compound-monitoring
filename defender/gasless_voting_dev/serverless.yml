@@ -5,14 +5,14 @@ frameworkVersion: "3"
 provider:
   name: defender
   stage: dev
-  stackName: forta_explorer_monitor
+  stackName: gasless_voting_dev
   ssot: false
 
 custom:
   config: ${file(../secrets.yml)}
 
   # Configure this section and rename secret-example.yml to secrets.yml
-  name: Forta Explorer Monitor
+  name: Gasless Voting DEV
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -23,9 +23,9 @@ functions:
     name: ${self:custom.name} Serverless Autotask
     path: autotask-1
     trigger:
-      type: schedule
-      cron: "0 * * * *" # Every hour on the hour
+      type: webhook
     paused: false
+    relayer: ${self:resources.Resources.relayers.relayer-1}
 
 resources:
   Resources:
@@ -39,6 +39,10 @@ resources:
     secrets:
 
     relayers:
+      relayer-1:
+        name: ${self:custom.name} Serverless Relay
+        network: mainnet
+        min-balance: 100000000000000000
 
 plugins:
   - defender-serverless
