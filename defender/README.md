@@ -122,7 +122,7 @@ When changing the stack name, ensure that the following are updated:
 - Folder name
 - serverless.yml - provider.stackName
 - serverless.yml - custom.name
-- secret.yml - secrets.(stackName)
+- secrets.yml - secrets.(stackName)
 - Stack names and imports inside of the `autotask-1/index.js` file
 - Name of the `test.spec.js` file
 - Stack names and imports inside of the `test.spec.js` file
