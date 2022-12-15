@@ -1,4 +1,4 @@
-const stackName = 'datadog_alerts_heat_map';
+const stackName = 'datadog_forta_detection_bot_health';
 const datadogSecretName = `${stackName}_datadogApiKey`;
 
 /* eslint-disable import/no-unresolved,import/no-extraneous-dependencies */

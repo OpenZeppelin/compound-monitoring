@@ -1,5 +1,5 @@
 // Set the name of the Secret set in Autotask
-const stackName = 'datadog_alerts_heat_map';
+const stackName = 'datadog_forta_detection_bot_health';
 const datadogSecretName = `${stackName}_datadogApiKey`;
 
 jest.mock('axios', () => jest.fn());
