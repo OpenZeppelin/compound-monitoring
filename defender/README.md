@@ -53,7 +53,7 @@ Secrets.yml file:
 
 ## Local Code Setup
 
-- In the `defender` directory do the following:
+In the `defender` directory, perform the following steps:
 - Run `npm i` to install the necessary Node packages.
 - Copy and rename the `secret-example.yml` to `secrets.yml`
 - Modify the two lines in the `secrets.yml` file, replacing the portion in the angle brackets `<>` with your Defender API key and secret key, as indicated:
