@@ -76,7 +76,7 @@ the Autotasks to verify that the Autotasks are performing as expected.
 ### Use of Jest
 
 This code uses Jest to override several modules (`axios`, `ethers`, and `defender-relay-client`) to mock their actions and avoid performing interactions
-with the blockchain or the Internet. This approach allows us to simplify testing by simulating all external data sources and then verifying that Autotasks
+with the blockchain or the Internet. This approach allows us to simplify testing by simulating all external data sources and then verify that Autotasks
 perform the functions we expect.
 
 ### Serverless Migration status
