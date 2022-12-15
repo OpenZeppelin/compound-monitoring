@@ -37,7 +37,7 @@ Secrets.yml file:
   - API keys
   - Email addresses
   - Webhook URLs
-  - Anything else sensitive information that needs to be passed to an Autotask
+  - Anything other sensitive information that needs to be passed to an Autotask
 - `secrets.yml` is local to the deployer and is not committed to GitHub.
 - `serverless.yml` can be configured to push the secrets to Notification Channels or Defender Autotask Secrets.
 
