@@ -129,5 +129,5 @@ When changing the stack name, ensure that the following are updated:
 
 Future plans:
 
-- Learn if serverless [environment variables](https://adamdelong.com/serverless-environment-variables/) available inside of Autotasks
+- Learn if serverless [environment variables](https://adamdelong.com/serverless-environment-variables/) are available inside of Autotasks
 - If so, some additional Autotask parameters may be migrated to the serverless.yml file
