@@ -19,7 +19,7 @@ custom:
   alert-ids:
     - AE-COMP-CTOKEN-EVENT
   agent-ids:
-    - "0x125c36816fbad9974a452947bf6a98d975988ddf4342c159a986383b64765e22"
+    - "0xab39733ddf86340b8e7940ebb933bb48506a341485c7f8c77da17bc1400fe028"
 
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
