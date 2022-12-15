@@ -1,8 +1,11 @@
 // Set the name of the Secret set in Autotask
 const stackName = 'forta_v3_liquidation_monitor_dev';
 const discordSecretName = `${stackName}_discordWebhook`;
-// Name of the Secret in the .env file
-const discordUrl = 'http://aaa.com';
+
+// Setup input for the handler
+const discordWebhook = 'http://localhost/';
+const secrets = {};
+secrets[discordSecretName] = discordWebhook;
 
 // Mock the data from the Bot finding
 const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
@@ -10,10 +13,6 @@ const mockMetadata = {
   borrowerAddress: `0x${'1'.repeat(40)}`,
   blockNumber: 100,
 };
-
-// Setup input for the handler
-const secrets = {};
-secrets[discordSecretName] = discordUrl;
 
 // mock the axios package
 const acceptedPost = {

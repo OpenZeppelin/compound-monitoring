@@ -1,8 +1,11 @@
 // Set the name of the Secret set in Autotask
 const stackName = 'forta_oracle_price';
 const discordSecretName = `${stackName}_discordWebhook`;
-// Name of the Secret in the .env file
-const discordEnvSecretName = 'discordUrl';
+
+// Setup input for the handler
+const discordWebhook = 'http://localhost/';
+const secrets = {};
+secrets[discordSecretName] = discordWebhook;
 
 // Mock the data from the Bot finding
 const mockTxHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
@@ -29,24 +32,6 @@ const mockFinding = Finding.fromObject({
   protocol: 'Protocol',
   metadata: mockMetadata,
 });
-
-// grab the existing keys before loading new content from the .env file
-const existingKeys = Object.keys(process.env);
-// eslint-disable-next-line import/no-unresolved
-require('dotenv').config();
-
-// now filter out all of the existing keys from what is currently in the process.env Object
-const newKeys = Object.keys(process.env).filter((key) => existingKeys.indexOf(key) === -1);
-const secrets = {};
-newKeys.forEach((key) => {
-  secrets[key] = process.env[key];
-});
-
-// Map the Env name to the Secret variable name
-if (discordSecretName !== discordEnvSecretName) {
-  secrets[discordSecretName] = secrets[discordEnvSecretName];
-  delete secrets[discordEnvSecretName];
-}
 
 // mock the axios package
 const acceptedPost = {
