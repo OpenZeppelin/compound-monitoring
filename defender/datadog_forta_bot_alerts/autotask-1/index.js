@@ -100,12 +100,10 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           }
         }
         nextPageValues {
-          blocknumber
           timestamp
           id
         }
         currentPageValues {
-          blocknumber
           timestamp
           id
         }

@@ -86,10 +86,10 @@ NAME - STATUS - (PAUSED)
 Production
 
 - cToken Monitor - Ready to deploy
-- Datadog Alerts Heat Map - Error 400
-- Datadog Forta Bot Alerts - Error 400
-- Datadog Forta Detection Bot Health - Error 400
-- Forta cToken - Ready to deploy - Paused
+- Datadog Alerts Heat Map - Ready to deploy
+- Datadog Forta Bot Alerts - Ready to deploy
+- Datadog Forta Detection Bot Health - Error 400 when accessing https://explorer-api.forta.network/graphql
+- Forta cToken - Replaced by Contract Sentinel cToken Monitor - Paused
 - Forta Distribution - Ready to deploy - Paused
 - Forta Explorer Monitor - Ready to deploy but Autotask returns error 400, also consider adding more bots and updating old ones
 - Forta Governance - Ready to deploy - Paused
@@ -107,15 +107,17 @@ Production
 - Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data - Paused
 - Proposal 117 Monitor Mint - No longer in production, missing sentinel data - Paused
 
+Note: The Datadog Autotasks are running successfully on the production account. However when they are tested on a differen...
+
 Dev - Yet to be implemented on production
 
-- Datadog Alerts Heat Map DEV
-- Datadog Forta Bot Alerts DEV
-- Forta Explorer Monitor DEV
-- Forta v2 Liquidation Monitor DEV
-- Forta v3 Liquidation Monitor DEV
-- Gasless Voting DEV
-- Governance Automation DEV
+- Datadog Alerts Heat Map DEV - Ready to deploy
+- Datadog Forta Bot Alerts DEV - Ready to deploy
+- Forta Explorer Monitor DEV - Error 400 when accessing https://explorer-api.forta.network/graphql
+- Forta v2 Liquidation Monitor DEV - Ready to deploy
+- Forta v3 Liquidation Monitor DEV - Ready to deploy
+- Gasless Voting DEV - Ready to deploy
+- Governance Automation DEV - Ready to deploy
 
 When changing the stack name, ensure that the following are updated:
 

@@ -52,8 +52,7 @@ function parseAgentInformationResponse(response) {
 
   const output = {};
   Object.entries(getAgentInformation[0]).forEach(([key, value]) => {
-    const newKey = camelize(key, '_');
-    output[newKey] = value;
+    output[camelize(key, '_')] = value;
   });
 
   return output;
@@ -170,7 +169,6 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           severity
           protocol
           name
-          everest_id
           alert_id
           scanner_count
           source {
@@ -191,11 +189,11 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
           }
         }
         nextPageValues {
-          blocknumber
+          timestamp
           id
         }
         currentPageValues {
-          blocknumber
+          timestamp
           id
         }
       }
@@ -208,7 +206,6 @@ function createAlertsQuery(botId, currentTimestamp, lastUpdateTimestamp) {
         txHash: '',
         text: '',
         muted: [],
-        limit: 0,
         sort: 'desc',
         agents: [botId],
         addresses: [],
@@ -295,6 +292,26 @@ async function postQuery(graphqlQuery) {
   return response;
 }
 
+function calculateTimeFrame(currentTimestamp, lastUpdateTimestamp) {
+  // if this is the first time the Autotask has executed, gather data for the last month
+  // on subsequent runs, set the time frame based on the previous timestamp and the current
+  // timestamp
+  const millisecondsPerHour = 60 * 60 * 1000;
+  const millisecondsPerDay = millisecondsPerHour * 24;
+  const millisecondsPerWeek = millisecondsPerDay * 7;
+
+  // set the time frame based on the previous timestamp and the current timestamp
+  const deltaTimestamp = currentTimestamp - lastUpdateTimestamp;
+  if (deltaTimestamp <= millisecondsPerHour) {
+    return 'hour';
+  } if (deltaTimestamp <= millisecondsPerDay) {
+    return 'day';
+  } if (deltaTimestamp <= millisecondsPerWeek) {
+    return 'week';
+  }
+  return 'month';
+}
+
 function botChanged(information, agentInformation, botId) {
   // if a new botId was added to the Array of values
   if (agentInformation[botId] === undefined) {
@@ -348,7 +365,8 @@ exports.handler = async function (autotaskEvent) {
   }
   console.debug(`lastUpdateTimestamp: ${lastUpdateTimestamp.toString()}`);
 
-  const timeFrame = 'hour';
+  // set the time frame based upon when this Autotask was last executed
+  const timeFrame = calculateTimeFrame(currentTimestamp, lastUpdateTimestamp);
   console.debug(`Calculated timeFrame for queries: ${timeFrame}`);
 
   const promises = botIds.map(async (botId) => {
@@ -413,11 +431,8 @@ exports.handler = async function (autotaskEvent) {
   const data = results.filter((result) => Object.keys(result).length > 1);
 
   if (data.length !== 0) {
-    console.debug('Returning data');
-    console.debug(JSON.stringify(data, null, 2));
     return data;
   }
 
-  console.debug('Returning empty Object');
   return {};
 };
