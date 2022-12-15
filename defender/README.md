@@ -21,7 +21,7 @@ defender/
 │   └── serverless.yml
 ├── example_stack1_dev/         # Development Stack to replace production
 ├── example_stack2/             # Production Stack
-└── sercrets.yml
+└── secrets.yml
 ```
 Only the `serverless.yml` and `sercrets.yml` files are mandatory. The full `serverless.yml` specifications can be found on the [Defender Serverless GitHub repo](https://github.com/OpenZeppelin/defender-serverless)
 
