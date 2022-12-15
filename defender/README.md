@@ -92,7 +92,7 @@ When changing the stack name, ensure that the following are updated:
 - serverless.yml - provider.stackName
 - serverless.yml - custom.name
 - secret.yml - secrets.(stackName)
-- autotask/index.js - `const stackName = '<stackName>';`
+- autotask-1/index.js - `const stackName = '<stackName>';`
 
 Future plans:
 - Learn if serverless [environment variables](https://adamdelong.com/serverless-environment-variables/) available inside of autotasks
