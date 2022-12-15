@@ -23,7 +23,7 @@ defender/
 ├── example_stack2/             # Production Stack
 └── secrets.yml
 ```
-Only the `serverless.yml` and `sercrets.yml` files are mandatory. The full `serverless.yml` specifications can be found on the [Defender Serverless GitHub repo](https://github.com/OpenZeppelin/defender-serverless)
+Only the `serverless.yml` and `secrets.yml` files are mandatory. The full `serverless.yml` specifications can be found on the [Defender Serverless GitHub repo](https://github.com/OpenZeppelin/defender-serverless)
 
 Naming convention:
 - The naming convention for stack is `<project name>_<optional development stage>`.
