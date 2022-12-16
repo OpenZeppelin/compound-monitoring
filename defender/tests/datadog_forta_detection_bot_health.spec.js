@@ -58,7 +58,7 @@ describe('Run the Autotask', () => {
 
     const metrics = [];
     const getAgentInformation = [{}];
-    const mockMetricsResponse = { data: { data: { getAgentMetrics: { metrics } } } };
+    const mockMetricsResponse = { data: { data: { getAgentMetrics: { chains: [{ metrics }] } } } };
     const mockAgentInformationResponse = { data: { data: { getAgentInformation } } };
     axios.mockImplementation((inputObject) => {
       const { data: { query } } = inputObject;
@@ -135,7 +135,7 @@ describe('Run the Autotask', () => {
     ];
 
     const getAgentInformation = [{}];
-    const mockMetricsResponse = { data: { data: { getAgentMetrics: { metrics } } } };
+    const mockMetricsResponse = { data: { data: { getAgentMetrics: { chains: [{ metrics }] } } } };
     const mockAgentInformationResponse = { data: { data: { getAgentInformation } } };
     const capturedDatadogRequest = [];
     axios.mockImplementation((inputObject) => {

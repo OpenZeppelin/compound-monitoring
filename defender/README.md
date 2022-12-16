@@ -88,11 +88,11 @@ Production
 - cToken Monitor - Ready to deploy
 - Datadog Alerts Heat Map - Ready to deploy
 - Datadog Forta Bot Alerts - Ready to deploy
-- Datadog Forta Detection Bot Health - Error 400 when accessing https://explorer-api.forta.network/graphql
-- Forta cToken - Replaced by Contract Sentinel cToken Monitor - Paused
+- Datadog Forta Detection Bot Health - Ready to deploy
+- Forta cToken - Superseded by Contract Sentinel cToken Monitor - Paused
 - Forta Distribution - Ready to deploy - Paused
-- Forta Explorer Monitor - Ready to deploy but Autotask returns error 400, also consider adding more bots and updating old ones
-- Forta Governance - Ready to deploy - Paused
+- Forta Explorer Monitor - Error 400 (bad request) when accessing https://explorer-api.forta.network/graphql
+- Forta Governance - Superseded by Contract Sentinel Governance Discord Alert - Paused
 - Forta Large Borrows Governance - Ready to deploy
 - Forta Large Delegations - Ready to deploy
 - Forta Low Liquidity - Ready to deploy
@@ -107,11 +107,10 @@ Production
 - Proposal 117 Monitor Market Entered - No longer in production, missing sentinel data - Paused
 - Proposal 117 Monitor Mint - No longer in production, missing sentinel data - Paused
 
-Note: The Datadog Autotasks are running successfully on the production account. However when they are tested on a differen...
+Note: The Forta Explorer Monitor Autotask relies on GraphQL queries which have changed since the last deployment. The query will need to be updated to fix the error 400 issue.
 
 Dev - Yet to be implemented on production
 
-- Datadog Alerts Heat Map DEV - Ready to deploy
 - Datadog Forta Bot Alerts DEV - Ready to deploy
 - Forta Explorer Monitor DEV - Error 400 when accessing https://explorer-api.forta.network/graphql
 - Forta v2 Liquidation Monitor DEV - Ready to deploy
