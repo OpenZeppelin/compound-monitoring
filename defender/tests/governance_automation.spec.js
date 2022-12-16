@@ -1,5 +1,5 @@
 // Set the name of the Secret set in Autotask
-const stackName = 'governance_automation_dev';
+const stackName = 'governance_automation';
 const governanceAddressSecretName = `${stackName}_governanceAddress`;
 
 require('dotenv').config();
@@ -45,7 +45,7 @@ jest.mock('defender-kvstore-client', () => ({
   KeyValueStoreClient: jest.fn().mockReturnValue(mockKeyValueStoreClient),
 }));
 
-const { handler } = require('../governance_automation_dev/autotask-1/index');
+const { handler } = require('../governance_automation/autotask-1/index');
 
 describe('check autotask', () => {
   let mockKeyValueStore;

@@ -1,5 +1,5 @@
 // Set the name of the Secret set in Autotask
-const stackName = 'datadog_alerts_heat_map_dev';
+const stackName = 'datadog_forta_bot_alerts';
 const datadogSecretName = `${stackName}_datadogApiKey`;
 
 jest.mock('axios', () => jest.fn());
@@ -14,23 +14,25 @@ const mockKeyValueStore = {
   put: jest.fn(),
 };
 
-const botIds = [
-  '0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714', // Forta Low Liquidity Attack
-  '0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339', // Forta Large Borrows Governance
-  '0x916603512086fcad84c35858d2fc5356c512f72b19c80e52e8f9c04d8122e2ba', // Forta Multi-Sig Monitor
-  '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53', // Forta Large Delegations Monitor
-  '0xe200d890a67d51c3610520dd9fdfa9e2bd6dd341d41e32fa457601e73c4c6685', // Forta Oracle Price Monitor
-  '0xf836bda7810aa2dd9df5bb7ac748f173b945863e922a15bb7c57da7b0e6dab05', // Forta Underlying Asset Monitor
-  '0x125c36816fbad9974a452947bf6a98d975988ddf4342c159a986383b64765e22', // Forta Compound cToken Monitor
-  '0xa0424dfee87cc34b9ff6a1dfa2cb22dbf1b20a238698ae0eeffbf07f869e5b39', // Forta Compound Governance Monitor
-];
+const botIdsToNames = {
+  '0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a': 'Low Liquidity Attack',
+  '0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339': 'Large Borrows Governance',
+  '0x2e7f036f3495fec41a3eabae03b3efd378f6834bbb2976b99dfed6d3c7de7458': 'Community Multi-Sig',
+  '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53': 'Large Delegations',
+  '0x32facccd163300ad76c7fe88b559b812dca9050a569417b42fced95594dda08e': 'Oracle Price',
+  '0xfa3044aa08927163ff8578fb5c108978dfde3a12e0b21834e53111e2859f3a59': 'Underlying Asset',
+  '0xab39733ddf86340b8e7940ebb933bb48506a341485c7f8c77da17bc1400fe028': 'Market Activity',
+  '0xa0424dfee87cc34b9ff6a1dfa2cb22dbf1b20a238698ae0eeffbf07f869e5b39': 'Governance Activity',
+};
+
+const botIds = Object.keys(botIdsToNames);
 
 // override the key-value store Class
 jest.mock('defender-kvstore-client', () => ({
   KeyValueStoreClient: jest.fn().mockReturnValue(mockKeyValueStore),
 }));
 
-const { handler } = require('../datadog_alerts_heat_map_dev/autotask-1/index');
+const { handler } = require('../datadog_forta_bot_alerts/autotask-1/index');
 
 describe('Run the Autotask', () => {
   let outputObject;
@@ -88,6 +90,7 @@ describe('Run the Autotask', () => {
     const mockSeverity = 'Mock Severity';
     const mockName = 'Mock Alert Name';
     const mockAlertId = 'MOCK-ALERT-ID';
+    const botId = '0x5a00b44b2db933d4c797e6bd3049abdeb89cc9ec1b2eaee7bdbaff911794f714';
     const mockDescription = 'Mock description of a Forta Bot alert';
     const alerts = [
       {
@@ -101,7 +104,7 @@ describe('Run the Autotask', () => {
         source: {
           txHash: '0xMOCKTRANSACTIONHASH',
           agent: {
-            id: '0xMOCKBOTID',
+            id: botId,
             name: null,
           },
           block: {
@@ -119,7 +122,7 @@ describe('Run the Autotask', () => {
       const {
         data: {
           query,
-          series,
+          date_happened: dateHappened,
         },
       } = inputObject;
 
@@ -127,7 +130,7 @@ describe('Run the Autotask', () => {
         return mockAlertResponse;
       }
 
-      if (series !== undefined) {
+      if (dateHappened !== undefined) {
         capturedDatadogRequest = inputObject;
       }
 
@@ -145,27 +148,19 @@ describe('Run the Autotask', () => {
         'DD-API-KEY': 'fakeApiKey',
       },
       method: 'post',
-      url: 'https://api.datadoghq.com/api/v2/series',
+      url: 'https://api.datadoghq.com/api/v1/events',
       data: {
-        series: [
-          {
-            metric: 'alertHeatMap',
-            points: [
-              {
-                timestamp: 1653150298,
-                value: 7,
-              },
-            ],
-            tags: [
-              'botid:0xMOCKBOTID',
-              `protocol:${mockProtocolName}`,
-              `severity:${mockSeverity}`,
-              'dayofweek:7',
-              'weekselapsed:23',
-            ],
-            type: 0,
-          },
+        date_happened: new Date(mockTimestamp).valueOf() / 1000,
+        host: undefined,
+        tags: [
+          `botid:${botId}`,
+          `protocol:${mockProtocolName}`,
+          `severity:${mockSeverity}`,
+          'version:4',
         ],
+        text: mockDescription,
+        aggregation_key: mockAlertId,
+        title: undefined,
       },
     });
     expect(outputObject.lastUpdateTimestampAlerts).toStrictEqual('8675309');
