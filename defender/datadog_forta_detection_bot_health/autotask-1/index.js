@@ -52,7 +52,8 @@ function parseAgentInformationResponse(response) {
 }
 
 function parseMetricsResponse(response, currentTimestamp) {
-  const { data: { data: { getAgentMetrics: { metrics } } } } = response;
+  // const { data: { data: { getAgentMetrics: { metrics } } } } = response;
+  const { data: { data: { getAgentMetrics: { chains: [{ metrics }] } } } } = response;
   const output = {};
   metrics.forEach((metric) => {
     // convert the name of the metric to lowerCamelCase
@@ -133,14 +134,17 @@ function createMetricsQuery(agentId, timeFrame) {
   const graphqlQuery = {
     query: `query ($getAgentMetricsInput: GetAgentMetricsInput) {
       getAgentMetrics(input: $getAgentMetricsInput) {
-        metrics {
-          key
-          scanners {
+        chains {
+          chain_id
+          metrics {
             key
-            interval {
+            scanners {
               key
-              sum
-              max
+              interval {
+                key
+                sum
+                max
+              }
             }
           }
         }
@@ -169,6 +173,7 @@ async function postQuery(graphqlQuery) {
     data: graphqlQuery,
   });
 
+  console.debug('Forta Explorer API Endpoint Response Received');
   return response;
 }
 
@@ -259,6 +264,7 @@ exports.handler = async function (autotaskEvent) {
     const output = { botId };
 
     const agentInformationQuery = createAgentInformationQuery(botId);
+    console.debug(JSON.stringify(agentInformationQuery, null, 2));
     const agentInformationResponse = await postQuery(agentInformationQuery);
     const information = parseAgentInformationResponse(agentInformationResponse);
     // only add the bot information if this is the first time we have executed the Autotask
@@ -277,6 +283,8 @@ exports.handler = async function (autotaskEvent) {
 
     // this will likely be updated every time
     const metricsQuery = createMetricsQuery(botId, timeFrame);
+    console.debug('Metrics query:');
+    console.debug(JSON.stringify(metricsQuery, null, 2));
     const metricsResponse = await postQuery(metricsQuery);
     const metrics = parseMetricsResponse(
       metricsResponse,
