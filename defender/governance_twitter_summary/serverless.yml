@@ -1,0 +1,61 @@
+service: generated-service
+configValidationMode: error
+frameworkVersion: "3"
+
+provider:
+  name: defender
+  stage: dev
+  stackName: governance_twitter_summary
+  ssot: false
+
+custom:
+  config: ${file(../secrets.yml)}
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
+
+  # Configure this section and rename secret-example.yml to secrets.yml
+  name: Governance Twitter Summary
+  # Comment out any secret that you do not want to be overwritten in Defender
+  defenderSecrets:
+    # Public Variables
+    # Compound Governance Address
+    governanceAddress: "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+    # Private Variables pulled from external secrets.yml file
+    appKey: ${self:custom.stackSecrets.appKey}
+    appSecret: ${self:custom.stackSecrets.appSecret}
+    accessToken: ${self:custom.stackSecrets.accessToken}
+    accessSecret: ${self:custom.stackSecrets.accessSecret}
+
+defender:
+  key: ${self:custom.config.keys.api}
+  secret: ${self:custom.config.keys.secret}
+
+functions:
+  autotask-1:
+    name: ${self:custom.name} Serverless Autotask
+    path: autotask-1
+    trigger:
+      type: schedule
+      cron: "0 0 * * *" # Daily at 0000 UTC
+    paused: false
+    relayer: ${self:resources.Resources.relayers.relayer-1}
+
+resources:
+  Resources:
+    policies:
+      policy-1:
+        gas-price-cap: 1000
+        whitelist-receivers:
+          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
+        eip1559-pricing: true
+
+    secrets:
+      stack: ${self:custom.defenderSecrets}
+
+    relayers:
+      relayer-1:
+        name: ${self:custom.name} Serverless Relay
+        network: mainnet
+        min-balance: 100000000000000000
+
+plugins:
+  - defender-serverless
