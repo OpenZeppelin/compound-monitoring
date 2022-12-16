@@ -91,7 +91,7 @@ Production
 - Datadog Forta Detection Bot Health - Ready to deploy
 - Forta cToken - Superseded by Contract Sentinel cToken Monitor - Paused
 - Forta Distribution - Ready to deploy - Paused
-- Forta Explorer Monitor - Error 400 (bad request) when accessing https://explorer-api.forta.network/graphql
+- Forta Explorer Monitor - Error 400 (bad request) when accessing <https://explorer-api.forta.network/graphql>
 - Forta Governance - Superseded by Contract Sentinel Governance Discord Alert - Paused
 - Forta Large Borrows Governance - Ready to deploy
 - Forta Large Delegations - Ready to deploy
