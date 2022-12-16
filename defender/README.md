@@ -111,12 +111,9 @@ Note: The Forta Explorer Monitor Autotask relies on GraphQL queries which have c
 
 Dev - Yet to be implemented on production
 
-- Datadog Forta Bot Alerts DEV - Ready to deploy
-- Forta Explorer Monitor DEV - Error 400 when accessing https://explorer-api.forta.network/graphql
 - Forta v2 Liquidation Monitor DEV - Ready to deploy
 - Forta v3 Liquidation Monitor DEV - Ready to deploy
 - Gasless Voting DEV - Ready to deploy
-- Governance Automation DEV - Ready to deploy
 
 When changing the stack name, ensure that the following are updated:
 
