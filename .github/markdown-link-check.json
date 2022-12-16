@@ -2,6 +2,9 @@
   "ignorePatterns": [
     {
       "pattern": "^https://reqbin.com/req/"
+    },
+    {
+      "pattern": "^https://explorer-api.forta.network/graphql"
     }
   ],
   "retryOn429": true,
