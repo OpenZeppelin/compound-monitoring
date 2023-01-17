@@ -3,7 +3,7 @@ const {
 } = require('forta-agent');
 const anchoredViewAbi = require('../abi/UniswapAnchoredView.json');
 
-const UNI_ANCHORED_VIEW_ADDRESS = '0x046728da7cb8272284238bD3e47909823d63A58D';
+const UNI_ANCHORED_VIEW_ADDRESS = '0x50ce56A3239671Ab62f185704Caedf626352741e';
 // set up a variable to hold initialization data used in the handler
 const initializeData = {};
 
@@ -60,7 +60,7 @@ function provideHandleTransaction(data) {
     const promises = parsedLogs.map(async (log) => {
       // the first argument of PriceGuarded is the symbol hash of the cToken, use this to retrieve
       // the cToken information from the UniswapAnchoredView contract and generate a finding
-      const { symbolHash, reporter: reporterPrice, anchor: anchorPrice } = log.args;
+      const { symbolHash, reporterPrice, anchorPrice } = log.args;
 
       /*
         struct TokenConfig {
