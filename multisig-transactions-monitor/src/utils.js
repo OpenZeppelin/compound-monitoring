@@ -5,10 +5,20 @@ const { contracts: { multisig: { address: multisigAddress } } } = require('../bo
 
 /// CREATE FINDINGS FOR GNOSIS SAFE INTERACTIONS ///
 /*
-        "AddedOwner",
-        "RemovedOwner",
+        "AddedOwner"
+        "ApproveHash"
+        "ChangedMasterCopy"
+        "ChangedThreshold"
+        "DisabledModule"
+        "EnabledModule"
+        "ExecutionFailure"
+        "ExecutionFromModuleFailure"
+        "ExecutionFromModuleSuccess"
+        "ExecutionSuccess"
+        "RemovedOwner"
+        "SignMsg"
 */
-function createAddOwnerFinding(
+function createAddedOwnerFinding(
   log,
   protocolName,
   protocolAbbreviation,
@@ -33,7 +43,235 @@ function createAddOwnerFinding(
   return finding;
 }
 
-function createRemoveOwnerFinding(
+function createApproveHashFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { owner, approvedHash } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Approved Hash`,
+    description: `Hash ${approvedHash} was approved`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-APPROVED-HASH-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      owner,
+      multisigAddress,
+      protocolVersion,
+      approvedHash,
+    },
+  });
+  return finding;
+}
+
+function createChangedMasterCopyFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { masterCopy } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Changed Master Copy`,
+    description: `Master Copy changes to ${masterCopy}`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-CHANGED-MASTER-COPY-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      multisigAddress,
+      protocolVersion,
+      masterCopy,
+    },
+  });
+  return finding;
+}
+
+function createChangedThresholdFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { threshold } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Changed Threshold`,
+    description: `Threshold Changed To ${threshold}`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-CHANGED-THRESHOLD-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      multisigAddress,
+      protocolVersion,
+      threshold,
+    },
+  });
+  return finding;
+}
+
+function createDisabledModuleFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { module } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Disabled Module`,
+    description: `Disabled Module ${module}`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-DISABLED-MODULE-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      multisigAddress,
+      protocolVersion,
+      module,
+    },
+  });
+  return finding;
+}
+
+function createEnabledModuleFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { module } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Enabled Module`,
+    description: `Enabled Module ${module}`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-ENABLED-MODULE-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      multisigAddress,
+      protocolVersion,
+      module,
+    },
+  });
+  return finding;
+}
+
+function createExecutionFailureFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { txHash, payment } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Execution Failure`,
+    description: `Execution Failed For Transaction Hash ${txHash}`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-EXECUTION-FAILURE-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      multisigAddress,
+      protocolVersion,
+      txHash,
+      payment,
+    },
+  });
+  return finding;
+}
+
+function createExecutionFromModuleFailureFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { module } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Execution From Module Failure`,
+    description: `Execution From Module ${module} Failed`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-EXECUTION-FROM-MODULE-FAILURE-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      multisigAddress,
+      protocolVersion,
+      module,
+    },
+  });
+  return finding;
+}
+
+function createExecutionFromModuleSuccessFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { module } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Execution From Module Success`,
+    description: `Execution From Module ${module} Succeeded`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-EXECUTION-FROM-MODULE-SUCCESS-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      multisigAddress,
+      protocolVersion,
+      module,
+    },
+  });
+  return finding;
+}
+
+function createExecutionSuccessFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { txHash, payment } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Execution Success`,
+    description: `Execution Succeeded For Transaction Hash ${txHash}`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-EXECUTION-SUCCESS-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      multisigAddress,
+      protocolVersion,
+      txHash,
+      payment,
+    },
+  });
+  return finding;
+}
+
+function createRemovedOwnerFinding(
   log,
   protocolName,
   protocolAbbreviation,
@@ -58,6 +296,31 @@ function createRemoveOwnerFinding(
   return finding;
 }
 
+function createSignMsgFinding(
+  log,
+  protocolName,
+  protocolAbbreviation,
+  developerAbbreviation,
+  protocolVersion,
+) {
+  const { msgHash } = log.args;
+
+  const finding = Finding.fromObject({
+    name: `${protocolName} Multisig Sign Message`,
+    description: `Message Signed, Hash ${msgHash}`,
+    alertId: `${developerAbbreviation}-${protocolAbbreviation}-MULTISIG-SIGN-MESSAGE-ALERT`,
+    protocol: protocolName,
+    type: FindingType.Info,
+    severity: FindingSeverity.Info,
+    metadata: {
+      multisigAddress,
+      protocolVersion,
+      msgHash,
+    },
+  });
+  return finding;
+}
+
 function createGnosisFinding(
   log,
   protocolName,
@@ -67,27 +330,54 @@ function createGnosisFinding(
 ) {
   let finding;
 
-  // iterate over logs to see which action occurred
-  if (log.name === 'AddedOwner') {
-    finding = createAddOwnerFinding(
-      log,
-      protocolName,
-      protocolAbbreviation,
-      developerAbbreviation,
-      protocolVersion,
-    );
-  }
+  const funcArgs = [
+    log,
+    protocolName,
+    protocolAbbreviation,
+    developerAbbreviation,
+    protocolVersion,
+  ];
 
-  if (log.name === 'RemovedOwner') {
-    finding = createRemoveOwnerFinding(
-      log,
-      protocolName,
-      protocolAbbreviation,
-      developerAbbreviation,
-      protocolVersion,
-    );
+  switch (log.name) {
+    case 'AddedOwner':
+      finding = createAddedOwnerFinding(...funcArgs);
+      break;
+    case 'ApproveHash':
+      finding = createApproveHashFinding(...funcArgs);
+      break;
+    case 'ChangedMasterCopy':
+      finding = createChangedMasterCopyFinding(...funcArgs);
+      break;
+    case 'ChangedThreshold':
+      finding = createChangedThresholdFinding(...funcArgs);
+      break;
+    case 'DisabledModule':
+      finding = createDisabledModuleFinding(...funcArgs);
+      break;
+    case 'EnabledModule':
+      finding = createEnabledModuleFinding(...funcArgs);
+      break;
+    case 'ExecutionFailure':
+      finding = createExecutionFailureFinding(...funcArgs);
+      break;
+    case 'ExecutionFromModuleFailure':
+      finding = createExecutionFromModuleFailureFinding(...funcArgs);
+      break;
+    case 'ExecutionFromModuleSuccess':
+      finding = createExecutionFromModuleSuccessFinding(...funcArgs);
+      break;
+    case 'ExecutionSuccess':
+      finding = createExecutionSuccessFinding(...funcArgs);
+      break;
+    case 'RemovedOwner':
+      finding = createRemovedOwnerFinding(...funcArgs);
+      break;
+    case 'SignMsg':
+      finding = createSignMsgFinding(...funcArgs);
+      break;
+    default:
+      console.error('No matching event name found');
   }
-
   return finding;
 }
 
@@ -543,8 +833,6 @@ function getAbi(abiFile) {
 }
 
 module.exports = {
-  createAddOwnerFinding,
-  createRemoveOwnerFinding,
   getAbi,
   createGnosisFinding,
   createGovernanceFinding,
