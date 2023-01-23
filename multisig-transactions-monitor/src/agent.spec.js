@@ -178,9 +178,6 @@ describe('monitor multisig contract transactions', () => {
     const comptrollerValidEventName = 'NewPauseGuardian';
     const cometValidEventName = 'PauseAction';
 
-    // non-monitored event for testing
-    const multisigNotMonitoredEventName = 'EnabledModule';
-
     // random address to pass in as an argument for test cases
     const testArgumentAddress = '0xa7EbE1285383bf567818EB6622e52782845C0bE2';
 
@@ -207,25 +204,8 @@ describe('monitor multisig contract transactions', () => {
       expect(findings).toStrictEqual([]);
     });
 
-    it('returns empty findings if multisig was involved in a transaction, but a non-monitored event was emitted', async () => {
-      mockTxEvent.addresses[multisigAddress] = true;
-
-      // use EnabledModule event to test (not on monitored events list)
-      const log = createLog(
-        multisigInterface.getEvent(multisigNotMonitoredEventName),
-        { owner: zeroAddress },
-        { address: multisigAddress },
-      );
-      mockTxEvent.logs = [log];
-
-      // run bot with mock transaction event
-      const findings = await handleTransaction(mockTxEvent);
-
-      expect(findings).toStrictEqual([]);
-    });
-
     // tests for multisig events
-    it('returns findings if multisig was involved in a transaction and monitored multisig event was emitted', async () => {
+    it('returns findings if multisig was involved in a transaction and the AddedOwner multisig event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
       // use AddedOwner event to test
@@ -250,6 +230,356 @@ describe('monitor multisig contract transactions', () => {
           owner: zeroAddress,
           multisigAddress,
           protocolVersion: undefined,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the ApproveHash event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use AddedOwner event to test
+      const log = createLog(
+        multisigInterface.getEvent('ApproveHash'),
+        { owner: zeroAddress, approvedHash: zeroHash },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Approved Hash',
+        description: `Hash ${zeroHash} was approved`,
+        alertId: 'AE-COMP-MULTISIG-APPROVED-HASH-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          owner: zeroAddress,
+          multisigAddress,
+          protocolVersion: undefined,
+          approvedHash: zeroHash,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the ChangedMasterCopy event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use ChangedMasterCopy event to test
+      const log = createLog(
+        multisigInterface.getEvent('ChangedMasterCopy'),
+        { masterCopy: zeroAddress },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Changed Master Copy',
+        description: `Master Copy changes to ${zeroAddress}`,
+        alertId: 'AE-COMP-MULTISIG-CHANGED-MASTER-COPY-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          masterCopy: zeroAddress,
+          multisigAddress,
+          protocolVersion: undefined,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the ChangedThreshold event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      const thresholdValue = ethers.BigNumber.from(0);
+
+      // use ChangedThreshold event to test
+      const log = createLog(
+        multisigInterface.getEvent('ChangedThreshold'),
+        { threshold: thresholdValue },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Changed Threshold',
+        description: `Threshold Changed To ${thresholdValue}`,
+        alertId: 'AE-COMP-MULTISIG-CHANGED-THRESHOLD-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          multisigAddress,
+          protocolVersion: undefined,
+          threshold: thresholdValue,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the DisabledModule event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use DisabledModule event to test
+      const log = createLog(
+        multisigInterface.getEvent('DisabledModule'),
+        { module: zeroAddress },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Disabled Module',
+        description: `Disabled Module ${zeroAddress}`,
+        alertId: 'AE-COMP-MULTISIG-DISABLED-MODULE-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          multisigAddress,
+          protocolVersion: undefined,
+          module: zeroAddress,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the EnabledModule event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use EnabledModule event to test
+      const log = createLog(
+        multisigInterface.getEvent('EnabledModule'),
+        { module: zeroAddress },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Enabled Module',
+        description: `Enabled Module ${zeroAddress}`,
+        alertId: 'AE-COMP-MULTISIG-ENABLED-MODULE-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          multisigAddress,
+          protocolVersion: undefined,
+          module: zeroAddress,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the ExecutionFailure event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      const paymentValue = ethers.BigNumber.from(0);
+
+      // use ExecutionFailure event to test
+      const log = createLog(
+        multisigInterface.getEvent('ExecutionFailure'),
+        { txHash: zeroHash, payment: paymentValue },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Execution Failure',
+        description: `Execution Failed For Transaction Hash ${zeroHash}`,
+        alertId: 'AE-COMP-MULTISIG-EXECUTION-FAILURE-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          multisigAddress,
+          protocolVersion: undefined,
+          txHash: zeroHash,
+          payment: paymentValue,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the ExecutionFromModuleFailure event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use ExecutionFromModuleFailure event to test
+      const log = createLog(
+        multisigInterface.getEvent('ExecutionFromModuleFailure'),
+        { module: zeroAddress },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Execution From Module Failure',
+        description: `Execution From Module ${zeroAddress} Failed`,
+        alertId: 'AE-COMP-MULTISIG-EXECUTION-FROM-MODULE-FAILURE-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          multisigAddress,
+          protocolVersion: undefined,
+          module: zeroAddress,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the ExecutionFromModuleSuccess event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use ExecutionFromModuleSuccess event to test
+      const log = createLog(
+        multisigInterface.getEvent('ExecutionFromModuleSuccess'),
+        { module: zeroAddress },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Execution From Module Success',
+        description: `Execution From Module ${zeroAddress} Succeeded`,
+        alertId: 'AE-COMP-MULTISIG-EXECUTION-FROM-MODULE-SUCCESS-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          multisigAddress,
+          protocolVersion: undefined,
+          module: zeroAddress,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the ExecutionSuccess event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      const paymentValue = ethers.BigNumber.from(0);
+
+      // use ExecutionSuccess event to test
+      const log = createLog(
+        multisigInterface.getEvent('ExecutionSuccess'),
+        { txHash: zeroHash, payment: paymentValue },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Execution Success',
+        description: `Execution Succeeded For Transaction Hash ${zeroHash}`,
+        alertId: 'AE-COMP-MULTISIG-EXECUTION-SUCCESS-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          multisigAddress,
+          protocolVersion: undefined,
+          txHash: zeroHash,
+          payment: paymentValue,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the RemovedOwner event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use RemovedOwner event to test
+      const log = createLog(
+        multisigInterface.getEvent('RemovedOwner'),
+        { owner: zeroAddress },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Owner Removed',
+        description: `Address ${zeroAddress} was removed as an owner`,
+        alertId: 'AE-COMP-MULTISIG-OWNER-REMOVED-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          multisigAddress,
+          protocolVersion: undefined,
+          owner: zeroAddress,
+        },
+      });
+
+      expect(findings).toStrictEqual([expectedFindings]);
+    });
+
+    it('returns findings if multisig was involved in a transaction and the SignMsg event was emitted', async () => {
+      mockTxEvent.addresses[multisigAddress] = true;
+
+      // use SignMsg event to test
+      const log = createLog(
+        multisigInterface.getEvent('SignMsg'),
+        { msgHash: zeroHash },
+        { address: multisigAddress },
+      );
+      mockTxEvent.logs = [log];
+
+      // run bot with mock transaction event
+      const findings = await handleTransaction(mockTxEvent);
+
+      const expectedFindings = Finding.fromObject({
+        name: 'Compound Multisig Sign Message',
+        description: `Message Signed, Hash ${zeroHash}`,
+        alertId: 'AE-COMP-MULTISIG-SIGN-MESSAGE-ALERT',
+        protocol: 'Compound',
+        type: FindingType.Info,
+        severity: FindingSeverity.Info,
+        metadata: {
+          multisigAddress,
+          protocolVersion: undefined,
+          msgHash: zeroHash,
         },
       });
 

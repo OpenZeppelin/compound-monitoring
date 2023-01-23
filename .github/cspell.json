@@ -5,7 +5,8 @@
     "**/.github/**",
     "package-lock.json",
     "megalinter-reports/**",
-    "cspell.json"
+    "cspell.json",
+    "megalinter_file_names_spell.txt"
   ],
   "language": "en",
   "noConfigSearch": true,
