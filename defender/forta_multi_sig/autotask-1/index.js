@@ -174,9 +174,49 @@ exports.handler = async function (autotaskEvent) {
       ({ owner } = metadata);
       message = `🆕 **Added Owner** ${owner} to Community Multi-Sig${protocolVersionString}`;
       break;
+    case 'AE-COMP-MULTISIG-APPROVED-HASH-ALERT':
+      ({ owner, approvedHash } = metadata);
+      message = `✅#️⃣  **Approved Hash** ${owner} approved hash ${approvedHash} to Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-CHANGED-MASTER-COPY-ALERT':
+      ({ masterCopy } = metadata);
+      message = `➡️ 📜 **Changed Master Copy** to ${masterCopy} to Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-CHANGED-THRESHOLD-ALERT':
+      ({ threshold } = metadata);
+      message = `🎚️ **Changed Threshold** to ${threshold} to Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-DISABLED-MODULE-ALERT':
+      ({ module } = metadata);
+      message = `🔴🧩 **Disabled Module** ${module} to Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-ENABLED-MODULE-ALERT':
+      ({ module } = metadata);
+      message = `🟢🧩 **Enabled Module** ${module} to Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-EXECUTION-FAILURE-ALERT':
+      ({ txHash } = metadata);
+      message = `❌ **Execution Failure** for transaction ${txHash} to Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-EXECUTION-FROM-MODULE-FAILURE-ALERT':
+      ({ module } = metadata);
+      message = `❌🧩 **Execution from Module Failure** for module ${module} to Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-EXECUTION-FROM-MODULE-SUCCESS-ALERT':
+      ({ module } = metadata);
+      message = `✅🧩 **Execution from Module Success** for module ${module} to Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-EXECUTION-SUCCESS-ALERT':
+      ({ txHash } = metadata);
+      message = `✅ **Execution Success** for transaction ${txHash} to Community Multi-Sig${protocolVersionString}`;
+      break;
     case 'AE-COMP-MULTISIG-OWNER-REMOVED-ALERT':
       ({ owner } = metadata);
       message = `🙅‍♂️ **Removed Owner** ${owner} from Community Multi-Sig${protocolVersionString}`;
+      break;
+    case 'AE-COMP-MULTISIG-SIGN-MESSAGE-ALERT':
+      ({ msgHash } = metadata);
+      message = `🔏 **Signed Message** hash ${msgHash} from Community Multi-Sig${protocolVersionString}`;
       break;
     case 'AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT':
       ({ proposalId: id } = metadata);
