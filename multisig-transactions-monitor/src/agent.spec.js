@@ -271,7 +271,7 @@ describe('monitor multisig contract transactions', () => {
     it('returns findings if multisig was involved in a transaction and the ChangedMasterCopy event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
-      // use AddedOwner event to test
+      // use ChangedMasterCopy event to test
       const log = createLog(
         multisigInterface.getEvent('ChangedMasterCopy'),
         { masterCopy: zeroAddress },
@@ -304,7 +304,7 @@ describe('monitor multisig contract transactions', () => {
 
       const thresholdValue = ethers.BigNumber.from(0);
 
-      // use AddedOwner event to test
+      // use ChangedThreshold event to test
       const log = createLog(
         multisigInterface.getEvent('ChangedThreshold'),
         { threshold: thresholdValue },
@@ -335,7 +335,7 @@ describe('monitor multisig contract transactions', () => {
     it('returns findings if multisig was involved in a transaction and the DisabledModule event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
-      // use AddedOwner event to test
+      // use DisabledModule event to test
       const log = createLog(
         multisigInterface.getEvent('DisabledModule'),
         { module: zeroAddress },
@@ -366,7 +366,7 @@ describe('monitor multisig contract transactions', () => {
     it('returns findings if multisig was involved in a transaction and the EnabledModule event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
-      // use AddedOwner event to test
+      // use EnabledModule event to test
       const log = createLog(
         multisigInterface.getEvent('EnabledModule'),
         { module: zeroAddress },
@@ -399,7 +399,7 @@ describe('monitor multisig contract transactions', () => {
 
       const paymentValue = ethers.BigNumber.from(0);
 
-      // use AddedOwner event to test
+      // use ExecutionFailure event to test
       const log = createLog(
         multisigInterface.getEvent('ExecutionFailure'),
         { txHash: zeroHash, payment: paymentValue },
@@ -431,7 +431,7 @@ describe('monitor multisig contract transactions', () => {
     it('returns findings if multisig was involved in a transaction and the ExecutionFromModuleFailure event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
-      // use AddedOwner event to test
+      // use ExecutionFromModuleFailure event to test
       const log = createLog(
         multisigInterface.getEvent('ExecutionFromModuleFailure'),
         { module: zeroAddress },
@@ -462,7 +462,7 @@ describe('monitor multisig contract transactions', () => {
     it('returns findings if multisig was involved in a transaction and the ExecutionFromModuleSuccess event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
-      // use AddedOwner event to test
+      // use ExecutionFromModuleSuccess event to test
       const log = createLog(
         multisigInterface.getEvent('ExecutionFromModuleSuccess'),
         { module: zeroAddress },
@@ -495,7 +495,7 @@ describe('monitor multisig contract transactions', () => {
 
       const paymentValue = ethers.BigNumber.from(0);
 
-      // use AddedOwner event to test
+      // use ExecutionSuccess event to test
       const log = createLog(
         multisigInterface.getEvent('ExecutionSuccess'),
         { txHash: zeroHash, payment: paymentValue },
@@ -527,7 +527,7 @@ describe('monitor multisig contract transactions', () => {
     it('returns findings if multisig was involved in a transaction and the RemovedOwner event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
-      // use AddedOwner event to test
+      // use RemovedOwner event to test
       const log = createLog(
         multisigInterface.getEvent('RemovedOwner'),
         { owner: zeroAddress },
@@ -558,7 +558,7 @@ describe('monitor multisig contract transactions', () => {
     it('returns findings if multisig was involved in a transaction and the SignMsg event was emitted', async () => {
       mockTxEvent.addresses[multisigAddress] = true;
 
-      // use AddedOwner event to test
+      // use SignMsg event to test
       const log = createLog(
         multisigInterface.getEvent('SignMsg'),
         { msgHash: zeroHash },

@@ -15,8 +15,83 @@ This bot detects specific transactions originating from and/or interacting with 
   - Type is always set to `Info`
   - Severity is always set to `Info`
   - Metadata field contains:
-    - Owner address added
+    - Owner address
     - Compound multisig address
+
+- AE-COMP-MULTISIG-APPROVED-HASH-ALERT
+  - Fired when a hash is approved by the Compound multisig wallet
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Owner address
+    - Compound multisig address
+    - Approved hash
+
+- AE-COMP-MULTISIG-CHANGED-MASTER-COPY-ALERT
+  - Fired when master copy address of the Compound multisig wallet is changed
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Compound multisig address
+    - Master copy address
+
+- AE-COMP-MULTISIG-CHANGED-THRESHOLD-ALERT
+  - Fired when the threshold is changed for the Compound multisig wallet
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Compound multisig address
+    - Threshold
+
+- AE-COMP-MULTISIG-DISABLED-MODULE-ALERT
+  - Fired when a module is disabled for the Compound multisig wallet
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Compound multisig address
+    - Module hash
+
+- AE-COMP-MULTISIG-ENABLED-MODULE-ALERT
+  - Fired when a module is enabled for the Compound multisig wallet
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Compound multisig address
+    - Module hash
+
+- AE-COMP-MULTISIG-EXECUTION-FAILURE-ALERT
+  - Fired when an execution fails for the Compound multisig wallet
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Compound multisig address
+    - Transaction hash
+    - Payment amount
+
+- AE-COMP-MULTISIG-EXECUTION-FROM-MODULE-FAILURE-ALERT
+  - Fired when a module fails to execute a transaction for the Compound multisig wallet
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Compound multisig address
+    - Module hash
+
+- AE-COMP-MULTISIG-EXECUTION-FROM-MODULE-SUCCESS-ALERT
+  - Fired when a module succeeds in executing a transaction for the Compound multisig wallet
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Compound multisig address
+    - Module hash
+
+- AE-COMP-MULTISIG-EXECUTION-SUCCESS-ALERT
+  - Fired when a transaction is successfully executed by the Compound multisig wallet
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Compound multisig address
+    - Transaction hash
+    - Payment amount
 
 - AE-COMP-MULTISIG-OWNER-REMOVED-ALERT
   - Fired when an owner is removed from the Compound multisig wallet
@@ -25,6 +100,14 @@ This bot detects specific transactions originating from and/or interacting with 
   - Metadata field contains:
     - Owner address removed
     - Compound multisig address
+
+- AE-COMP-MULTISIG-SIGN-MESSAGE-ALERT
+  - Fired when a message is signed for the Compound multisig wallet
+  - Type is always set to `Info`
+  - Severity is always set to `Info`
+  - Metadata field contains:
+    - Compound multisig address
+    - Message hash
 
 - AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT
   - Fired when a proposal is created from the Compound multisig wallet
