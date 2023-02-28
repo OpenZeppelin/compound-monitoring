@@ -77,18 +77,16 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('body undefined');
   }
 
-  const {
-    alert,
-    source,
-  } = body;
+  const { alert } = body;
   if (alert === undefined) {
     throw new Error('alert undefined');
-  } else if (source === undefined) {
-    throw new Error('source undefined');
   }
 
-  // extract the metadata from the alert Object
-  const { metadata } = alert;
+  // extract the metadata and source from the alert Object
+  const { metadata, source } = alert;
+  if (source === undefined) {
+    throw new Error('source undefined');
+  }
   if (metadata === undefined) {
     throw new Error('metadata undefined');
   }
