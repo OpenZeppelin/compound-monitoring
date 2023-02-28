@@ -87,11 +87,11 @@ function createFortaSentinelEvent(finding, blockHash, txHash) {
         hash: '0xAGENT-HASH', // forta Agent hash
         alert: {
           metadata: finding.metadata,
-        },
-        source: {
-          transactionHash: txHash,
-          block: {
-            hash: blockHash,
+          source: {
+            transactionHash: txHash,
+            block: {
+              hash: blockHash,
+            },
           },
         },
         matchReasons,

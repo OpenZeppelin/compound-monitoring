@@ -150,11 +150,11 @@ function createFortaSentinelEvent(metadata, alertId, blockHash, txHash) {
         alert: {
           alertId,
           metadata: finding.metadata,
-        },
-        source: {
-          transactionHash: txHash,
-          block: {
-            hash: blockHash,
+          source: {
+            transactionHash: txHash,
+            block: {
+              hash: blockHash,
+            },
           },
         },
         matchReasons,
