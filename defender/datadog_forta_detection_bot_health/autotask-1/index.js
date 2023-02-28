@@ -53,7 +53,7 @@ function parseAgentInformationResponse(response) {
 
 function parseMetricsResponse(response, currentTimestamp) {
   const chains = response?.data?.data?.getAgentMetrics?.chains;
-  if (chains.length === 0) {
+  if (chains === undefined || chains.length === 0) {
     return {};
   }
   let metrics = [];
