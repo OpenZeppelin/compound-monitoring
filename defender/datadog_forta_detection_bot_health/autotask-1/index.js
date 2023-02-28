@@ -52,8 +52,17 @@ function parseAgentInformationResponse(response) {
 }
 
 function parseMetricsResponse(response, currentTimestamp) {
-  // const { data: { data: { getAgentMetrics: { metrics } } } } = response;
-  const { data: { data: { getAgentMetrics: { chains: [{ metrics }] } } } } = response;
+  const chains = response?.data?.data?.getAgentMetrics?.chains;
+  if (chains.length === 0) {
+    return {};
+  }
+  let metrics = [];
+  for (let i = 0; i < chains.length; i += 1) {
+    if (chains[i].chain_id === 1) {
+      metrics = chains[i].metrics;
+      break;
+    }
+  }
   const output = {};
   metrics.forEach((metric) => {
     // convert the name of the metric to lowerCamelCase
