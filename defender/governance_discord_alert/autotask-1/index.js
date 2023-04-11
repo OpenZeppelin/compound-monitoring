@@ -1,16 +1,18 @@
 const stackName = 'governance_discord_alert';
 const discordSecretName = `${stackName}_discordWebhook`;
-const tallyApiKeySecretName = `${stackName}_talyApiKey`;
+const tallyApiKeySecretName = `${stackName}_tallyApiKey`;
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
 const baseTallyUrl = 'https://api.tally.xyz/query';
+const v2GovernorAddress = '0xc0da02939e1441f497fd74f78ce7decb17b66529';
+const ethereumMainnetChainId = 'eip155:1';
 
 function getRandomInt(min, max) {
   return Math.floor((Math.random() * (max - min)) + min);
 }
 
-async function postToDiscord(discordWebhook, tallyApiKey, message) {
+async function postToDiscord(discordWebhook, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
@@ -44,13 +46,40 @@ async function postToDiscord(discordWebhook, tallyApiKey, message) {
   }
   return response;
 }
-
+// Using both chainId and governor address to be safe
 async function getProposalTitle(proposalId, tallyApiKey) {
-  const baseUrl = baseTallyUrl;
-  const queryUrl = `?proposal_ids[]=${proposalId}`;
   let title;
   try {
-    const result = await axios.get(baseUrl + queryUrl);
+    const result = await axios.post(
+      baseTallyUrl,
+      {
+        query: `query ProposalTitle(
+          $chainId: ChainID!, 
+          $governors: [Address!],
+          $proposalIds: [ID!]) {
+          proposals(
+              chainId: $chainId,
+              governors: $governors,
+              proposalIds: $proposalIds,
+            ) {
+              id
+              title
+              description
+              }
+            }
+          }`,
+        variables: {
+          chainId: ethereumMainnetChainId,
+          governors: [v2GovernorAddress],
+          proposalIds: [proposalId]
+        },
+      },
+      {
+        headers: {
+          'Api-Key': tallyApiKey,
+        },
+      },
+    );
     title = result.data.proposals[0].title;
     if (title === null) {
       title = '';
@@ -63,8 +92,9 @@ async function getProposalTitle(proposalId, tallyApiKey) {
 // TODO: fetch delegates, get accounts, get account display names eg. "Bill"
 // eip155-standardized ID is used to specify chain/prevent replay votes
 async function getAccountDisplayName(voter, tallyApiKey) {
-  try{
-    const tallyResult = await axios.post(
+  let displayName;
+  try {
+    const result = await axios.post(
       baseTallyUrl,
       {
         query: `query DisplayName($governanceId: AccountID!) {
@@ -75,17 +105,16 @@ async function getAccountDisplayName(voter, tallyApiKey) {
             }
           }`,
         variables: {
-          address: `eip155:1:${voter.id}`, //assuming voter id is a wallet address
+          address: `eip155:1:${voter.id}`, // assuming voter id is a wallet address
         },
       },
-    {
-      headers: {
-        'Api-Key': tallyApiKey,
+      {
+        headers: {
+          'Api-Key': tallyApiKey,
+        },
       },
-    },
-  );
-  let displayName;
-  displayName = result.data.accounts[0].name;
+    );
+    displayName = result.data.accounts[0].name;
     if (displayName === null) {
       displayName = '';
     }
@@ -109,7 +138,7 @@ function getProposalTitleFromDescription(description) {
   return proposalName;
 }
 
-async function createDiscordMessage(eventName, params, transactionHash) {
+async function createDiscordMessage(eventName, params, transactionHash, tallyApiKey) {
   let description;
   let support;
   let proposalId;
@@ -181,7 +210,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       }
       votes = internationalNumberFormat.format(votes);
 
-      proposalName = await getProposalTitle(proposalId);
+      proposalName = await getProposalTitle(proposalId, tallyApiKey);
       if (displayName !== '') {
         message = `${voteTypeString} ${proposalName} ${supportEmoji} ${votes} by ${displayName} ${etherscanLink}`;
       } else {
@@ -194,17 +223,17 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       break;
     case 'ProposalCanceled':
       ({ id } = params);
-      proposalName = await getProposalTitle(id);
+      proposalName = await getProposalTitle(id, tallyApiKey);
       message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'ProposalExecuted':
       ({ id } = params);
-      proposalName = await getProposalTitle(id);
+      proposalName = await getProposalTitle(id, tallyApiKey);
       message = `**Executed Proposal** ${proposalName} ${checkMarkEmoji}`;
       break;
     case 'ProposalQueued':
       ({ eta, id } = params);
-      proposalName = await getProposalTitle(id);
+      proposalName = await getProposalTitle(id, tallyApiKey);
       message = `**Queued Proposal** ${proposalName} ${checkMarkEmoji} available to execute at timestamp ${eta}`;
       break;
     default:
@@ -264,7 +293,7 @@ exports.handler = async function (autotaskEvent) {
     const { signature, params } = reason;
     const eventName = signature.slice(0, signature.indexOf('('));
     // craft the Discord message
-    return createDiscordMessage(eventName, params, transactionHash);
+    return createDiscordMessage(eventName, params, transactionHash, tallyApiKey);
   });
 
   // wait for the promises to settle

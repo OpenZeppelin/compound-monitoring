@@ -1,5 +1,9 @@
 const stackName = 'forta_governance';
 const discordSecretName = `${stackName}_discordWebhook`;
+const tallyApiKeySecretName = `${stackName}_tallyApiKey`;
+const baseTallyUrl = 'https://api.tally.xyz/query';
+const v2GovernorAddress = '0xc0da02939e1441f497fd74f78ce7decb17b66529';
+const ethereumMainnetChainId = 'eip155:1';
 
 const axios = require('axios');
 
@@ -61,13 +65,40 @@ async function postToDiscord(url, message) {
   return response;
 }
 
-async function getProposalTitle(proposalId) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposals';
-  const queryUrl = `?proposal_ids[]=${proposalId}`;
-  const fullUrl = baseUrl + queryUrl;
+// Using both chainId and governor address to be safe
+async function getProposalTitle(proposalId, tallyApiKey) {
   let title;
   try {
-    const result = await axios.get(fullUrl);
+    const result = await axios.post(
+      baseTallyUrl,
+      {
+        query: `query ProposalTitle(
+          $chainId: ChainID!, 
+          $governors: [Address!],
+          $proposalIds: [ID!]) {
+          proposals(
+              chainId: $chainId,
+              governors: $governors,
+              proposalIds: $proposalIds,
+            ) {
+              id
+              title
+              description
+              }
+            }
+          }`,
+        variables: {
+          chainId: ethereumMainnetChainId,
+          governors: [v2GovernorAddress],
+          proposalIds: [proposalId]
+        },
+      },
+      {
+        headers: {
+          'Api-Key': tallyApiKey,
+        },
+      },
+    );
     title = result.data.proposals[0].title;
     if (title === null) {
       title = '';
@@ -77,15 +108,33 @@ async function getProposalTitle(proposalId) {
   }
   return title;
 }
+
 // TODO: fetch delegates, get accounts, get account display names eg. "Bill"
 // Prev: voter param was a DisplayCompAccount object
-async function getAccountDisplayName(voter) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voter}`;
+async function getAccountDisplayName(voter, tallyApiKey) {
   let displayName;
   try {
-    const result = await axios.get(baseUrl + queryUrl);
-    displayName = result.data.proposal_vote_receipts[0].voter.display_name;
+    const result = await axios.post(
+      baseTallyUrl,
+      {
+        query: `query DisplayName($governanceId: AccountID!) {
+            accounts(id: $governanceId) {
+              accounts {
+                name
+              }
+            }
+          }`,
+        variables: {
+          address: `eip155:1:${voter.id}`, // assuming voter id is a wallet address
+        },
+      },
+      {
+        headers: {
+          'Api-Key': tallyApiKey,
+        },
+      },
+    );
+    displayName = result.data.accounts[0].name;
     if (displayName === null) {
       displayName = '';
     }
@@ -109,7 +158,7 @@ function getProposalTitleFromDescription(description) {
   return proposalName;
 }
 
-async function createDiscordMessage(eventName, params, transactionHash) {
+async function createDiscordMessage(eventName, params, transactionHash, tallyApiKey) {
   let description;
   let support;
   let proposer;
@@ -135,9 +184,9 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       ({ proposer, id, description } = params);
       proposalName = getProposalTitleFromDescription(description);
       if (proposalName === undefined || proposalName === 'undefined') {
-        proposalName = await getProposalTitle(id);
+        proposalName = await getProposalTitle(id, tallyApiKey);
       }
-      displayName = await getAccountDisplayName(proposer);
+      displayName = await getAccountDisplayName(proposer, tallyApiKey);
       if (displayName === '') {
         message = `**New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
       } else {
@@ -154,7 +203,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
         id,
       } = params);
 
-      displayName = await getAccountDisplayName(voter);
+      displayName = await getAccountDisplayName(voter, tallyApiKey);
 
       if (support === 0) {
         supportEmoji = noEntryEmoji;
@@ -243,6 +292,12 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('request undefined');
   }
 
+  // ensure that there is a Tally secret
+  const tallyApiKey = secrets[tallyApiKeySecretName];
+  if (tallyApiKey === undefined) {
+    throw new Error('Tally API key undefined');
+  }
+
   // ensure that the body key exists within the request Object
   const { body } = request;
   if (body === undefined) {
@@ -303,7 +358,7 @@ exports.handler = async function (autotaskEvent) {
       throw new Error('Unknown eventName');
   }
 
-  const message = await createDiscordMessage(eventName, metadata, transactionHash);
+  const message = await createDiscordMessage(eventName, metadata, transactionHash, tallyApiKey);
 
   // create promises for posting messages to Discord webhook
   // with Log Forwarding enabled, this console.log will forward the text string to Dune Analytics

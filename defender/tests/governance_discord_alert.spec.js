@@ -1,5 +1,5 @@
 // Set the name of the Secret set in Autotask
-const stackName = 'forta_governance';
+const stackName = 'governance_discord_alert';
 const discordSecretName = `${stackName}_discordWebhook`;
 const tallyApiKeySecretName = `${stackName}_tallyApiKey`;
 
@@ -104,7 +104,7 @@ const {
 } = require('forta-agent');
 
 // eslint-disable-next-line import/no-useless-path-segments
-const { handler } = require('../forta_governance/autotask-1/index');
+const { handler } = require('../governance_discord_alert/autotask-1/index');
 
 function createFinding(metadata) {
   return Finding.fromObject({
