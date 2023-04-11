@@ -49,6 +49,7 @@ function getProposalName(config, id) {
   return proposalName;
 }
 
+// TODO: fetch delegates, get accounts, get account display names eg. "Bill"
 async function getAccountDisplayName(voteInfo) {
   const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
   const queryUrl = `?account=${voteInfo.voter}&proposal_id=${voteInfo.proposalId}`;

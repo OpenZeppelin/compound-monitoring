@@ -1,14 +1,16 @@
 const stackName = 'governance_discord_alert';
 const discordSecretName = `${stackName}_discordWebhook`;
-
+const tallyApiKeySecretName = `${stackName}_talyApiKey`;
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
+
+const baseTallyUrl = 'https://api.tally.xyz/query';
 
 function getRandomInt(min, max) {
   return Math.floor((Math.random() * (max - min)) + min);
 }
 
-async function postToDiscord(discordWebhook, message) {
+async function postToDiscord(discordWebhook, tallyApiKey, message) {
   const headers = {
     'Content-Type': 'application/json',
   };
@@ -43,8 +45,8 @@ async function postToDiscord(discordWebhook, message) {
   return response;
 }
 
-async function getProposalTitle(proposalId) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposals';
+async function getProposalTitle(proposalId, tallyApiKey) {
+  const baseUrl = baseTallyUrl;
   const queryUrl = `?proposal_ids[]=${proposalId}`;
   let title;
   try {
@@ -59,13 +61,31 @@ async function getProposalTitle(proposalId) {
   return title;
 }
 // TODO: fetch delegates, get accounts, get account display names eg. "Bill"
-async function getAccountDisplayName(voter) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voter}`;
+// eip155-standardized ID is used to specify chain/prevent replay votes
+async function getAccountDisplayName(voter, tallyApiKey) {
+  try{
+    const tallyResult = await axios.post(
+      baseTallyUrl,
+      {
+        query: `query DisplayName($governanceId: AccountID!) {
+            accounts(id: $governanceId) {
+              accounts {
+                name
+              }
+            }
+          }`,
+        variables: {
+          address: `eip155:1:${voter.id}`, //assuming voter id is a wallet address
+        },
+      },
+    {
+      headers: {
+        'Api-Key': tallyApiKey,
+      },
+    },
+  );
   let displayName;
-  try {
-    const result = await axios.get(baseUrl + queryUrl);
-    displayName = result.data.proposal_vote_receipts[0].voter.display_name;
+  displayName = result.data.accounts[0].name;
     if (displayName === null) {
       displayName = '';
     }
@@ -73,7 +93,7 @@ async function getAccountDisplayName(voter) {
     displayName = '';
   }
   return displayName;
-}
+};
 
 function getProposalTitleFromDescription(description) {
   const lines = description.split('\n');
@@ -118,9 +138,9 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       ({ proposer, id, description } = params);
       proposalName = getProposalTitleFromDescription(description);
       if (proposalName === undefined) {
-        proposalName = await getProposalTitle(id);
+        proposalName = await getProposalTitle(id, tallyApiKey);
       }
-      displayName = await getAccountDisplayName(proposer);
+      displayName = await getAccountDisplayName(proposer, tallyApiKey);
       // Reference:
       // https://discord.com/developers/docs/resources/channel#allowed-mentions-object-allowed-mentions-reference
       if (displayName === '') {
@@ -212,6 +232,12 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('discordUrl undefined');
   }
 
+  // ensure that there is a Tally secret
+  const tallyApiKey = secrets[tallyApiKeySecretName];
+  if (tallyApiKey === undefined) {
+    throw new Error('Tally API key undefined');
+  }
+
   // ensure that the request key exists within the autotaskEvent Object
   if (request === undefined) {
     throw new Error('request undefined');
@@ -252,7 +278,7 @@ exports.handler = async function (autotaskEvent) {
     }
 
     console.log(result.value);
-    return postToDiscord(discordUrl, result.value);
+    return postToDiscord(discordUrl, tallyApiKey, result.value);
   });
 
   results = await Promise.allSettled(discordPromises);
