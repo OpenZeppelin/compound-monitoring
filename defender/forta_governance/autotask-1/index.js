@@ -220,7 +220,7 @@ async function createDiscordMessage(eventName, params, transactionHash, tallyApi
       }
       votes = internationalNumberFormat.format(votes);
 
-      proposalName = await getProposalTitle(id);
+      proposalName = await getProposalTitle(id, tallyApiKey);
       if (displayName !== '') {
         message = `**Vote** ${proposalName} ${supportEmoji} ${votes} by ${displayName} ${etherscanLink}`;
       } else {
@@ -233,17 +233,17 @@ async function createDiscordMessage(eventName, params, transactionHash, tallyApi
       break;
     case 'ProposalCanceled':
       ({ id } = params);
-      proposalName = await getProposalTitle(id);
+      proposalName = await getProposalTitle(id, tallyApiKey);
       message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'ProposalExecuted':
       ({ id } = params);
-      proposalName = await getProposalTitle(id);
+      proposalName = await getProposalTitle(id, tallyApiKey);
       message = `**Executed Proposal** ${proposalName} ${checkMarkEmoji}`;
       break;
     case 'ProposalQueued':
       ({ eta, id } = params);
-      proposalName = await getProposalTitle(id);
+      proposalName = await getProposalTitle(id, tallyApiKey);
       message = `**Queued Proposal** ${proposalName} ${checkMarkEmoji} available to execute at timestamp ${eta}`;
       break;
     default:

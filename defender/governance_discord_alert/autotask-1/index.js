@@ -122,7 +122,7 @@ async function getAccountDisplayName(voter, tallyApiKey) {
     displayName = '';
   }
   return displayName;
-};
+}
 
 function getProposalTitleFromDescription(description) {
   const lines = description.split('\n');
@@ -188,7 +188,7 @@ async function createDiscordMessage(eventName, params, transactionHash, tallyApi
         proposalId,
       } = params);
 
-      displayName = await getAccountDisplayName(voter);
+      displayName = await getAccountDisplayName(voter, tallyApiKey);
 
       if (support === 0) {
         supportEmoji = noEntryEmoji;
@@ -261,6 +261,21 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('discordUrl undefined');
   }
 
+  // Ref: https://developer.mozilla.org/en-US/docs/Web/API/URL
+  function isValidUrl(string) {
+    let url;
+    try {
+      url = new URL(string);
+    } catch (_) {
+      return false;
+    }
+    return url.href;
+  }
+
+  if (isValidUrl(discordUrl) === false) {
+    throw new Error('discordUrl is not a valid URL');
+  }
+
   // ensure that there is a Tally secret
   const tallyApiKey = secrets[tallyApiKeySecretName];
   if (tallyApiKey === undefined) {
@@ -279,6 +294,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that the alert key exists within the body Object
+  // This looks like a Forta event type?
   const {
     matchReasons,
     hash: transactionHash,
@@ -307,7 +323,7 @@ exports.handler = async function (autotaskEvent) {
     }
 
     console.log(result.value);
-    return postToDiscord(discordUrl, tallyApiKey, result.value);
+    return postToDiscord(discordUrl, result.value);
   });
 
   results = await Promise.allSettled(discordPromises);

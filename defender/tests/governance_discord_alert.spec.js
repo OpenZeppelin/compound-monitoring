@@ -14,7 +14,7 @@ secrets[tallyApiKeySecretName] = '1337';
 const mockBlockHash = '0x1110890564dbd87ca848b7107487ae5a7d28da1b16707bccd3ba37381ae33419';
 
 const mockCreatedTxHash = '0xcab21dadc18ca7c28ec204225ee350558322506df50e12b290b4b563bef0e773';
-const mockCreatedName = 'Compound Governance Proposal Created';
+const mockCreatedName = 'ProposalCreated ';
 const mockCreatedMeta = {
   _values: '0,0,0,0,0',
   address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
@@ -29,7 +29,7 @@ const mockCreatedMeta = {
 };
 
 const mockCastTxHash = '0xe65195312258cef491732d11a18199055bab6ded4ffd5cfb7bbbca034159492d';
-const mockCastName = 'Compound Governance Proposal Vote Cast';
+const mockCastName = 'VoteCast ';
 const mockCastMeta = {
   address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
   displayName: '',
@@ -41,10 +41,17 @@ const mockCastMeta = {
   votes: '50000000000000000000000',
 };
 
-// No data for ProposalCanceled found, skipping this mock
+const mockCanceledTxHash = '0x0f0c6fba386a7f654e249d6d1531696708805ad335ef4d234d1aa7d5378466b9';
+const mockCanceledName = 'ProposalCanceled ';
+const mockCanceledMeta = {
+  address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
+  id: '107',
+  proposalName: '(unknown proposal name)',
+  state: 'canceled',
+};
 
 const mockExecutedTxHash = '0x0f0c6fba386a7f654e249d6d1531696708805ad335ef4d234d1aa7d5378466b9';
-const mockExecutedName = 'Compound Governance Proposal Executed';
+const mockExecutedName = 'ProposalExecuted ';
 const mockExecutedMeta = {
   address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
   id: '107',
@@ -53,7 +60,7 @@ const mockExecutedMeta = {
 };
 
 const mockQueuedTxHash = '0x9964fd7648c0f5d2faf6aa9e952027085d5df3b0632464a7d16291c3ac4ccc5d';
-const mockQueuedName = 'Compound Governance Proposal Queued';
+const mockQueuedName = 'ProposalQueued ';
 const mockQueuedMeta = {
   address: '0xc0Da02939E1441F497fd74F78cE7Decb17B66529',
   eta: '1653983138',
@@ -94,29 +101,13 @@ jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
-// mock the returned value from the Compound API call
+// mock the returned value from the Tally API call
 axios.post = jest.fn().mockResolvedValue(mockTitle);
-
-const {
-  Finding, FindingType, FindingSeverity,
-} = require('forta-agent');
 
 // eslint-disable-next-line import/no-useless-path-segments
 const { handler } = require('../governance_discord_alert/autotask-1/index');
 
-function createFinding(metadata) {
-  return Finding.fromObject({
-    name: 'Placeholder Alert',
-    description: 'Placeholder description',
-    alertId: 'AE-ALERT-ID',
-    type: FindingType.Info,
-    severity: FindingSeverity.Info,
-    protocol: 'Protocol',
-    metadata,
-  });
-}
-
-function createFortaSentinelEvent(finding, findingName, blockHash, tryTxHash) {
+function createSentinelEvent(reason, reasonName, blockHash, tryTxHash) {
   // Generally findings go from the Bot, to Scan Node, to Sentinel, to Autotasks
   // with some metadata being added and removed along the way. This function will mimic
   // the Sentinel output with only Finding, block and transaction data.
@@ -133,18 +124,6 @@ function createFortaSentinelEvent(finding, findingName, blockHash, tryTxHash) {
     txHash = tryTxHash;
   }
 
-  // populate the matchReasons Array with placeholders
-  const matchReasons = [
-    {
-      type: 'alert-id',
-      value: 'ALERT_ID_PLACEHOLDER',
-    },
-    {
-      type: 'severity',
-      value: 'INFO',
-    },
-  ];
-
   // populate the sentinel Object with placeholders
   const sentinel = {
     id: '8fe3d50b-9b52-44ff-b3fd-a304c66e1e56',
@@ -154,7 +133,7 @@ function createFortaSentinelEvent(finding, findingName, blockHash, tryTxHash) {
     network: 'mainnet',
     chainId: 1,
   };
-
+  // This is a regular autotask event, not a Forta Sentinel
   const autotaskEvent = {
     relayerARN: undefined,
     kvstoreARN: undefined,
@@ -163,23 +142,25 @@ function createFortaSentinelEvent(finding, findingName, blockHash, tryTxHash) {
     secrets,
     request: {
       body: {
-        hash: '0xAGENT-HASH', // forta Agent hash
-        alert: {
-          name: findingName,
-          metadata: finding.metadata,
-        },
+        hash: txHash,
         source: {
           transactionHash: txHash,
           block: {
             hash: blockHash,
           },
         },
-        matchReasons,
+        matchReasons: [
+          {
+            signature: reasonName,
+            params: reason,
+          },
+        ],
         sentinel,
-        type: 'FORTA',
+        type: 'BLOCK',
       },
     },
   };
+
   return autotaskEvent;
 }
 
@@ -194,9 +175,8 @@ describe('check autotask', () => {
   });
 
   it('Runs autotask against mock Created data and posts in Discord', async () => {
-    const mockFinding = createFinding(mockCreatedMeta);
-    const autotaskEvent = createFortaSentinelEvent(
-      mockFinding,
+    const autotaskEvent = createSentinelEvent(
+      mockCreatedMeta,
       mockCreatedName,
       mockBlockHash,
       mockCreatedTxHash,
@@ -206,7 +186,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await handler(autotaskEvent);
 
-    const data = { content: '**New Proposal** Risk Parameter Updates for 5 Collateral Assets by Fake Name [TX](<https://etherscan.io/tx/0xcab21dadc18ca7c28ec204225ee350558322506df50e12b290b4b563bef0e773>)\nDetails: https://compound.finance/governance/proposals/107' };
+    const data = { content: '@here **New Proposal** Risk Parameter Updates for 5 Collateral Assets by Fake Name [TX](<https://etherscan.io/tx/0xcab21dadc18ca7c28ec204225ee350558322506df50e12b290b4b563bef0e773>)\nDetails: https://compound.finance/governance/proposals/107' };
     const expectedLastCall = {
       url, headers, method, data,
     };
@@ -216,9 +196,8 @@ describe('check autotask', () => {
   });
 
   it('Runs autotask against mock Cast data and posts in Discord', async () => {
-    const mockFinding = createFinding(mockCastMeta);
-    const autotaskEvent = createFortaSentinelEvent(
-      mockFinding,
+    const autotaskEvent = createSentinelEvent(
+      mockCastMeta,
       mockCastName,
       mockBlockHash,
       mockCastTxHash,
@@ -238,9 +217,8 @@ describe('check autotask', () => {
   });
 
   it('Runs autotask against mock Executed data and posts in Discord', async () => {
-    const mockFinding = createFinding(mockExecutedMeta);
-    const autotaskEvent = createFortaSentinelEvent(
-      mockFinding,
+    const autotaskEvent = createSentinelEvent(
+      mockExecutedMeta,
       mockExecutedName,
       mockBlockHash,
       mockExecutedTxHash,
@@ -258,10 +236,29 @@ describe('check autotask', () => {
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
+  it('Runs autotask against mock Canceled data and posts in Discord', async () => {
+    const autotaskEvent = createSentinelEvent(
+      mockCanceledMeta,
+      mockCanceledName,
+      mockBlockHash,
+      mockCanceledTxHash,
+    );
+    axios.post.mockResolvedValueOnce(mockTitle);
+    // run the autotask on the events
+    await handler(autotaskEvent);
+
+    const data = { content: '**Canceled Proposal** Fake title ⛔' };
+    const expectedLastCall = {
+      url, headers, method, data,
+    };
+    expect(axios).toBeCalledTimes(1);
+    expect(axios.post).toBeCalledTimes(1);
+    expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
+  });
+
   it('Runs autotask against mock Queued data and posts in Discord', async () => {
-    const mockFinding = createFinding(mockQueuedMeta);
-    const autotaskEvent = createFortaSentinelEvent(
-      mockFinding,
+    const autotaskEvent = createSentinelEvent(
+      mockQueuedMeta,
       mockQueuedName,
       mockBlockHash,
       mockQueuedTxHash,
@@ -282,9 +279,8 @@ describe('check autotask', () => {
   it('throws error if discordUrl is not valid', async () => {
     // Use an invalid discord URL
     secrets[discordSecretName] = 'http//zzzz';
-    const mockFinding = createFinding(mockCreatedMeta);
-    const autotaskEvent = createFortaSentinelEvent(
-      mockFinding,
+    const autotaskEvent = createSentinelEvent(
+      mockCreatedMeta,
       mockCreatedName,
       mockBlockHash,
       mockCreatedTxHash,
