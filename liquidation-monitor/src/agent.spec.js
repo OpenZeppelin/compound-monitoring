@@ -609,7 +609,7 @@ describe('handleBlock', () => {
     expect(mockContract.getAccountLiquidity).toBeCalledTimes(1);
     expect(findings).toStrictEqual([]);
   });
-
+  // TODO: Check that this works without acct init
   it('returns findings if borrowed asset increases and account exceeds the minimumLiquidation threshold', async () => {
     // BTC increases by 2%
     // Scaled to integer, because ethers.BigNumbers doesn't accept floats

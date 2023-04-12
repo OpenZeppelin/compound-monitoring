@@ -71,7 +71,7 @@ async function getProposalTitle(proposalId, tallyApiKey) {
         variables: {
           chainId: ethereumMainnetChainId,
           governors: [v2GovernorAddress],
-          proposalIds: [proposalId]
+          proposalIds: [proposalId],
         },
       },
       {

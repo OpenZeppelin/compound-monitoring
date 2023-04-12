@@ -5,13 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Program",
+            "program": "${workspaceFolder}/defender/governance_discord_alert/autotask-1/index.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node"
+        },
+        {
+            "name": "Launch Program",
+            "program": "${workspaceFolder}/defender/forta_governance/autotask-1/index.js",
+            "request": "launch",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node"
+        },
+
+        
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/comp-delegations-monitor/src/agent.spec.js"
+            "program": "${workspaceFolder}/comp-delegations-monitor/src/agent.spec.js",
+
         }
     ]
 }

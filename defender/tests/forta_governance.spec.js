@@ -64,7 +64,7 @@ const mockQueuedMeta = {
 
 // No data for ThresholdSet found, skipping this mock
 
-// mock info for Compound API calls
+// mock info for Tally API calls
 const mockTitle = {
   data: {
     proposals: [
@@ -77,11 +77,9 @@ const mockTitle = {
 
 const mockName = {
   data: {
-    proposal_vote_receipts: [
+    accounts: [
       {
-        voter: {
-          display_name: 'Fake Name',
-        },
+        name: 'Fake Name',
       },
     ],
   },
@@ -97,7 +95,7 @@ jest.mock('axios', () => jest.fn().mockResolvedValue(acceptedPost));
 const axios = require('axios');
 
 // mock the returned value from the Compound API call
-axios.get = jest.fn().mockResolvedValue(mockTitle);
+axios.post = jest.fn().mockResolvedValue(mockTitle);
 
 const {
   Finding, FindingType, FindingSeverity,
@@ -192,7 +190,7 @@ describe('check autotask', () => {
 
   beforeEach(async () => {
     axios.mockClear();
-    axios.get.mockClear();
+    axios.post.mockClear();
   });
 
   it('Runs autotask against mock Created data and posts in Discord', async () => {
@@ -203,7 +201,7 @@ describe('check autotask', () => {
       mockBlockHash,
       mockCreatedTxHash,
     );
-    axios.get.mockResolvedValueOnce(mockName);
+    axios.post.mockResolvedValueOnce(mockName);
 
     // run the autotask on the events
     await handler(autotaskEvent);
@@ -213,7 +211,7 @@ describe('check autotask', () => {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
-    expect(axios.get).toBeCalledTimes(1);
+    expect(axios.post).toBeCalledTimes(1);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
@@ -225,7 +223,7 @@ describe('check autotask', () => {
       mockBlockHash,
       mockCastTxHash,
     );
-    axios.get.mockResolvedValueOnce(mockName).mockResolvedValueOnce(mockTitle);
+    axios.post.mockResolvedValueOnce(mockName).mockResolvedValueOnce(mockTitle);
 
     // run the autotask on the events
     await handler(autotaskEvent);
@@ -235,7 +233,7 @@ describe('check autotask', () => {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
-    expect(axios.get).toBeCalledTimes(2);
+    expect(axios.post).toBeCalledTimes(2);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
@@ -247,7 +245,7 @@ describe('check autotask', () => {
       mockBlockHash,
       mockExecutedTxHash,
     );
-    axios.get.mockResolvedValueOnce(mockTitle);
+    axios.post.mockResolvedValueOnce(mockTitle);
     // run the autotask on the events
     await handler(autotaskEvent);
 
@@ -256,7 +254,7 @@ describe('check autotask', () => {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
-    expect(axios.get).toBeCalledTimes(1);
+    expect(axios.post).toBeCalledTimes(1);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
@@ -268,7 +266,7 @@ describe('check autotask', () => {
       mockBlockHash,
       mockQueuedTxHash,
     );
-    axios.get.mockResolvedValueOnce(mockTitle);
+    axios.post.mockResolvedValueOnce(mockTitle);
     // run the autotask on the events
     await handler(autotaskEvent);
 
@@ -277,7 +275,7 @@ describe('check autotask', () => {
       url, headers, method, data,
     };
     expect(axios).toBeCalledTimes(1);
-    expect(axios.get).toBeCalledTimes(1);
+    expect(axios.post).toBeCalledTimes(1);
     expect(axios.mock.lastCall[0]).toStrictEqual(expectedLastCall);
   });
 
@@ -294,7 +292,7 @@ describe('check autotask', () => {
     // run the autotask on the events
     await expect(handler(autotaskEvent)).rejects.toThrow('discordUrl is not a valid URL');
 
-    expect(axios.get).toBeCalledTimes(0);
+    expect(axios.post).toBeCalledTimes(0);
     expect(axios).toBeCalledTimes(0);
   });
 });
