@@ -49,42 +49,8 @@ function getProposalName(config, id) {
   return proposalName;
 }
 
-// TODO: fetch delegates, get accounts, get account display names eg. "Bill"
-async function getAccountDisplayName(voteInfo, tallyApiKey) {
-  let displayName;
-  try {
-    const result = await axios.post(
-      baseTallyUrl,
-      {
-        query: `query DisplayName($governanceId: AccountID!) {
-            accounts(id: $governanceId) {
-              accounts {
-                name
-              }
-            }
-          }`,
-        variables: {
-          address: `eip155:1:${voteInfo.voter.id}`, // assuming voter id is a wallet address
-        },
-      },
-      {
-        headers: {
-          'Api-Key': tallyApiKey,
-        },
-      },
-    );
-    displayName = result.data.accounts[0].name;
-    if (displayName === null) {
-      displayName = '';
-    }
-  } catch (err) {
-    displayName = '';
-  }
-  return displayName;
-}
-
 async function voteCastFinding(voteInfo, address, config) {
-  const displayName = await getAccountDisplayName(voteInfo, config.tallyApiKey);
+  const displayName = 'PLACEHOLDER';
 
   let description = `Vote cast with ${voteInfo.votes.toString()} votes`;
   switch (voteInfo.support) {
@@ -226,7 +192,11 @@ async function createGovernanceFindings(logs, address, config) {
         };
         // create a finding indicating that the vote was cast
         finding = await voteCastFinding(voteInfo, address, config);
-        return finding;
+
+        // TODO: SEND TO AUTOTASK FOR API CALL TO TALLY AND FINAL FORMATTING
+        // WHICH THEN POSTS TO DISCORD
+        // return finding;
+        break;
       case 'ProposalCanceled':
         // create a finding indicating that the proposal has been canceled,
         return proposalCanceledFinding(log.args.id.toString(), address, config);
