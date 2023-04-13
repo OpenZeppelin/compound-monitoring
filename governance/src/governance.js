@@ -50,24 +50,41 @@ function getProposalName(config, id) {
 }
 
 // TODO: fetch delegates, get accounts, get account display names eg. "Bill"
-async function getAccountDisplayName(voteInfo) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voteInfo.voter}&proposal_id=${voteInfo.proposalId}`;
+async function getAccountDisplayName(voteInfo, tallyApiKey) {
   let displayName;
   try {
-    const result = await axios.get(baseUrl + queryUrl);
-    displayName = result.data.proposal_vote_receipts[0].voter.display_name;
+    const result = await axios.post(
+      baseTallyUrl,
+      {
+        query: `query DisplayName($governanceId: AccountID!) {
+            accounts(id: $governanceId) {
+              accounts {
+                name
+              }
+            }
+          }`,
+        variables: {
+          address: `eip155:1:${voteInfo.voter.id}`, // assuming voter id is a wallet address
+        },
+      },
+      {
+        headers: {
+          'Api-Key': tallyApiKey,
+        },
+      },
+    );
+    displayName = result.data.accounts[0].name;
     if (displayName === null) {
       displayName = '';
     }
-  } catch {
+  } catch (err) {
     displayName = '';
   }
   return displayName;
 }
 
 async function voteCastFinding(voteInfo, address, config) {
-  const displayName = await getAccountDisplayName(voteInfo);
+  const displayName = await getAccountDisplayName(voteInfo, config.tallyApiKey);
 
   let description = `Vote cast with ${voteInfo.votes.toString()} votes`;
   switch (voteInfo.support) {

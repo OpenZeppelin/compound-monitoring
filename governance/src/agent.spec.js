@@ -2,13 +2,11 @@ const {
   Finding, createTransactionEvent, ethers, FindingType, FindingSeverity,
 } = require('forta-agent');
 
-const mockCompoundApiCall = {
+const mockTallyApiCall = {
   data: {
-    proposal_vote_receipts: [
+    accounts: [
       {
-        voter: {
-          display_name: '',
-        },
+        name: '',
       },
     ],
   },
@@ -17,7 +15,7 @@ const mockCompoundApiCall = {
 // mock the axios package
 jest.mock('axios', () => ({
   ...jest.requireActual('axios'),
-  get: jest.fn().mockResolvedValue(mockCompoundApiCall),
+  post: jest.fn().mockResolvedValue(mockTallyApiCall),
 }));
 const axios = require('axios');
 
@@ -103,15 +101,15 @@ abi.push(invalidEvent);
 const iface = new ethers.utils.Interface(abi);
 
 describe('mock axios GET request', () => {
-  it('should call axios.get and return a response', async () => {
-    mockCompoundApiCall.data.proposal_vote_receipts[0].voter.display_name = 'foo';
-    const response = await axios.get('https://...');
-    expect(axios.get).toHaveBeenCalledTimes(1);
-    expect(response.data.proposal_vote_receipts[0].voter.display_name).toEqual('foo');
+  it('should call axios.post and return a response', async () => {
+    mockTallyApiCall.data.accounts[0].name = 'foo';
+    const response = await axios.post('https://...');
+    expect(axios.post).toHaveBeenCalledTimes(1);
+    expect(response.data.accounts[0].name).toEqual('foo');
 
     // reset call count for next test
-    axios.get.mockClear();
-    expect(axios.get).toHaveBeenCalledTimes(0);
+    axios.post.mockClear();
+    expect(axios.post).toHaveBeenCalledTimes(0);
   });
 });
 
@@ -318,8 +316,8 @@ describe('monitor governance contracts for emitted events', () => {
         reason: mockArgs.reason,
       };
 
-      // set the return value for the Compound API call
-      mockCompoundApiCall.data.proposal_vote_receipts[0].voter.display_name = null;
+      // set the return value for the Tally API call
+      mockTallyApiCall.data.accounts[0].name = null;
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -370,7 +368,7 @@ describe('monitor governance contracts for emitted events', () => {
       };
 
       // set the return value for the Compound API call
-      mockCompoundApiCall.data.proposal_vote_receipts[0].voter.display_name = 'ArbitraryApp';
+      mockTallyApiCall.data.accounts[0].name = 'ArbitraryApp';
 
       const findings = await handleTransaction(mockTxEvent);
 
