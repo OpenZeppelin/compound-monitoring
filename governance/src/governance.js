@@ -1,7 +1,5 @@
 const { Finding, FindingType, FindingSeverity } = require('forta-agent');
 
-const axios = require('axios');
-
 function createProposalFromLog(log) {
   const proposal = {
     id: log.args.id.toString(),
@@ -49,25 +47,7 @@ function getProposalName(config, id) {
   return proposalName;
 }
 
-async function getAccountDisplayName(voteInfo) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voteInfo.voter}&proposal_id=${voteInfo.proposalId}`;
-  let displayName;
-  try {
-    const result = await axios.get(baseUrl + queryUrl);
-    displayName = result.data.proposal_vote_receipts[0].voter.display_name;
-    if (displayName === null) {
-      displayName = '';
-    }
-  } catch {
-    displayName = '';
-  }
-  return displayName;
-}
-
 async function voteCastFinding(voteInfo, address, config) {
-  const displayName = await getAccountDisplayName(voteInfo);
-
   let description = `Vote cast with ${voteInfo.votes.toString()} votes`;
   switch (voteInfo.support) {
     case 0:
@@ -100,7 +80,6 @@ async function voteCastFinding(voteInfo, address, config) {
       reason: voteInfo.reason,
       id: voteInfo.proposalId.toString(),
       proposalName,
-      displayName,
     },
   });
 }
