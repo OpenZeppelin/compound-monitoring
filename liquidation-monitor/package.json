@@ -7,7 +7,6 @@
   ],
   "scripts": {
     "start": "npm run start:dev",
-    "start:prod": "forta-agent run --prod",
     "tx": "forta-agent run --tx",
     "block": "forta-agent run --block",
     "range": "forta-agent run --range",
