@@ -54,23 +54,6 @@ async function postToTwitter(client, message, tweetIdToReply) {
   return id;
 }
 
-async function getProposalTitle(proposalId) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposals';
-  const queryUrl = `?proposal_ids[]=${proposalId}`;
-  const fullUrl = baseUrl + queryUrl;
-  let title;
-  try {
-    const result = await axios.get(fullUrl);
-    title = result.data.proposals[0].title;
-    if (title === null) {
-      title = '';
-    }
-  } catch {
-    title = '';
-  }
-  return title;
-}
-
 exports.handler = async function handler(autotaskEvent) {
   // ensure that the autotaskEvent Object exists
   if (autotaskEvent === undefined) {
@@ -217,12 +200,6 @@ exports.handler = async function handler(autotaskEvent) {
   // Find how many votes are needed to pass
   const quorumVotes = await governanceContract.quorumVotes();
 
-  // Get titles of the Proposals
-  const titleMap = {};
-  await Promise.all(activeProposals.map(async (proposalId) => {
-    titleMap[proposalId] = await getProposalTitle(proposalId);
-  }));
-
   // Get proposal info
   const proposalInfo = await Promise.all(activeProposals
     .map(async (proposalId) => governanceContract.proposals(proposalId)));
@@ -253,7 +230,7 @@ exports.handler = async function handler(autotaskEvent) {
     const seconds = Math.trunc(timeLeft);
 
     const proposalLink = `https://compound.finance/governance/proposals/${proposal.id}`;
-    const currentTweet = `Proposal #${proposal.id} - ${titleMap[proposal.id]}:\n`
+    const currentTweet = `Proposal #${proposal.id}}:\n`
       + `FOR votes vs quorum threshold: ${vsQuorum}%\n`
       + `👍 (for) votes: ${forVotes}\n`
       + `👎 (against) votes: ${againstVotes}\n`

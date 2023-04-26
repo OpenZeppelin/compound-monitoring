@@ -43,38 +43,6 @@ async function postToDiscord(discordWebhook, message) {
   return response;
 }
 
-async function getProposalTitle(proposalId) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposals';
-  const queryUrl = `?proposal_ids[]=${proposalId}`;
-  let title;
-  try {
-    const result = await axios.get(baseUrl + queryUrl);
-    title = result.data.proposals[0].title;
-    if (title === null) {
-      title = '';
-    }
-  } catch {
-    title = '';
-  }
-  return title;
-}
-
-async function getAccountDisplayName(voter) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voter}`;
-  let displayName;
-  try {
-    const result = await axios.get(baseUrl + queryUrl);
-    displayName = result.data.proposal_vote_receipts[0].voter.display_name;
-    if (displayName === null) {
-      displayName = '';
-    }
-  } catch (err) {
-    displayName = '';
-  }
-  return displayName;
-}
-
 function getProposalTitleFromDescription(description) {
   const lines = description.split('\n');
   let [proposalName] = lines;
@@ -99,7 +67,6 @@ async function createDiscordMessage(eventName, params, transactionHash) {
   let reason;
   let proposalName;
   let message;
-  let displayName;
   let id;
   let supportEmoji;
   let eta;
@@ -118,15 +85,14 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       ({ proposer, id, description } = params);
       proposalName = getProposalTitleFromDescription(description);
       if (proposalName === undefined) {
-        proposalName = await getProposalTitle(id);
+        proposalName = '';
       }
-      displayName = await getAccountDisplayName(proposer);
       // Reference:
       // https://discord.com/developers/docs/resources/channel#allowed-mentions-object-allowed-mentions-reference
-      if (displayName === '') {
-        message = `@here **New Proposal** ${proposalName} by ${proposer.slice(0, 6)} ${etherscanLink}`;
+      if (proposalName === '') {
+        message = `@here **New Proposal** ${id} by ${proposer.slice(0, 6)} ${etherscanLink}`;
       } else {
-        message = `@here **New Proposal** ${proposalName} by ${displayName} ${etherscanLink}`;
+        message = `@here **New Proposal** ${proposalName} by ${proposer} ${etherscanLink}`;
       }
       message += `\nDetails: https://compound.finance/governance/proposals/${id}`;
       break;
@@ -138,8 +104,6 @@ async function createDiscordMessage(eventName, params, transactionHash) {
         support,
         proposalId,
       } = params);
-
-      displayName = await getAccountDisplayName(voter);
 
       if (support === 0) {
         supportEmoji = noEntryEmoji;
@@ -161,12 +125,7 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       }
       votes = internationalNumberFormat.format(votes);
 
-      proposalName = await getProposalTitle(proposalId);
-      if (displayName !== '') {
-        message = `${voteTypeString} ${proposalName} ${supportEmoji} ${votes} by ${displayName} ${etherscanLink}`;
-      } else {
-        message = `${voteTypeString} ${proposalName} ${supportEmoji} ${votes} by ${voter.slice(0, 6)} ${etherscanLink}`;
-      }
+      message = `${voteTypeString} ${proposalId} ${supportEmoji} ${votes} by ${voter.slice(0, 6)} ${etherscanLink}`;
 
       if (reason !== '') {
         message += `\n\`\`\`${reason}\`\`\``;
@@ -174,18 +133,15 @@ async function createDiscordMessage(eventName, params, transactionHash) {
       break;
     case 'ProposalCanceled':
       ({ id } = params);
-      proposalName = await getProposalTitle(id);
-      message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
+      message = `**Canceled Proposal** ${id} ${noEntryEmoji}`;
       break;
     case 'ProposalExecuted':
       ({ id } = params);
-      proposalName = await getProposalTitle(id);
-      message = `**Executed Proposal** ${proposalName} ${checkMarkEmoji}`;
+      message = `**Executed Proposal** ${id} ${checkMarkEmoji}`;
       break;
     case 'ProposalQueued':
       ({ eta, id } = params);
-      proposalName = await getProposalTitle(id);
-      message = `**Queued Proposal** ${proposalName} ${checkMarkEmoji} available to execute at timestamp ${eta}`;
+      message = `**Queued Proposal** ${id} ${checkMarkEmoji} available to execute at timestamp ${eta}`;
       break;
     default:
       return undefined;
