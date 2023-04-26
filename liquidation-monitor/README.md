@@ -2,9 +2,9 @@
 
 ## Description
 
-This bot detects when an account on Compound is able to be liquidated. 
+This bot detects when an account on Compound is able to be liquidated.
 
-Note: Since the deprecation of the Compound v2 monitoring API, this bot has been deprecated as well. The line, ` "start:prod": "forta-agent run --prod",` has been removed from package.json to prevent accidental deployment.
+Note: Since the deprecation of the Compound v2 monitoring API, this bot has been deprecated as well. The line, `"start:prod": "forta-agent run --prod",` has been removed from package.json to prevent accidental deployment.
 
 ## Optimizations
 
