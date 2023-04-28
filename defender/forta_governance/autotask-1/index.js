@@ -69,29 +69,15 @@ async function postToDiscord(url, message) {
 async function getProposalTitle(proposalId, tallyApiKey) {
   let title;
   try {
-    const result = await axios.post(
-      baseTallyUrl,
+    const tallyRes = await axios.post(
+      'https://api.tally.xyz/query',
       {
-        query: `query ProposalTitle(
-          $chainId: ChainID!, 
-          $governors: [Address!],
-          $proposalIds: [ID!]) {
-          proposals(
-              chainId: $chainId,
-              governors: $governors,
-              proposalIds: $proposalIds,
-            ) {
-              id
-              title
-              description
-              }
-            }
-          }`,
+        query: 'query Proposals($chainId: ChainID!,\n$governors: [Address!],\n$proposalIds: [ID!]) {\nproposals(\nchainId: $chainId,\ngovernors: $governors,\nproposalIds: $proposalIds,\n) {\nid\ntitle\ndescription\n},}',
         variables: {
           chainId: ethereumMainnetChainId,
           governors: [v2GovernorAddress],
           proposalIds: [proposalId],
-        },
+        }
       },
       {
         headers: {
@@ -99,7 +85,7 @@ async function getProposalTitle(proposalId, tallyApiKey) {
         },
       },
     );
-    title = result.data.proposals[0].title;
+    title = tallyRes.data.data.proposals[0].title;
     if (title === null) {
       title = '';
     }

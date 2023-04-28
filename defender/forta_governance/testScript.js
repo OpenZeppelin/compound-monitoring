@@ -10,25 +10,12 @@ async function main() {
   const tallyRes = await axios.post(
     'https://api.tally.xyz/query',
     {
-      query: `query ($chainId: ChainID!, 
-              $governors: [Address!],
-              $proposalIds: [ID!]) {
-                proposals(
-                             chainId: $chainId,
-                             governors: $governors,
-                             proposalIds: $proposalIds,
-                           ) {
-                                      id
-                                      title
-                                      description
-                                      }
-            }
-          }`,
+      query: 'query Proposals($chainId: ChainID!,\n$governors: [Address!],\n$proposalIds: [ID!]) {\nproposals(\nchainId: $chainId,\ngovernors: $governors,\nproposalIds: $proposalIds,\n) {\nid\ntitle\ndescription\n},}',
       variables: {
         chainId: ethereumMainnetChainId,
         governors: [v2GovernorAddress],
         proposalIds: [proposalId],
-      },
+      }
     },
     {
       headers: {
@@ -36,43 +23,8 @@ async function main() {
       },
     },
   );
-  await Promise.all(tallyRes);
-  console.log(tallyRes.data.error);
-  // const result = await axios.post(
-  //   baseTallyUrl,
-  //   {
-  //     query: `query ProposalTitle(
-  //       $chainId: ChainID!, 
-  //       $governors: [Address!],
-  //       $proposalIds: [ID!]) {
-  //       proposals(
-  //           chainId: $chainId,
-  //           governors: $governors,
-  //           proposalIds: $proposalIds,
-  //         ) {
-  //           id
-  //           title
-  //           description
-  //           }
-  //         }
-  //       }`,
-  //     variables: {
-  //       chainIds: ethereumMainnetChainId,
-  //       governors: [v2GovernorAddress],
-  //       proposalIds: [proposalId],
-  //     },
-  //   },
-  //   {
-  //     headers: {
-  //       'Api-Key': tallyApiKey,
-  //     },
-  //   },
-  // );
-  // console.log(result.data);
-  //   const { title } = result.data.proposals[0];
-
-//   console.log(result);
-//   console.log(title);
+  console.log(tallyRes.status);
+  console.log('\n\n\nRESULT: %s', tallyRes.data.data.proposals[0].title);
 }
 
 main()

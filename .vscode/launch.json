@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Attach",
+            "port": 9229,
+            "request": "attach",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "type": "node"
+        },
+        {
             "name": "Launch Program",
             "program": "${workspaceFolder}/defender/governance_discord_alert/autotask-1/index.js",
             "request": "launch",

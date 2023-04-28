@@ -17,14 +17,16 @@ custom:
 
   # Contract Sentinel Settings
   monitored-addresses:
-    - "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+   # - "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+    - "0x057b512C67A2E8491788A89E5f2532e8B9977F0f"
   # Possible Defender networks: https://github.com/OpenZeppelin/defender-client/blob/master/packages/base/src/utils/network.ts`
-  monitored-network: mainnet
+  monitored-network: goerli #mainnet
 
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
     # Private variables pulled from external secrets.yml file
     discordWebhook: ${self:custom.stackSecrets.discordWebhook}
+    tallyApiKey: ${self.stackSecrets.tallyApiKey}
 
 defender:
   key: ${self:custom.config.keys.api}
