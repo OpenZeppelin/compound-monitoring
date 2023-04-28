@@ -178,7 +178,6 @@ async function createDiscordMessage(eventName, params, transactionHash, tallyApi
 
   // construct the Etherscan transaction link
   const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-
   switch (eventName) {
     case 'ProposalCreated':
       ({ proposer, id, description } = params);
