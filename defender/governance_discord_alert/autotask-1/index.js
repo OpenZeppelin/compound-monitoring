@@ -51,7 +51,7 @@ async function getProposalTitle(proposalId, tallyApiKey) {
   let title;
   try {
     const tallyRes = await axios.post(
-      'https://api.tally.xyz/query',
+      baseTallyUrl,
       {
         query: 'query Proposals($chainId: ChainID!,\n$governors: [Address!],\n$proposalIds: [ID!]) {\nproposals(\nchainId: $chainId,\ngovernors: $governors,\nproposalIds: $proposalIds,\n) {\nid\ntitle\ndescription\n},}',
         variables: {
@@ -82,16 +82,10 @@ async function getAccountDisplayName(voter, tallyApiKey) {
   try {
     const result = await axios.post(
       baseTallyUrl,
-      {
-        query: `query DisplayName($governanceId: AccountID!) {
-            accounts(id: $governanceId) {
-              accounts {
-                name
-              }
-            }
-          }`,
+      {"query":"query Accounts(\n$ids: [AccountID!],\n$addresses:[Address!]\n) {\naccounts(\nids: $ids,\naddresses: $addresses\n ) {\nid\naddress\nname}}",
         variables: {
-          address: `eip155:1:${voter.id}`, // assuming voter id is a wallet address
+          ids: [`${ethereumMainnetChainId}:${voter}`],
+          addresses: [voter],
         },
       },
       {
@@ -100,7 +94,7 @@ async function getAccountDisplayName(voter, tallyApiKey) {
         },
       },
     );
-    displayName = result.data.accounts[0].name;
+    displayName = result.data.data.accounts[0].name;
     if (displayName === null) {
       displayName = '';
     }
