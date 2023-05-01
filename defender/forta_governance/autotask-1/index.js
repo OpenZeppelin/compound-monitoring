@@ -85,7 +85,7 @@ async function getProposalTitle(proposalId, tallyApiKey) {
         },
       },
     );
-    title = tallyRes.data.data.proposals[0].title;
+    title = tallyRes.data.proposals[0].title;
     if (title === null) {
       title = '';
     }
@@ -101,17 +101,11 @@ async function getAccountDisplayName(voter, tallyApiKey) {
   let displayName;
   try {
     const result = await axios.post(
-      baseTallyUrl,
-      {
-        query: `query DisplayName($governanceId: AccountID!) {
-            accounts(id: $governanceId) {
-              accounts {
-                name
-              }
-            }
-          }`,
+      'https://api.tally.xyz/query',
+      {"query":"query Accounts(\n$ids: [AccountID!],\n$addresses:[Address!]\n) {\naccounts(\nids: $ids,\naddresses: $addresses\n ) {\nid\naddress\nname}}",
         variables: {
-          address: `eip155:1:${voter.id}`, // assuming voter id is a wallet address
+          ids: [`${ethereumMainnetChainId}:${voter}`],
+          addresses: [voter],
         },
       },
       {

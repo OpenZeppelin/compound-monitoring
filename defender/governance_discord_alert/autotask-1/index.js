@@ -66,7 +66,7 @@ async function getProposalTitle(proposalId, tallyApiKey) {
         },
       },
     );
-    title = tallyRes.data.data.proposals[0].title;
+    title = tallyRes.data.proposals[0].title;
     if (title === null) {
       title = '';
     }
@@ -94,7 +94,7 @@ async function getAccountDisplayName(voter, tallyApiKey) {
         },
       },
     );
-    displayName = result.data.data.accounts[0].name;
+    displayName = result.data.accounts[0].name;
     if (displayName === null) {
       displayName = '';
     }
