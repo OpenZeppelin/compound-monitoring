@@ -75,8 +75,7 @@ async function getProposalTitle(proposalId, tallyApiKey) {
   }
   return title;
 }
-// TODO: fetch delegates, get accounts, get account display names eg. "Bill"
-// eip155-standardized ID is used to specify chain/prevent replay votes
+
 async function getAccountDisplayName(voter, tallyApiKey) {
   let displayName;
   try {

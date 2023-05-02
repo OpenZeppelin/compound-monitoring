@@ -95,8 +95,6 @@ async function getProposalTitle(proposalId, tallyApiKey) {
   return title;
 }
 
-// TODO: fetch delegates, get accounts, get account display names eg. "Bill"
-// Prev: voter param was a DisplayCompAccount object
 async function getAccountDisplayName(voter, tallyApiKey) {
   let displayName;
   try {
