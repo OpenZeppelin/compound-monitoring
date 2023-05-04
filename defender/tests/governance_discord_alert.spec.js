@@ -74,21 +74,25 @@ const mockQueuedMeta = {
 // mock info for Tally API calls
 const mockTitle = {
   data: {
-    proposals: [
-      {
-        title: 'Fake title',
-      },
-    ],
+    data: {
+      proposals: [
+        {
+          title: 'Fake title',
+        },
+      ],
+    },
   },
 };
 
 const mockName = {
   data: {
-    accounts: [
-      {
-        name: 'Fake Name',
-      },
-    ],
+    data: {
+      accounts: [
+        {
+          name: 'Fake Name',
+        },
+      ],
+    },
   },
 };
 
