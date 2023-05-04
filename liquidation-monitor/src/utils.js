@@ -18,7 +18,7 @@ function buildJsonRequest(maxHealth, minBorrow, pageNumber, pageSize) {
   };
   return jsonRequest;
 }
-// TODO: replace with ??? Liquidation API call; Tally no help here
+
 async function callCompoundAPI(jsonRequest) {
   try {
     const apiURL = 'https://api.compound.finance/api/v2/account';

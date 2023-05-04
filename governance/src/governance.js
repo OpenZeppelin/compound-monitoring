@@ -1,6 +1,5 @@
 const { Finding, FindingType, FindingSeverity } = require('forta-agent');
-
-const axios = require('axios');
+const delegatesList = require('./delegatesList.json');
 
 function createProposalFromLog(log) {
   const proposal = {
@@ -49,14 +48,11 @@ function getProposalName(config, id) {
   return proposalName;
 }
 
-// TODO: fetch delegates, get accounts, get account display names eg. "Bill"
 async function getAccountDisplayName(voteInfo) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voteInfo.voter}&proposal_id=${voteInfo.proposalId}`;
   let displayName;
   try {
-    const result = await axios.get(baseUrl + queryUrl);
-    displayName = result.data.proposal_vote_receipts[0].voter.display_name;
+    const accountObj = delegatesList.delegates.find((a) => a.account.address === voteInfo.voter);
+    displayName = accountObj.account.name;
     if (displayName === null) {
       displayName = '';
     }

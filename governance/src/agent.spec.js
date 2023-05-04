@@ -2,25 +2,6 @@ const {
   Finding, createTransactionEvent, ethers, FindingType, FindingSeverity,
 } = require('forta-agent');
 
-const mockCompoundApiCall = {
-  data: {
-    proposal_vote_receipts: [
-      {
-        voter: {
-          display_name: '',
-        },
-      },
-    ],
-  },
-};
-
-// mock the axios package
-jest.mock('axios', () => ({
-  ...jest.requireActual('axios'),
-  get: jest.fn().mockResolvedValue(mockCompoundApiCall),
-}));
-const axios = require('axios');
-
 const { provideHandleTransaction, provideInitialize, getAbi } = require('./agent');
 
 const { createMockEventLogs, getObjectsFromAbi } = require('./test-utils');
@@ -34,6 +15,7 @@ const MINIMUM_EVENT_LIST = [
   'ProposalExecuted',
 ];
 
+const validDelegateAddress = '0xea6C3Db2e7FCA00Ea9d7211a03e83f568Fc13BF7';
 // check the configuration file to verify the values
 describe('check bot configuration file', () => {
   it('protocolName key required', () => {
@@ -101,19 +83,6 @@ const invalidEvent = {
 // push fake event to abi before creating the interface
 abi.push(invalidEvent);
 const iface = new ethers.utils.Interface(abi);
-
-describe('mock axios GET request', () => {
-  it('should call axios.get and return a response', async () => {
-    mockCompoundApiCall.data.proposal_vote_receipts[0].voter.display_name = 'foo';
-    const response = await axios.get('https://...');
-    expect(axios.get).toHaveBeenCalledTimes(1);
-    expect(response.data.proposal_vote_receipts[0].voter.display_name).toEqual('foo');
-
-    // reset call count for next test
-    axios.get.mockClear();
-    expect(axios.get).toHaveBeenCalledTimes(0);
-  });
-});
 
 // tests
 describe('monitor governance contracts for emitted events', () => {
@@ -293,7 +262,7 @@ describe('monitor governance contracts for emitted events', () => {
       expect(findings).toStrictEqual([expectedFinding]);
     });
 
-    it('returns finding with empty string for display name if no name was provided by the Compound API', async () => {
+    it('returns finding with empty string for display name if no name was provided in cached data', async () => {
       // create an event to run through the handler so we can see if the proposal name was saved
       const { mockArgs, mockTopics, data } = createMockEventLogs(thirdValidEvent, iface);
 
@@ -317,9 +286,6 @@ describe('monitor governance contracts for emitted events', () => {
         votes: mockArgs.votes.toString(),
         reason: mockArgs.reason,
       };
-
-      // set the return value for the Compound API call
-      mockCompoundApiCall.data.proposal_vote_receipts[0].voter.display_name = null;
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -344,9 +310,13 @@ describe('monitor governance contracts for emitted events', () => {
       expect(findings).toStrictEqual([expectedFinding]);
     });
 
-    it('returns finding with display name if name was provided by the Compound API', async () => {
+    it('returns finding with display name if name was provided in cached data', async () => {
       // create an event to run through the handler so we can see if the proposal name was saved
-      const { mockArgs, mockTopics, data } = createMockEventLogs(thirdValidEvent, iface);
+      const override = {
+        name: 'voter',
+        value: validDelegateAddress,
+      };
+      const { mockArgs, mockTopics, data } = createMockEventLogs(thirdValidEvent, iface, override);
 
       // update mock transaction event
       const [defaultLog] = mockTxEvent.receipt.logs;
@@ -356,21 +326,18 @@ describe('monitor governance contracts for emitted events', () => {
       defaultLog.topics = mockTopics;
       defaultLog.args = mockArgs;
       defaultLog.data = data;
+      defaultLog.args.voter = validDelegateAddress;
       defaultLog.signature = iface
         .getEvent(thirdValidEvent.name)
         .format(ethers.utils.FormatTypes.minimal)
         .substring(6);
-
       const voteInfo = {
-        voter: mockArgs.voter,
+        voter: validDelegateAddress,
         proposalId: mockArgs.proposalId.toString(),
         support: mockArgs.support,
         votes: mockArgs.votes.toString(),
         reason: mockArgs.reason,
       };
-
-      // set the return value for the Compound API call
-      mockCompoundApiCall.data.proposal_vote_receipts[0].voter.display_name = 'ArbitraryApp';
 
       const findings = await handleTransaction(mockTxEvent);
 
@@ -383,7 +350,7 @@ describe('monitor governance contracts for emitted events', () => {
         protocol: config.protocolName,
         metadata: {
           address: validContractAddress,
-          displayName: 'ArbitraryApp',
+          displayName: 'Polychain Capital',
           id: voteInfo.proposalId,
           reason: voteInfo.reason,
           voter: voteInfo.voter,
