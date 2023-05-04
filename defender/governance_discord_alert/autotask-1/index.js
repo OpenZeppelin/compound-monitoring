@@ -67,6 +67,7 @@ async function getProposalTitle(proposalId, tallyApiKey) {
       },
     );
     title = tallyRes.data.data.proposals[0].title.replaceAll('#', '').trim();
+
     if (title === null) {
       title = '';
     }
@@ -301,7 +302,6 @@ exports.handler = async function (autotaskEvent) {
       return undefined;
     }
 
-    console.log(result.value);
     return postToDiscord(discordUrl, result.value);
   });
 
