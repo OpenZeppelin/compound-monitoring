@@ -1,6 +1,7 @@
 const stackName = 'governance_discord_alert';
 const discordSecretName = `${stackName}_discordWebhook`;
 const tallyApiKeySecretName = `${stackName}_tallyApiKey`;
+let tallyApiKey;
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
 
@@ -47,7 +48,7 @@ async function postToDiscord(discordWebhook, message) {
   return response;
 }
 // Using both chainId and governor address to be safe
-async function getProposalTitle(proposalId, tallyApiKey) {
+async function getProposalTitle(proposalId) {
   let title;
   try {
     const tallyRes = await axios.post(
@@ -77,7 +78,7 @@ async function getProposalTitle(proposalId, tallyApiKey) {
   return title;
 }
 
-async function getAccountDisplayName(voter, tallyApiKey) {
+async function getAccountDisplayName(voter) {
   let displayName;
   try {
     const result = await axios.post(
@@ -118,7 +119,7 @@ function getProposalTitleFromDescription(description) {
   return proposalName;
 }
 
-async function createDiscordMessage(eventName, params, transactionHash, tallyApiKey) {
+async function createDiscordMessage(eventName, params, transactionHash) {
   let description;
   let support;
   let proposalId;
@@ -147,9 +148,9 @@ async function createDiscordMessage(eventName, params, transactionHash, tallyApi
       ({ proposer, id, description } = params);
       proposalName = getProposalTitleFromDescription(description);
       if (proposalName === undefined) {
-        proposalName = await getProposalTitle(id, tallyApiKey);
+        proposalName = await getProposalTitle(id);
       }
-      displayName = await getAccountDisplayName(proposer, tallyApiKey);
+      displayName = await getAccountDisplayName(proposer);
       // Reference:
       // https://discord.com/developers/docs/resources/channel#allowed-mentions-object-allowed-mentions-reference
       if (displayName === '') {
@@ -168,7 +169,7 @@ async function createDiscordMessage(eventName, params, transactionHash, tallyApi
         proposalId,
       } = params);
 
-      displayName = await getAccountDisplayName(voter, tallyApiKey);
+      displayName = await getAccountDisplayName(voter);
 
       if (support === 0) {
         supportEmoji = noEntryEmoji;
@@ -190,7 +191,7 @@ async function createDiscordMessage(eventName, params, transactionHash, tallyApi
       }
       votes = internationalNumberFormat.format(votes);
 
-      proposalName = await getProposalTitle(proposalId, tallyApiKey);
+      proposalName = await getProposalTitle(proposalId);
       if (displayName !== '') {
         message = `${voteTypeString} ${proposalName} ${supportEmoji} ${votes} by ${displayName} ${etherscanLink}`;
       } else {
@@ -203,17 +204,17 @@ async function createDiscordMessage(eventName, params, transactionHash, tallyApi
       break;
     case 'ProposalCanceled':
       ({ id } = params);
-      proposalName = await getProposalTitle(id, tallyApiKey);
+      proposalName = await getProposalTitle(id);
       message = `**Canceled Proposal** ${proposalName} ${noEntryEmoji}`;
       break;
     case 'ProposalExecuted':
       ({ id } = params);
-      proposalName = await getProposalTitle(id, tallyApiKey);
+      proposalName = await getProposalTitle(id);
       message = `**Executed Proposal** ${proposalName} ${checkMarkEmoji}`;
       break;
     case 'ProposalQueued':
       ({ eta, id } = params);
-      proposalName = await getProposalTitle(id, tallyApiKey);
+      proposalName = await getProposalTitle(id);
       message = `**Queued Proposal** ${proposalName} ${checkMarkEmoji} available to execute at timestamp ${eta}`;
       break;
     default:
@@ -257,7 +258,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that there is a Tally secret
-  const tallyApiKey = secrets[tallyApiKeySecretName];
+  tallyApiKey = secrets[tallyApiKeySecretName];
   if (tallyApiKey === undefined) {
     throw new Error('Tally API key undefined');
   }
@@ -289,7 +290,7 @@ exports.handler = async function (autotaskEvent) {
     const { signature, params } = reason;
     const eventName = signature.slice(0, signature.indexOf('('));
     // craft the Discord message
-    return createDiscordMessage(eventName, params, transactionHash, tallyApiKey);
+    return createDiscordMessage(eventName, params, transactionHash);
   });
 
   // wait for the promises to settle
