@@ -17,10 +17,9 @@ custom:
 
   # Contract Sentinel Settings
   monitored-addresses:
-   # - "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
-    - "0x057b512C67A2E8491788A89E5f2532e8B9977F0f"
+   - "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
   # Possible Defender networks: https://github.com/OpenZeppelin/defender-client/blob/master/packages/base/src/utils/network.ts`
-  monitored-network: goerli #mainnet
+  monitored-network: mainnet
 
   # Comment out any secret that you do not want to be overwritten in Defender
   defenderSecrets:
