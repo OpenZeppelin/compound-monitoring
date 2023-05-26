@@ -1,8 +1,13 @@
 const stackName = 'governance_discord_alert';
 const discordSecretName = `${stackName}_discordWebhook`;
-
+const tallyApiKeySecretName = `${stackName}_tallyApiKey`;
+let tallyApiKey;
 // eslint-disable-next-line import/no-extraneous-dependencies
 const axios = require('axios');
+
+const baseTallyUrl = 'https://api.tally.xyz/query';
+const v2GovernorAddress = '0xc0da02939e1441f497fd74f78ce7decb17b66529';
+const ethereumMainnetChainId = 'eip155:1';
 
 function getRandomInt(min, max) {
   return Math.floor((Math.random() * (max - min)) + min);
@@ -42,14 +47,28 @@ async function postToDiscord(discordWebhook, message) {
   }
   return response;
 }
-
+// Using both chainId and governor address to be safe
 async function getProposalTitle(proposalId) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposals';
-  const queryUrl = `?proposal_ids[]=${proposalId}`;
   let title;
   try {
-    const result = await axios.get(baseUrl + queryUrl);
-    title = result.data.proposals[0].title;
+    const tallyRes = await axios.post(
+      baseTallyUrl,
+      {
+        query: 'query Proposals($chainId: ChainID!,\n$governors: [Address!],\n$proposalIds: [ID!]) {\nproposals(\nchainId: $chainId,\ngovernors: $governors,\nproposalIds: $proposalIds,\n) {\nid\ntitle\ndescription\n},}',
+        variables: {
+          chainId: ethereumMainnetChainId,
+          governors: [v2GovernorAddress],
+          proposalIds: [proposalId],
+        },
+      },
+      {
+        headers: {
+          'Api-Key': tallyApiKey,
+        },
+      },
+    );
+    title = tallyRes.data.data.proposals[0].title.replaceAll('#', '').trim();
+
     if (title === null) {
       title = '';
     }
@@ -60,12 +79,23 @@ async function getProposalTitle(proposalId) {
 }
 
 async function getAccountDisplayName(voter) {
-  const baseUrl = 'https://api.compound.finance/api/v2/governance/proposal_vote_receipts';
-  const queryUrl = `?account=${voter}`;
   let displayName;
   try {
-    const result = await axios.get(baseUrl + queryUrl);
-    displayName = result.data.proposal_vote_receipts[0].voter.display_name;
+    const result = await axios.post(
+      baseTallyUrl,
+      {"query":"query Accounts(\n$ids: [AccountID!],\n$addresses:[Address!]\n) {\naccounts(\nids: $ids,\naddresses: $addresses\n ) {\nid\naddress\nname}}",
+        variables: {
+          ids: [`${ethereumMainnetChainId}:${voter}`],
+          addresses: [voter],
+        },
+      },
+      {
+        headers: {
+          'Api-Key': tallyApiKey,
+        },
+      },
+    );
+    displayName = result.data.data.accounts[0].name;
     if (displayName === null) {
       displayName = '';
     }
@@ -212,6 +242,27 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('discordUrl undefined');
   }
 
+  // Ref: https://developer.mozilla.org/en-US/docs/Web/API/URL
+  function isValidUrl(string) {
+    let url;
+    try {
+      url = new URL(string);
+    } catch (_) {
+      return false;
+    }
+    return url.href;
+  }
+
+  if (isValidUrl(discordUrl) === false) {
+    throw new Error('discordUrl is not a valid URL');
+  }
+
+  // ensure that there is a Tally secret
+  tallyApiKey = secrets[tallyApiKeySecretName];
+  if (tallyApiKey === undefined) {
+    throw new Error('Tally API key undefined');
+  }
+
   // ensure that the request key exists within the autotaskEvent Object
   if (request === undefined) {
     throw new Error('request undefined');
@@ -224,6 +275,7 @@ exports.handler = async function (autotaskEvent) {
   }
 
   // ensure that the alert key exists within the body Object
+  // This looks like a Forta event type?
   const {
     matchReasons,
     hash: transactionHash,
@@ -251,7 +303,6 @@ exports.handler = async function (autotaskEvent) {
       return undefined;
     }
 
-    console.log(result.value);
     return postToDiscord(discordUrl, result.value);
   });
 
