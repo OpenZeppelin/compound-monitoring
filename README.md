@@ -41,9 +41,9 @@ to Proposals and Voting.
 This bot monitors all borrow events of COMP to see if the borrower address has accrued enough COMP
 to pass significant governance thresholds. This can be an early indication of governance attacks.
 
-### [Liquidation Monitor](liquidation-monitor/README.md)
+### [DEPRECATED: Liquidation Monitor](liquidation-monitor/README.md)
 
-This bot detects when an account on Compound is able to be liquidated.
+This bot detects when an account on Compound is able to be liquidated. Since deprecation of the Compound v2 monitoring API, this bot has been deprecated.
 
 ### [Low Liquidity Market Attack Monitor](low-liquidity-market-attack-monitor/README.md)
 
