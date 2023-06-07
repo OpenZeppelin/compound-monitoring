@@ -60,8 +60,8 @@ resources:
         paused: false
         notify-config:
           timeout: 0
-          message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
-          message-subject: 'Compound Monitoring: Forta Oracle Price Monitor triggered'
+          message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
+          message-subject: "Compound Monitoring: Forta Oracle Price Monitor triggered"
           channels:
             - ${self:resources.Resources.notifications.j-bass-oz}
             - >-
@@ -71,6 +71,6 @@ resources:
           severity: 1
         autotask-condition: ${self:functions.autotask-1}
         agent-ids:
-          - '0x32facccd163300ad76c7fe88b559b812dca9050a569417b42fced95594dda08e'
+          - "0x32facccd163300ad76c7fe88b559b812dca9050a569417b42fced95594dda08e"
 plugins:
   - defender-serverless
