@@ -1,4 +1,5 @@
 *.swp
+.vscode
 .env
 forta.config.json
 node_modules
