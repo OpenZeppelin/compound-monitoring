@@ -3,7 +3,7 @@
 ## Description
 
 This bot monitors the UniswapAnchoredProxy contract for PriceGuarded events which indicate that
-a ValidatorProxy reported a cToken price that is outside of the Uniswap V2 TWAP percent threshold.
+a ValidatorProxy reported a cToken price that is outside of the Uniswap V3 TWAP percent threshold.
 
 ## Alerts
 
