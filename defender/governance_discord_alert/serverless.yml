@@ -25,6 +25,7 @@ custom:
   defenderSecrets:
     # Private variables pulled from external secrets.yml file
     discordWebhook: ${self:custom.stackSecrets.discordWebhook}
+    tallyApiKey: ${self.stackSecrets.tallyApiKey}
 
 defender:
   key: ${self:custom.config.keys.api}
