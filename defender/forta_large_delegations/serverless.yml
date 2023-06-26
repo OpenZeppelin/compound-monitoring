@@ -32,7 +32,6 @@ defender:
 
 functions:
   autotask-1:
-    forta-large-delegations-filter:
     name: Forta Large Delegations Filter
     trigger:
       type: sentinel
