@@ -53,7 +53,7 @@ resources:
     relayers:
 
     sentinels:
-     forta-large-delegations-monitor:
+     sentinel-1:
         name: Forta Large Delegations Monitor
         type: FORTA
         addresses: []
@@ -64,6 +64,7 @@ resources:
           message-subject: 'Defender Sentinel: Forta Large Delegations Monitor triggered'
           channels:
             - ${self:resources.Resources.notifications.SecurityAlerts}
+        autotask-condition: ${self:functions.autotask-1}
         conditions:
           min-scanner-count: 1
           severity: 1
