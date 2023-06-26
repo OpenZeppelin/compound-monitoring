@@ -53,15 +53,15 @@ resources:
     relayers:
 
     sentinels:
-     forta-large-delegations-monitor:
+      forta-large-delegations-monitor:
         name: Forta Large Delegations Monitor
         type: FORTA
         addresses: []
         paused: false
         notify-config:
           timeout: 0
-          message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
-          message-subject: 'Defender Sentinel: Forta Large Delegations Monitor triggered'
+          message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
+          message-subject: "Defender Sentinel: Forta Large Delegations Monitor triggered"
           channels:
             - ${self:resources.Resources.notifications.SecurityAlerts}
         conditions:
@@ -70,6 +70,6 @@ resources:
           alert-ids:
             - AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD
         agent-ids:
-          - '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53'
+          - "0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53"
 plugins:
   - defender-serverless
