@@ -47,6 +47,13 @@ resources:
           - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
         eip1559-pricing: true
     notifications:
+     security-alerts:
+        type: discord
+        name: SecurityAlerts
+        config:
+          url: >-
+            https://discord.com/api/webhooks/974392977583669348/vD_9OBLHB0eYf0loRNXe5Eu9uR4Y5DVngxgtQ-Dde6ac36Zob7jqb56hlamf1dBWDqdy
+        paused: false
       morgan-test-discord:
         type: discord
         name: morgan-test-discord
@@ -67,7 +74,7 @@ resources:
           message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
           message-subject: 'Defender Sentinel: Forta Large Delegations Monitor triggered'
           channels:
-            - ${self:resources.Resources.notifications.morgan-test-discord}
+            - ${self:resources.Resources.notifications.security-alerts}
         autotask-condition: ${self:functions.autotask-1}
         conditions:
           min-scanner-count: 1
