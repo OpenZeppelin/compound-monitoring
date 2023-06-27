@@ -64,6 +64,7 @@ resources:
           message-subject: "Defender Sentinel: Forta Large Delegations Monitor triggered"
           channels:
             - ${self:resources.Resources.notifications.SecurityAlerts}
+        autotask-condition: ${self:functions.autotask-1}
         conditions:
           min-scanner-count: 1
           severity: 1
