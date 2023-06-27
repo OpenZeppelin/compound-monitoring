@@ -66,8 +66,8 @@ resources:
         paused: false
         notify-config:
           timeout: 0
-          message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
-          message-subject: 'Defender Sentinel: Forta Large Delegations Monitor triggered'
+          message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
+          message-subject: "Defender Sentinel: Forta Large Delegations Monitor triggered"
           channels:
             - "${self:resources.Resources.notifications.morgan-test-discord}"
         autotask-condition: "${self:functions.autotask-1}"
@@ -77,6 +77,6 @@ resources:
           alert-ids:
             - AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD
         agent-ids:
-          - '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53'
+          - "0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53"
 plugins:
   - defender-serverless
