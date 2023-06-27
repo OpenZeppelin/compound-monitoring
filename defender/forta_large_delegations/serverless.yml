@@ -34,9 +34,9 @@ functions:
   autotask-1:
     name: Forta Large Delegations Filter
     trigger:
-      type: sentinel
+      type: webhook
     paused: false
-    path: autotask-1
+    path: 'autotask-1'
 
 resources:
   Resources:
@@ -44,7 +44,7 @@ resources:
       policy-1:
         gas-price-cap: 1000
         whitelist-receivers:
-          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
+          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
         eip1559-pricing: true
     notifications:
       morgan-test-discord:
@@ -56,27 +56,25 @@ resources:
         paused: false
     secrets:
       stack: ${self:custom.defenderSecrets}
-    relayers:
     sentinels:
       forta-large-delegations-monitor:
-        name: "Forta Large Delegations Monitor"
-        type: FORTA
-        addresses: []
+        name: 'Forta Large Delegations Monitor'
+        type: 'FORTA'
         network: mainnet
         paused: false
         notify-config:
           timeout: 0
-          message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
-          message-subject: "Defender Sentinel: Forta Large Delegations Monitor triggered"
+          message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
+          message-subject: 'Defender Sentinel: Forta Large Delegations Monitor triggered'
           channels:
-            - "${self:resources.Resources.notifications.morgan-test-discord}"
-        autotask-condition: "${self:functions.autotask-1}"
+            - ${self:resources.Resources.notifications.morgan-test-discord}
+        autotask-condition: ${self:functions.autotask-1}
         conditions:
           min-scanner-count: 1
           severity: 1
           alert-ids:
             - AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD
         agent-ids:
-          - "0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53"
+          - '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53'
 plugins:
   - defender-serverless
