@@ -1,101 +1,65 @@
-const stackName = 'forta_low_liquidity';
-const discordSecretName = `${stackName}_discordWebhook`;
 
-const axios = require('axios');
-
-async function post(url, method, headers, data) {
-  return axios({
-    url,
-    method,
-    headers,
-    data,
-  });
-}
-
-async function postToDiscord(url, message) {
-  const method = 'post';
-  const headers = {
-    'Content-Type': 'application/json',
+const ScopedSecretsProvider = function ({ autotaskId = '', autotaskName = '', secrets = [], namespace = secrets[autotaskId] || autotaskName, delim = '_' } = {}) {
+  const scopes = function* () {
+    const arr = namespace.split(delim);
+    do {
+      yield arr.join(delim);
+      arr.pop();
+    } while (arr.length);
   };
-  const data = { content: message };
-
-  let response;
-  try {
-    // perform the POST request
-    response = await post(url, method, headers, data);
-  } catch (error) {
-    // check if this is a "too many requests" error (HTTP status 429)
-    if (error.response && error.response.status === 429) {
-      // the request was made and a response was received
-      // try again after waiting 5 - 50 seconds, if retry_after value is received, use that.
-      let timeout;
-      // Discord Webhook API defaults to v6, and v6 returns retry_after value in ms. Later versions
-      // use seconds, so this will need to be updated when Discord changes their default API version
-      // Ref: https://discord.com/developers/docs/reference
-      if (error.response.data
-        && error.response.data.retry_after
-        && error.response.data.retry_after < 50000) {
-        // Wait the specified amount of time + a random number to reduce
-        // overlap with newer requests. Initial testing reveals that the Discord Webhook allows 5
-        // requests and then resets the counter after 2 seconds. With a 15 second range of 5-20,
-        // this function can reliably can handle batches of 15 requests. Increase the max variable
-        // below if you anticipate a larger number of requests.
-        // Ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/random
-        const min = 5000;
-        const max = 30000;
-        timeout = Math.floor(Math.random() * (max - min) + min);
-        timeout += error.response.data.retry_after;
-      } else {
-        // If retry_after is larger than 50 seconds, then just wait 50 seconds.
-        timeout = 50000;
-      }
-      // eslint-disable-next-line no-promise-executor-return
-      const promise = new Promise((resolve) => setTimeout(resolve, timeout));
-      await promise;
-      response = await post(url, method, headers, data);
-    } else {
-      // re-throw the error if it's not from a 429 status
-      throw error;
+  const get = (target, name) => {
+    if (!!target && name in target) return target[name];
+  };
+  const parse = (str) => {
+    try {
+      if (!!str) return JSON.parse(str);
+    } catch { }
+  };
+  const order = function* (name, target) {
+    for (const scope of scopes()) {
+      yield get(target, scope.concat(delim, name));
+      yield get(parse(get(target, scope.concat(delim))), name);
+      yield get(parse(get(target, scope)), name);
     }
-  }
-  return response;
+  };
+  return new Proxy(secrets, {
+    get: (target, name) => {
+      for (const value of order(name, target))
+        if (!!value) return value;
+    }
+  });
+};
+function getUrl(scopedSecrets, source) {
+  if (!scopedSecrets || !source) return;
+  const { block, transactionHash } = source;
+  if (!block || !transactionHash) return;
+  const { chainId } = block;
+  if (!chainId) return;
+  let mapping = scopedSecrets['NetworkBlockexplorerMapping'];
+  if (!mapping) return;
+  try {
+    mapping = JSON.parse(mapping);
+  } catch (e) { return; }
+  const path = mapping?.[chainId];
+  if (!path) return;
+  return `${path}${transactionHash}`;
 }
 
 // eslint-disable-next-line func-names
-exports.handler = async function (autotaskEvent) {
-  // ensure that the autotaskEvent Object exists
-  if (autotaskEvent === undefined) {
+exports.handler = async function (payload) {
+  const scopedSecrets = new ScopedSecretsProvider(payload);
+  const matches = [];
+
+  // Safety boilerplate:
+  if (payload === undefined) {
     throw new Error('autotaskEvent undefined');
   }
-
-  const { secrets } = autotaskEvent;
+  const { secrets } = payload;
   if (secrets === undefined) {
     throw new Error('secrets undefined');
   }
-
-  // ensure that there is a DiscordUrl secret
-  const discordUrl = secrets[discordSecretName];
-  if (discordUrl === undefined) {
-    throw new Error('discordUrl undefined');
-  }
-
-  // Ref: https://developer.mozilla.org/en-US/docs/Web/API/URL
-  function isValidUrl(string) {
-    let url;
-    try {
-      url = new URL(string);
-    } catch (_) {
-      return false;
-    }
-    return url.href;
-  }
-
-  if (isValidUrl(discordUrl) === false) {
-    throw new Error('discordUrl is not a valid URL');
-  }
-
   // ensure that the request key exists within the autotaskEvent Object
-  const { request } = autotaskEvent;
+  const { request } = payload;
   if (request === undefined) {
     throw new Error('request undefined');
   }
@@ -124,38 +88,36 @@ exports.handler = async function (autotaskEvent) {
     throw new Error('metadata undefined');
   }
 
-  // extract the hashes from the source Object
-  const {
-    transactionHash,
-  } = source;
+  payload.request.body.events?.forEach((event) => {
+    const { hash } = event.alert;
+    const transactionLink = getUrl(scopedSecrets, source) ?? `https://explorer.forta.network/alert/${hash}`;
+    if (metadata === undefined) {
+      throw new Error('metadata undefined');
+    }
 
-  // Start of usual modifications to the autotask script
-  // extract the metadata
-  const {
-    compTokenSymbol,
-    maliciousAddress,
-    protocolVersion,
-  } = metadata;
-  if (maliciousAddress === undefined) {
-    throw new Error('maliciousAddress undefined');
-  }
+    let protocolVersionString = metadata.protocolVersion;
+    if (protocolVersionString === undefined) {
+      protocolVersionString = 'undefined';
+    }
 
-  // Handle older alerts which don't specify the protocol version
-  let versionString = '';
-  if (protocolVersion !== undefined) {
-    versionString = ` (Compound v${protocolVersion})`;
-  }
+    const {
+      compTokenSymbol,
+      maliciousAddress,
+    } = metadata;
+    if (maliciousAddress === undefined) {
+      throw new Error('maliciousAddress undefined');
+    }
 
-  const maliciousAddressFormatted = maliciousAddress.slice(0, 6);
+    const maliciousAddressFormatted = maliciousAddress.slice(0, 6);
 
-  // // construct the Etherscan transaction link
-  const etherscanLink = `[TX](<https://etherscan.io/tx/${transactionHash}>)`;
-  const message = `${etherscanLink} The address ${maliciousAddressFormatted} is potentially manipulating the cToken ${compTokenSymbol} market${versionString}`;
+    const message = `${transactionLink} The address ${maliciousAddressFormatted} is potentially manipulating the cToken ${compTokenSymbol} market on protocolVersion ${protocolVersionString}`;
 
-  // create promises for posting messages to Discord webhook
-  // with Log Forwarding enabled, this console.log will forward the text string to Dune Analytics
-  console.log(message);
-  await postToDiscord(discordUrl, message);
+    console.log(message);
+    matches.push({
+      hash: event.hash,
+      metadata: { message, transactionLink },
+    });
+  });
 
-  return {};
+  return { matches };
 };
