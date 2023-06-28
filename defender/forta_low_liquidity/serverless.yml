@@ -32,7 +32,7 @@ defender:
 
 functions:
   autotask-1:
-    name: ${self:custom.name} Serverless Autotask
+    name: ${self:custom.name} Serverless Autotask Filter
     path: autotask-1
     trigger:
       type: schedule
@@ -47,11 +47,23 @@ resources:
         whitelist-receivers:
           - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
-
+    notifications:
+      security-alerts:
+        type: discord
+        name: SecurityAlerts
+        config:
+          url: >-
+            https://discord.com/api/webhooks/974392977583669348/vD_9OBLHB0eYf0loRNXe5Eu9uR4Y5DVngxgtQ-Dde6ac36Zob7jqb56hlamf1dBWDqdy
+        paused: false
+      morgan-test-discord:
+        type: discord
+        name: morgan-test-discord
+        config:
+          url: >-
+            https://discord.com/api/webhooks/1100782529079943298/Ip0p-gUKe1m5n4ygss8JWVUT0QhpOzbBoV8iFqV1NuxFjameu1yCzbukJcAokfXwjjyO
+        paused: false
     secrets:
       stack: ${self:custom.defenderSecrets}
-
-    relayers:
 
     sentinels:
       sentinel-1:
@@ -60,10 +72,13 @@ resources:
         addresses: []
         network: mainnet
         paused: false
-        autotask-trigger: ${self:functions.autotask-1}
         notify-config:
           timeout: 0
-          channels: []
+          message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
+          message-subject: 'Defender Sentinel: Forta Low Liquidity Attack Monitor triggered'
+          channels:
+            - ${self:resources.Resources.notifications.morgan-test-discord}
+        autotask-condition: ${self:functions.autotask-1}
         conditions:
           min-scanner-count: 1
           severity: 1
