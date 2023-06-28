@@ -10,21 +10,7 @@ provider:
 
 custom:
   config: ${file(../secrets.yml)}
-  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
-
-  # Configure this section and rename secret-example.yml to secrets.yml
-  name: Forta Sentinel Price Oracle Filter
-
-  # Forta Sentinel Settings
-  alert-ids:
-    - AE-COMP-CTOKEN-PRICE-REJECTED
-  agent-ids:
-    - "0x32facccd163300ad76c7fe88b559b812dca9050a569417b42fced95594dda08e"
-
-  # Comment out any secret that you do not want to be overwritten in Defender
-  defenderSecrets:
-    # Private variables pulled from external secrets.yml file
-    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
+  name: Forta Oracle Price
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -32,7 +18,7 @@ defender:
 
 functions:
   autotask-1:
-    name: ${self:custom.name} Serverless Autotask Filter
+    name: ${self:custom.name} Filter
     path: autotask-1
     trigger:
       type: sentinel
@@ -40,30 +26,17 @@ functions:
 
 resources:
   Resources:
-    policies:
-      policy-1:
-        gas-price-cap: 1000
-        whitelist-receivers:
-          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
-        eip1559-pricing: true
-
-    secrets:
-      stack: ${self:custom.defenderSecrets}
-
-    relayers:
-
     sentinels:
       sentinel-1:
-        name: Forta Oracle Price Monitor
+        name: Forta Oracle Price Sentinel
         type: FORTA
         addresses: []
         paused: false
         notify-config:
           timeout: 0
           message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
-          message-subject: "Compound Monitoring: Forta Oracle Price Monitor triggered"
+          message-subject: "Compound Monitoring: Forta Oracle Price Sentinel triggered"
           channels:
-            - ${self:resources.Resources.notifications.j-bass-oz}
             - >-
               ${self:resources.Resources.notifications.security-alerts-oracle-price}
         conditions:
