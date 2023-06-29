@@ -10,21 +10,7 @@ provider:
 
 custom:
   config: ${file(../secrets.yml)}
-  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
-
-  # Configure this section and rename secret-example.yml to secrets.yml
   name: Forta Low Liquidity
-
-  # Forta Sentinel Settings
-  alert-ids:
-    - AE-COMP-MARKET-ATTACK-EVENT
-  agent-ids:
-    - "0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a"
-
-  # Comment out any secret that you do not want to be overwritten in Defender
-  defenderSecrets:
-    # Private variables pulled from external secrets.yml file
-    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -40,40 +26,26 @@ functions:
 
 resources:
   Resources:
-    policies:
-      policy-1:
-        gas-price-cap: 1000
-        whitelist-receivers:
-          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
-        eip1559-pricing: true
-
-    secrets:
-      stack: ${self:custom.defenderSecrets}
-
-    relayers:
-
     sentinels:
       sentinel-1:
-        name: ${self:custom.name} Serverless Sentinel
+        name: ${self:custom.name} Sentinel
         type: FORTA
         addresses: []
         network: mainnet
         paused: false
         notify-config:
           timeout: 0
-           message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
+          message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
           message-subject: 'Defender Sentinel: Forta Low Liquidity Attack Monitor triggered'
           channels:
-            - ${self:resources.Resources.notifications.j-bass-oz}
             - >-
-              ${self:resources.Resources.notifications.security-alerts-multisig-monitor}
-        # The channel above (security-alerts-multisig-monitor) is one of 3 webhooks to the same Discord sec channel
+              ${self:resources.Resources.notifications.security-alerts-liquidity-monitor}
         conditions:
           min-scanner-count: 1
           severity: 1
-          alert-ids: ${self:custom.alert-ids}
+          alert-ids: []
         autotask-condition: ${self:functions.autotask-1}
-        agent-ids: ${self:custom.agent-ids}
+        agent-ids: 0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a
 
 plugins:
   - defender-serverless
