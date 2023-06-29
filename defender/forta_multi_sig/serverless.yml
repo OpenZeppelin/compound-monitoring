@@ -36,9 +36,9 @@ resources:
           - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
     notifications:
-      test-discord:
+      discord:
         type: discord
-        name: morgan-test-discord
+        name: '${self:custom.name} Security Alerts'
         config:
           url: ${self:custom.discordWebhook}
         paused: false
@@ -46,13 +46,15 @@ resources:
       forta-multisig-sentinel:
         name: '${self:custom.name} Sentinel'
         type: 'FORTA'
+        network: 'mainnet'
+        addresses: []
         paused: false
         notify-config:
           timeout: 0
           message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
           message-subject: 'Defender Sentinel: ${self:custom.name} triggered'
           channels:
-            - ${self:resources.Resources.notifications.test-discord}
+            - ${self:resources.Resources.notifications.discord}
         conditions:
           min-scanner-count: 1
           severity: 1
