@@ -9,51 +9,16 @@ provider:
   ssot: false
 
 custom:
-  config: ${file(../secrets.yml)}
-  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
-
-  # Configure this section and rename secret-example.yml to secrets.yml
+  config: ${file(secrets.yml)}
   name: Forta Multi-Sig
-
-  # Forta Sentinel Settings
-  alert-ids:
-    - AE-COMP-MULTISIG-OWNER-ADDED-ALERT,
-    - AE-COMP-MULTISIG-APPROVED-HASH-ALERT,
-    - AE-COMP-MULTISIG-CHANGED-MASTER-COPY-ALERT,
-    - AE-COMP-MULTISIG-CHANGED-THRESHOLD-ALERT,
-    - AE-COMP-MULTISIG-DISABLED-MODULE-ALERT,
-    - AE-COMP-MULTISIG-ENABLED-MODULE-ALERT,
-    - AE-COMP-MULTISIG-EXECUTION-FAILURE-ALERT,
-    - AE-COMP-MULTISIG-EXECUTION-FROM-MODULE-FAILURE-ALERT,
-    - AE-COMP-MULTISIG-EXECUTION-FROM-MODULE-SUCCESS-ALERT,
-    - AE-COMP-MULTISIG-EXECUTION-SUCCESS-ALERT,
-    - AE-COMP-MULTISIG-OWNER-REMOVED-ALERT,
-    - AE-COMP-MULTISIG-SIGN-MESSAGE-ALERT,
-    - AE-COMP-GOVERNANCE-PROPOSAL-CREATED-ALERT
-    - AE-COMP-GOVERNANCE-PROPOSAL-EXECUTED-ALERT
-    - AE-COMP-GOVERNANCE-PROPOSAL-CANCELED-ALERT
-    - AE-COMP-GOVERNANCE-VOTE-CAST-ALERT
-    - AE-COMP-GOVERNANCE-PROPOSAL-THRESHOLD-SET-ALERT
-    - AE-COMP-GOVERNANCE-NEW-ADMIN-ALERT
-    - AE-COMP-NEW-PAUSE-GUARDIAN-ALERT
-    - AE-COMP-ACTION-PAUSED-ALERT
-    - AE-COMP-NEW-BORROW-CAP-ALERT
-    - AE-COMP-NEW-BORROW-CAP-GUARDIAN-ALERT
-  agent-ids:
-    - "0x2e7f036f3495fec41a3eabae03b3efd378f6834bbb2976b99dfed6d3c7de7458"
-
-  # Comment out any secret that you do not want to be overwritten in Defender
-  defenderSecrets:
-    # Private variables pulled from external secrets.yml file
-    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
-
+  
 defender:
   key: ${self:custom.config.keys.api}
   secret: ${self:custom.config.keys.secret}
 
 functions:
   autotask-1:
-    name: ${self:custom.name} Serverless Autotask Filter
+    name: ${self:custom.name} Filter
     path: autotask-1
     trigger:
       type: sentinel
@@ -68,23 +33,17 @@ resources:
           - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
 
-    secrets:
-      stack: ${self:custom.defenderSecrets}
-
-    relayers:
-
     sentinels:
       forta-multisig-sentinel:
-        name: Forta Multisig Sentinel
+        name: &sentinel-name ${self:custom.name} Sentinel
         type: FORTA
         addresses: []
         paused: false
         notify-config:
           timeout: 0
           message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
-          message-subject: 'Defender Sentinel: Forta Multisig Sentinel triggered'
+          message-subject: 'Defender Sentinel: ${sentinel-name} triggered'
           channels:
-            - ${self:resources.Resources.notifications.j-bass-oz}
             - >-
               ${self:resources.Resources.notifications.security-alerts-multisig-monitor}
         conditions:
