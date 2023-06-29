@@ -9,9 +9,11 @@ provider:
   ssot: false
 
 custom:
-  config: ${file(secrets.yml)}
+  config:  ${file(../secrets.yml)}
   name: Forta Multi-Sig
-  
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
+  discordWebhook: ${self:custom.stackSecrets.discordWebhook}
+
 defender:
   key: ${self:custom.config.keys.api}
   secret: ${self:custom.config.keys.secret}
@@ -21,7 +23,8 @@ functions:
     name: ${self:custom.name} Filter
     path: autotask-1
     trigger:
-      type: sentinel
+      type: schedule
+      frequency: 525600000
     paused: false
 
 resources:
@@ -32,20 +35,24 @@ resources:
         whitelist-receivers:
           - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
         eip1559-pricing: true
-
+    notifications:
+      test-discord:
+        type: discord
+        name: morgan-test-discord
+        config:
+          url: ${self:custom.discordWebhook}
+        paused: false
     sentinels:
       forta-multisig-sentinel:
-        name: &sentinel-name ${self:custom.name} Sentinel
-        type: FORTA
-        addresses: []
+        name: '${self:custom.name} Sentinel'
+        type: 'FORTA'
         paused: false
         notify-config:
           timeout: 0
           message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
-          message-subject: 'Defender Sentinel: ${sentinel-name} triggered'
+          message-subject: 'Defender Sentinel: ${self:custom.name} triggered'
           channels:
-            - >-
-              ${self:resources.Resources.notifications.security-alerts-multisig-monitor}
+            - ${self:resources.Resources.notifications.test-discord}
         conditions:
           min-scanner-count: 1
           severity: 1
