@@ -11,7 +11,8 @@ provider:
 custom:
   config: ${file(../secrets.yml)}
   stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
-
+  discordWebhook: ${self:custom.stackSecrets.discordWebhook}
+  
   # Configure this section and rename secret-example.yml to secrets.yml
   name: Forta Large Delegations
 
@@ -21,51 +22,31 @@ custom:
   agent-ids:
     - "0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53"
 
-  # Comment out any secret that you do not want to be overwritten in Defender
-  defenderSecrets:
-    # Private variables pulled from external secrets.yml file
-    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
-
 defender:
   key: ${self:custom.config.keys.api}
   secret: ${self:custom.config.keys.secret}
 
 functions:
   autotask-1:
-    name: Forta Large Delegations Filter
+    name: ${self:custom.name} Filter
     trigger:
-      type: webhook
-    paused: false
+      type: schedule
+      frequency: 0
+    paused: true
     path: 'autotask-1'
 
 resources:
   Resources:
-    policies:
-      policy-1:
-        gas-price-cap: 1000
-        whitelist-receivers:
-          - '0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2'
-        eip1559-pricing: true
     notifications:
      security-alerts:
         type: discord
-        name: SecurityAlerts
+        name: '${self:custom.name} Security Alerts'
         config:
-          url: >-
-            https://discord.com/api/webhooks/974392977583669348/vD_9OBLHB0eYf0loRNXe5Eu9uR4Y5DVngxgtQ-Dde6ac36Zob7jqb56hlamf1dBWDqdy
+          url:  ${self:custom.discordWebhook}
         paused: false
-      morgan-test-discord:
-        type: discord
-        name: morgan-test-discord
-        config:
-          url: >-
-            https://discord.com/api/webhooks/1100782529079943298/Ip0p-gUKe1m5n4ygss8JWVUT0QhpOzbBoV8iFqV1NuxFjameu1yCzbukJcAokfXwjjyO
-        paused: false
-    secrets:
-      stack: ${self:custom.defenderSecrets}
     sentinels:
       forta-large-delegations-monitor:
-        name: 'Forta Large Delegations Monitor'
+        name: '${self:custom.name} Sentinel'
         type: 'FORTA'
         network: mainnet
         paused: false
@@ -80,8 +61,8 @@ resources:
           min-scanner-count: 1
           severity: 1
           alert-ids:
-            - AE-COMP-GOVERNANCE-DELEGATE-THRESHOLD
+            - ${self:custom.alert-ids}
         agent-ids:
-          - '0x0d3cdcc2757cd7837e3b302a9889c854044a80835562dc8060d7c163fbb69d53'
+          - ${self:custom.agent-ids}
 plugins:
   - defender-serverless
