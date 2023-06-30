@@ -9,7 +9,7 @@ provider:
   ssot: false
 
 custom:
-  config:  ${file(../secrets.yml)}
+  config: ${file(../secrets.yml)}
   name: Forta Low Liquidity
   stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
   discordWebhook: ${self:custom.stackSecrets.discordWebhook}
@@ -19,7 +19,6 @@ custom:
     - AE-COMP-MARKET-ATTACK-EVENT
   agent-ids:
     - "0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a"
-
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -52,7 +51,7 @@ resources:
         paused: false
       discord:
         type: discord
-        name: '${self:custom.name} Security Alerts'
+        name: "${self:custom.name} Security Alerts"
         config:
           url: ${self:custom.discordWebhook}
         paused: false
