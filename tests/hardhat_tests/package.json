@@ -1,0 +1,16 @@
+{
+  "name": "polygonfork",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat --network localhost test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@nomicfoundation/hardhat-toolbox": "2.0.1",
+    "dotenv": "16.0.3",
+    "hardhat": "2.12.7"
+  }
+}

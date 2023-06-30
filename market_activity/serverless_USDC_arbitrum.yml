@@ -1,0 +1,84 @@
+service: generated-service
+configValidationMode: error
+frameworkVersion: "3"
+
+provider:
+  name: defender
+  stage: dev
+  stackName: market_activity_USDC_arbitrum
+  ssot: false
+
+# Configure and rename secret-example.yml to secrets.yml
+custom:
+  config: ${file(../secrets.yml)}
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
+  # Comet address
+  comet-address:
+    - "0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA"
+  # Possible Defender networks: https://github.com/OpenZeppelin/defender-client/blob/master/packages/base/src/utils/network.ts
+  # Comet network
+  comet-network: arbitrum
+
+defender:
+  key: ${self:custom.config.keys.api}
+  secret: ${self:custom.config.keys.secret}
+
+functions:
+  autotask-1:
+    name: USDC(Arbitrum) MarketMonitor Autotask
+    path: autotask-1
+    trigger:
+      type: schedule
+      frequency: 52560000
+    paused: false
+    relayer: ${self:resources.Resources.relayers.relayer-1}
+
+resources:
+  Resources:
+    policies:
+      policy-1:
+        gas-price-cap: 1000
+        whitelist-receivers:
+          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
+        eip1559-pricing: true
+
+    secrets:
+      stack:
+        webhookURL: ${self:custom.stackSecrets.webhookURL}
+
+    relayers:
+      relayer-1:
+        name: USDC(Arbitrum) MarketMonitor Relay
+        network: ${self:custom.comet-network}
+        min-balance: 100000000000000000
+
+    sentinels:
+      sentinel-1:
+        # name must contain 'USDC'
+        name: USDC(Arbitrum) MarketActivity Sentinel
+        type: BLOCK
+        addresses: ${self:custom.comet-address}
+        network: ${self:custom.comet-network}
+        abi: ${file(abis/sentinel-1.json.abi)}
+        paused: false
+        autotask-trigger: ${self:functions.autotask-1}
+        confirm-level: 1
+        notify-config:
+          timeout: 0
+          channels: []
+        conditions:
+          event:
+            - signature: AbsorbCollateral(address,address,address,uint256,uint256)
+            - signature: AbsorbDebt(address,address,uint256,uint256)
+            - signature: BuyCollateral(address,address,uint256,uint256)
+            - signature: Supply(address,address,uint256)
+            - signature: SupplyCollateral(address,address,address,uint256)
+            - signature: Transfer(address,address,uint256)
+            - signature: TransferCollateral(address,address,address,uint256)
+            - signature: Withdraw(address,address,uint256)
+            - signature: WithdrawCollateral(address,address,address,uint256)
+            - signature: WithdrawReserves(address,uint256)
+          function: []
+
+plugins:
+  - defender-serverless

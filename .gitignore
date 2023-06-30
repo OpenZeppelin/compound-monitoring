@@ -1,0 +1,9 @@
+# Serverless directories
+.serverless
+
+# Defender
+secrets*.yml
+.defender
+
+# Basic Hygeine
+.env
