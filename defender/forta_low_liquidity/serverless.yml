@@ -65,8 +65,8 @@ resources:
         paused: false
         notify-config:
           timeout: 0
-          message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
-          message-subject: 'Defender Sentinel: Forta Low Liquidity Attack Monitor triggered'
+          message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
+          message-subject: "Defender Sentinel: Forta Low Liquidity Attack Monitor triggered"
           channels:
             - ${self:resources.Resources.notifications.security-alerts}
         autotask-condition: ${self:functions.autotask-1}
