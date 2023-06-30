@@ -9,11 +9,10 @@ provider:
   ssot: false
 
 custom:
-  config: ${file(../secrets.yml)}
-  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
-
-  # Configure this section and rename secret-example.yml to secrets.yml
+  config:  ${file(../secrets.yml)}
   name: Forta Low Liquidity
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
+  discordWebhook: ${self:custom.stackSecrets.discordWebhook}
 
   # Forta Sentinel Settings
   alert-ids:
@@ -21,10 +20,6 @@ custom:
   agent-ids:
     - "0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a"
 
-  # Comment out any secret that you do not want to be overwritten in Defender
-  defenderSecrets:
-    # Private variables pulled from external secrets.yml file
-    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -55,16 +50,12 @@ resources:
           url: >-
             https://discord.com/api/webhooks/974392977583669348/vD_9OBLHB0eYf0loRNXe5Eu9uR4Y5DVngxgtQ-Dde6ac36Zob7jqb56hlamf1dBWDqdy
         paused: false
-      morgan-test-discord:
+      discord:
         type: discord
-        name: morgan-test-discord
+        name: '${self:custom.name} Security Alerts'
         config:
-          url: >-
-            https://discord.com/api/webhooks/1100782529079943298/Ip0p-gUKe1m5n4ygss8JWVUT0QhpOzbBoV8iFqV1NuxFjameu1yCzbukJcAokfXwjjyO
+          url: ${self:custom.discordWebhook}
         paused: false
-    secrets:
-      stack: ${self:custom.defenderSecrets}
-
     sentinels:
       sentinel-1:
         name: ${self:custom.name} Serverless Sentinel
@@ -77,7 +68,7 @@ resources:
           message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
           message-subject: 'Defender Sentinel: Forta Low Liquidity Attack Monitor triggered'
           channels:
-            - ${self:resources.Resources.notifications.morgan-test-discord}
+            - ${self:resources.Resources.notifications.discord}
         autotask-condition: ${self:functions.autotask-1}
         conditions:
           min-scanner-count: 1

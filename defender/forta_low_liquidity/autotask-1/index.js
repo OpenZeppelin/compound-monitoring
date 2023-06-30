@@ -1,4 +1,3 @@
-
 const ScopedSecretsProvider = function ({ autotaskId = '', autotaskName = '', secrets = [], namespace = secrets[autotaskId] || autotaskName, delim = '_' } = {}) {
   const scopes = function* () {
     const arr = namespace.split(delim);
@@ -44,80 +43,36 @@ function getUrl(scopedSecrets, source) {
   if (!path) return;
   return `${path}${transactionHash}`;
 }
-
-// eslint-disable-next-line func-names
 exports.handler = async function (payload) {
   const scopedSecrets = new ScopedSecretsProvider(payload);
   const matches = [];
-
-  // Safety boilerplate:
-  if (payload === undefined) {
-    throw new Error('autotaskEvent undefined');
-  }
-  const { secrets } = payload;
-  if (secrets === undefined) {
-    throw new Error('secrets undefined');
-  }
-  // ensure that the request key exists within the autotaskEvent Object
-  const { request } = payload;
-  if (request === undefined) {
-    throw new Error('request undefined');
-  }
-
-  // ensure that the body key exists within the request Object
-  const { body } = request;
-  if (body === undefined) {
-    throw new Error('body undefined');
-  }
-
-  // ensure that the alert key exists within the body Object
-  const { alert } = body;
-  if (alert === undefined) {
-    throw new Error('alert undefined');
-  }
-
-  // ensure that the alert key exists within the body Object
-  const { source } = body;
-  if (source === undefined) {
-    throw new Error('source undefined');
-  }
-
-  // extract the metadata from the alert Object
-  const { metadata } = alert;
-  if (metadata === undefined) {
-    throw new Error('metadata undefined');
-  }
-
-  payload.request.body.events?.forEach((event) => {
-    const { hash } = event.alert;
+  payload.request.body.events?.forEach(event => {
+    const { alertId, source, metadata, hash } = event.alert;
     const transactionLink = getUrl(scopedSecrets, source) ?? `https://explorer.forta.network/alert/${hash}`;
     if (metadata === undefined) {
       throw new Error('metadata undefined');
     }
-
-    let protocolVersionString = metadata.protocolVersion;
-    if (protocolVersionString === undefined) {
-      protocolVersionString = 'undefined';
-    }
-
+    // Start of usual modifications to the autotask script
+    // extract the metadata
     const {
       compTokenSymbol,
       maliciousAddress,
+      protocolVersion,
     } = metadata;
     if (maliciousAddress === undefined) {
       throw new Error('maliciousAddress undefined');
     }
-
+    // Handle older alerts which don't specify the protocol version
+    let versionString = '';
+    if (protocolVersion !== undefined) {
+      versionString = ` (Compound v${protocolVersion})`;
+    }
     const maliciousAddressFormatted = maliciousAddress.slice(0, 6);
-
-    const message = `${transactionLink} The address ${maliciousAddressFormatted} is potentially manipulating the cToken ${compTokenSymbol} market on protocolVersion ${protocolVersionString}`;
-
-    console.log(message);
+    const message = `The address ${maliciousAddressFormatted} is potentially manipulating the cToken ${compTokenSymbol} market${versionString}`;
     matches.push({
       hash: event.hash,
-      metadata: { message, transactionLink },
+      metadata: { message, transactionLink }
     });
   });
-
   return { matches };
 };
