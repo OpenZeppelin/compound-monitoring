@@ -1,0 +1,75 @@
+{
+  "sentinels": [
+    {
+      "type": "BLOCK",
+      "network": "mumbai",
+      "confirmLevel": 1,
+      "paused": false,
+      "name": "USDC MarketActivity Monitor",
+      "addresses": ["0xF09F0369aB0a875254fB565E52226c88f10Bc839"],
+      "abi": "../../market_activity/abis/sentinel-1.json.abi",
+      "functionConditions": [],
+      "eventConditions": [
+        {
+          "eventSignature": "AbsorbCollateral(address,address,address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "AbsorbDebt(address,address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "BuyCollateral(address,address,uint256,uint256)"
+        },
+        {
+          "eventSignature": "Supply(address,address,uint256)"
+        },
+        {
+          "eventSignature": "SupplyCollateral(address,address,address,uint256)"
+        },
+        {
+          "eventSignature": "Transfer(address,address,uint256)"
+        },
+        {
+          "eventSignature": "TransferCollateral(address,address,address,uint256)"
+        },
+        {
+          "eventSignature": "Withdraw(address,address,uint256)"
+        },
+        {
+          "eventSignature": "WithdrawCollateral(address,address,address,uint256)"
+        },
+        {
+          "eventSignature": "WithdrawReserves(address,uint256)"
+        }
+      ],
+      "txCondition": "",
+      "autotaskTrigger": "Display AutotaskEvent",
+      "uid": "817a5c49",
+      "alertTimeoutMs": 1000,
+      "notificationChannels": ["testing"]
+    }
+  ],
+  "autotasks": [
+    {
+      "name": "Display AutotaskEvent",
+      "trigger": {
+        "frequencyMinutes": 720,
+        "type": "schedule"
+      },
+      "paused": false,
+      "uid": "e9f2ee0b",
+      "autotaskFilePath": "./AutoTask_Market_Activity_Monitor.js"
+    }
+  ],
+  "relays": [],
+  "notificationChannels": [
+    {
+      "type": "email",
+      "name": "testing",
+      "paused": false,
+      "uid": "80d93ff8",
+      "secrets": {
+        "emailEnvVariableName": "DEFENDER_EMAIL1"
+      }
+    }
+  ]
+}
