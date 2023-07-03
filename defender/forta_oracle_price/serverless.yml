@@ -34,14 +34,14 @@ resources:
     notifications:
       discord:
         type: discord
-        name: '${self:custom.name} Security Alerts'
+        name: "${self:custom.name} Security Alerts"
         config:
           url: ${self:custom.discordWebhook}
         paused: false
     sentinels:
       forta-oracle-price-sentinel:
-        name: '${self:custom.name} Sentinel'
-        type: 'FORTA'
+        name: "${self:custom.name} Sentinel"
+        type: "FORTA"
         network: "mainnet"
         addresses: []
         paused: false
@@ -50,7 +50,7 @@ resources:
           message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
           message-subject: "Compound Monitoring: Forta Oracle Price Sentinel triggered"
           channels:
-          - ${self:resources.Resources.notifications.discord}
+            - ${self:resources.Resources.notifications.discord}
         conditions:
           min-scanner-count: 1
           severity: 1
