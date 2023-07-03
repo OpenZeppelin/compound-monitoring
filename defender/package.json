@@ -15,7 +15,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@openzeppelin/defender-serverless": "^1.2.1",
     "axios": "0.21.2",
     "axios-retry": "3.1.9",
     "defender-autotask-client": "1.37.0-rc.2",
@@ -32,7 +31,7 @@
     "serverless": "3.24.1"
   },
   "devDependencies": {
-    "defender-serverless": "^1.1.0",
+    "@openzeppelin/defender-serverless": "openzeppelin/defender-serverless",
     "eslint": "8.9.0",
     "eslint-config-airbnb-base": "15.0.0",
     "eslint-plugin-import": "2.25.4",
