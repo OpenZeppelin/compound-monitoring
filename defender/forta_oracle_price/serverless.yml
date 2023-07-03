@@ -39,7 +39,7 @@ resources:
           url: ${self:custom.discordWebhook}
         paused: false
     sentinels:
-      forta-oracle-price-sintinel:
+      forta-oracle-price-sentinel:
         name: '${self:custom.name} Sentinel'
         type: 'FORTA'
         network: 'mainnet'
