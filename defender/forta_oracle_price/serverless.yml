@@ -26,8 +26,8 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      frequency: 5256000000
-    paused: false
+      frequency: 0
+    paused: true
 
 resources:
   Resources:
@@ -42,7 +42,7 @@ resources:
       forta-oracle-price-sentinel:
         name: '${self:custom.name} Sentinel'
         type: 'FORTA'
-        network: 'mainnet'
+        network: "mainnet"
         addresses: []
         paused: false
         notify-config:
@@ -57,4 +57,4 @@ resources:
         autotask-condition: ${self:functions.autotask-1}
         agent-ids: ${self:custom.agent-ids}
 plugins:
-  - defender-serverless
+  - '@openzeppelin/defender-serverless'
