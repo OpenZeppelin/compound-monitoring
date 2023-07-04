@@ -34,7 +34,7 @@ resources:
     notifications:
       discord:
         type: discord
-        name: "${self:custom.name} Security Alerts"
+        name: "${self:custom.name} Discord Channel"
         config:
           url: ${self:custom.discordWebhook}
         paused: false
