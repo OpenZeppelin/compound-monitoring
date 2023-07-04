@@ -15,6 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@openzeppelin/defender-serverless": "^1.2.1",
     "axios": "0.21.2",
     "axios-retry": "3.1.9",
     "defender-autotask-client": "1.37.0-rc.2",
