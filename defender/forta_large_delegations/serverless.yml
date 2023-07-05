@@ -12,7 +12,7 @@ custom:
   config: ${file(../secrets.yml)}
   stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
   discordWebhook: ${self:custom.stackSecrets.discordWebhook}
-  
+
   # Configure this section and rename secret-example.yml to secrets.yml
   name: Forta Large Delegations
 
@@ -33,27 +33,27 @@ functions:
       type: schedule
       frequency: 0
     paused: true
-    path: 'autotask-1'
+    path: "autotask-1"
 
 resources:
   Resources:
     notifications:
-     security-alerts:
+      security-alerts:
         type: discord
-        name: '${self:custom.name} Security Alerts'
+        name: "${self:custom.name} Security Alerts"
         config:
-          url:  ${self:custom.discordWebhook}
+          url: ${self:custom.discordWebhook}
         paused: false
     sentinels:
       forta-large-delegations-monitor:
-        name: '${self:custom.name} Sentinel'
-        type: 'FORTA'
+        name: "${self:custom.name} Sentinel"
+        type: "FORTA"
         network: mainnet
         paused: false
         notify-config:
           timeout: 0
-          message: '[TX]({{ metadata.transactionLink }}) {{ metadata.message }}'
-          message-subject: 'Defender Sentinel: Forta Large Delegations Monitor triggered'
+          message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
+          message-subject: "Defender Sentinel: Forta Large Delegations Monitor triggered"
           channels:
             - ${self:resources.Resources.notifications.security-alerts}
         autotask-condition: ${self:functions.autotask-1}
