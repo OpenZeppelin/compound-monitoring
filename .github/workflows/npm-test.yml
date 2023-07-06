@@ -11,6 +11,8 @@ on:
     branches:
       - main
 
+permissions: read-all
+
 jobs:
   npm-test:
     runs-on: ubuntu-latest

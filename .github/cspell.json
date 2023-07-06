@@ -6,7 +6,8 @@
     "package-lock.json",
     "megalinter-reports/**",
     "cspell.json",
-    "megalinter_file_names_spell.txt"
+    "megalinter_file_names_spell.txt",
+    "**/delegatesList.json"
   ],
   "language": "en",
   "noConfigSearch": true,

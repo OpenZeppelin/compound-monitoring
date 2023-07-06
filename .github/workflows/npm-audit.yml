@@ -11,6 +11,7 @@ on:
     types: [opened, reopened]
   schedule:
     - cron: "0 0 * * 0" # Hours, minutes, day of month, month, day of week. Set for weekly
+permissions: read-all
 
 jobs:
   npm-audit:
