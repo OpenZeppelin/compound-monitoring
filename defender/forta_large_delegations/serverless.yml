@@ -33,7 +33,7 @@ functions:
       type: schedule
       frequency: 0
     paused: true
-    path: 'autotask-1'
+    path: "autotask-1"
 
 resources:
   Resources:
