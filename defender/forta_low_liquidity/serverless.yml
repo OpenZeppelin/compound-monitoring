@@ -10,21 +10,9 @@ provider:
 
 custom:
   config: ${file(../secrets.yml)}
-  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
-
-  # Configure this section and rename secret-example.yml to secrets.yml
   name: Forta Low Liquidity
-
-  # Forta Sentinel Settings
-  alert-ids:
-    - AE-COMP-MARKET-ATTACK-EVENT
-  agent-ids:
-    - "0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a"
-
-  # Comment out any secret that you do not want to be overwritten in Defender
-  defenderSecrets:
-    # Private variables pulled from external secrets.yml file
-    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
+  discordWebhook: ${self:custom.stackSecrets.discordWebhook}
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -32,7 +20,7 @@ defender:
 
 functions:
   autotask-1:
-    name: ${self:custom.name} Serverless Autotask
+    name: ${self:custom.name} Filter
     path: autotask-1
     trigger:
       type: schedule
@@ -41,34 +29,34 @@ functions:
 
 resources:
   Resources:
-    policies:
-      policy-1:
-        gas-price-cap: 1000
-        whitelist-receivers:
-          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
-        eip1559-pricing: true
-
-    secrets:
-      stack: ${self:custom.defenderSecrets}
-
-    relayers:
-
+    notifications:
+      discord:
+        type: discord
+        name: "${self:custom.name} Discord Channel"
+        config:
+          url: ${self:custom.discordWebhook}
+        paused: false
     sentinels:
       sentinel-1:
-        name: ${self:custom.name} Serverless Sentinel
+        name: ${self:custom.name} Sentinel
         type: FORTA
         addresses: []
         network: mainnet
         paused: false
-        autotask-trigger: ${self:functions.autotask-1}
         notify-config:
           timeout: 0
-          channels: []
+          message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
+          message-subject: "Defender Sentinel: Forta Low Liquidity triggered"
+          channels:
+            - ${self:resources.Resources.notifications.discord}
+        autotask-condition: ${self:functions.autotask-1}
         conditions:
           min-scanner-count: 1
           severity: 1
-          alert-ids: ${self:custom.alert-ids}
-        agent-ids: ${self:custom.agent-ids}
+          alert-ids: 
+            - AE-COMP-MARKET-ATTACK-EVENT
+        agent-ids:
+          - "0xe49ab07879658c258d5007ac6b88428a2b88cc5cfef206222ad94690840be87a"
 
 plugins:
   - defender-serverless
