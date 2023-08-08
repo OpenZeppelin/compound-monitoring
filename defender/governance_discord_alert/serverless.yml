@@ -17,7 +17,7 @@ custom:
 
   # Contract Sentinel Settings
   monitored-addresses:
-   - "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+    - "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
   # Possible Defender networks: https://github.com/OpenZeppelin/defender-client/blob/master/packages/base/src/utils/network.ts`
   monitored-network: mainnet
 
