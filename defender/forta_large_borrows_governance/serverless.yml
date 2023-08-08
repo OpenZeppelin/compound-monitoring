@@ -24,8 +24,8 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      frequency: 525600000
-    paused: false
+      frequency: 0
+    paused: true
 
 resources:
   Resources:
@@ -38,7 +38,7 @@ resources:
         paused: false
     sentinels:
       monitor:
-        name: ${self:custom.name} Serverless Sentinel
+        name: ${self:custom.name} Monitor
         type: FORTA
         network: mainnet
         paused: false
@@ -52,8 +52,8 @@ resources:
         conditions:
           min-scanner-count: 1
           severity: 1
-           alert-ids:
-             - AE-COMP-GOVERNANCE-THRESHOLD
+          alert-ids:
+            - AE-COMP-GOVERNANCE-THRESHOLD
         agent-ids: 
           - 0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339
 

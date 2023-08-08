@@ -10,21 +10,11 @@ provider:
 
 custom:
   config: ${file(../secrets.yml)}
-  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
-
-  # Configure this section and rename secret-example.yml to secrets.yml
   name: Forta Oracle Price
+  stackSecrets: ${self:custom.config.secrets.${self:provider.stackName}}
+  discordWebhook: ${self:custom.stackSecrets.discordWebhook}
 
-  # Forta Sentinel Settings
-  alert-ids:
-    - AE-COMP-CTOKEN-PRICE-REJECTED
-  agent-ids:
-    - "0x32facccd163300ad76c7fe88b559b812dca9050a569417b42fced95594dda08e"
-
-  # Comment out any secret that you do not want to be overwritten in Defender
-  defenderSecrets:
-    # Private variables pulled from external secrets.yml file
-    discordWebhook: ${self:custom.stackSecrets.discordWebhook}
+  agent-ids: "0x32facccd163300ad76c7fe88b559b812dca9050a569417b42fced95594dda08e"
 
 defender:
   key: ${self:custom.config.keys.api}
@@ -32,43 +22,39 @@ defender:
 
 functions:
   autotask-1:
-    name: ${self:custom.name} Serverless Autotask
+    name: ${self:custom.name} Filter
     path: autotask-1
     trigger:
       type: schedule
-      frequency: 525600000
-    paused: false
+      frequency: 0
+    paused: true
 
 resources:
   Resources:
-    policies:
-      policy-1:
-        gas-price-cap: 1000
-        whitelist-receivers:
-          - "0x0f06aB75c7DD497981b75CD82F6566e3a5CAd8f2"
-        eip1559-pricing: true
-
-    secrets:
-      stack: ${self:custom.defenderSecrets}
-
-    relayers:
-
-    sentinels:
-      sentinel-1:
-        name: ${self:custom.name} Serverless Sentinel
-        type: FORTA
-        addresses: []
-        network: mainnet
+    notifications:
+      discord:
+        type: discord
+        name: "${self:custom.name} Discord Channel"
+        config:
+          url: ${self:custom.discordWebhook}
         paused: false
-        autotask-trigger: ${self:functions.autotask-1}
+    sentinels:
+      forta-oracle-price-sentinel:
+        name: "${self:custom.name} Sentinel"
+        type: "FORTA"
+        network: "mainnet"
+        addresses: []
+        paused: false
         notify-config:
           timeout: 0
-          channels: []
+          message: "[TX]({{ metadata.transactionLink }}) {{ metadata.message }}"
+          message-subject: "Compound Monitoring: Forta Oracle Price Sentinel triggered"
+          channels:
+            - ${self:resources.Resources.notifications.discord}
         conditions:
           min-scanner-count: 1
           severity: 1
-          alert-ids: ${self:custom.alert-ids}
+        autotask-condition: ${self:functions.autotask-1}
         agent-ids: ${self:custom.agent-ids}
-
 plugins:
-  - defender-serverless
+  - '@openzeppelin/defender-serverless'
