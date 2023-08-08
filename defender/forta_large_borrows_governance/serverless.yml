@@ -20,7 +20,7 @@ defender:
 
 functions:
   autotask-1:
-    name: ${self:custom.name} Serverless Autotask
+    name: ${self:custom.name} Action
     path: autotask-1
     trigger:
       type: schedule
@@ -28,8 +28,7 @@ functions:
     paused: true
 
 resources:
-  Resources:
-  notifications:
+    notifications:
       discord:
         type: discord
         name: ${self:custom.name} Discord
@@ -50,7 +49,8 @@ resources:
         conditions:
           min-scanner-count: 1
           severity: 1
-          alert-ids: AE-COMP-GOVERNANCE-THRESHOLD
+          alert-ids:
+           - AE-COMP-GOVERNANCE-THRESHOLD
         agent-ids: 0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339
 
 plugins:
