@@ -28,6 +28,7 @@ functions:
     paused: true
 
 resources:
+  Resources:
     notifications:
       discord:
         type: discord
@@ -44,14 +45,17 @@ resources:
         autotask-trigger: ${self:functions.autotask-1}
         notify-config:
           timeout: 0
+          message: [TX]({{ metadata.transactionLink }}) {{ metadata.message }}
+          message-subject: Defender Alert: ${self:custom.name}
           channels:
             - ${self:resources.Resources.notifications.discord}
         conditions:
           min-scanner-count: 1
           severity: 1
           alert-ids:
-           - AE-COMP-GOVERNANCE-THRESHOLD
-        agent-ids: 0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339
+            - AE-COMP-GOVERNANCE-THRESHOLD
+        agent-ids: 
+          - 0xb6bdedbae67cc82e60aad02a8ffab3ccbefeaa876ca7e4f291c07c798a95e339
 
 plugins:
   - defender-serverless
