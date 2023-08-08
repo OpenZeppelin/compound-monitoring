@@ -24,11 +24,10 @@ functions:
     path: autotask-1
     trigger:
       type: schedule
-      frequency: 525600000
-    paused: false
+      frequency: 0
+    paused: true
 
 resources:
-  Resources:
     notifications:
       discord:
         type: discord
@@ -38,7 +37,7 @@ resources:
         paused: false
     sentinels:
       monitor:
-        name: ${self:custom.name} Serverless Sentinel
+        name: ${self:custom.name} Monitor
         type: FORTA
         network: mainnet
         paused: false
