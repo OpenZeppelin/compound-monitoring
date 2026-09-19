@@ -29,7 +29,7 @@
     "jszip": "3.10.0",
     "okhttp": "^1.1.0",
     "request": "^2.88.2",
-    "serverless": "3.24.1"
+    "serverless": "4.42.0"
   },
   "devDependencies": {
     "eslint": "8.9.0",
